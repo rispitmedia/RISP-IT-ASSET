@@ -18,7 +18,7 @@
     content="yes"
   >
 
-  <title>RISP IT ASSET Scanner</title>
+  <title>RISP IT ASSET Scanner — Navy Grunge</title>
 
   <script
     src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js">
@@ -38,8 +38,12 @@
       background: #0b0b0d;
       color: #ffffff;
       font-family:
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Helvetica Neue",
         Arial,
-        Helvetica,
         sans-serif;
     }
 
@@ -71,17 +75,18 @@
       margin-bottom: 18px;
     }
 
-    .logo { display:flex;align-items:center;justify-content:center;gap:12px;cursor:pointer;user-select:none; }
-    .logo img { width:58px;height:58px;object-fit:contain;filter:drop-shadow(0 0 12px rgba(255,255,255,.16)); }
+    .logo { display:flex;align-items:center;justify-content:center;gap:13px;cursor:pointer;user-select:none; }
+    .logo img { width:62px;height:62px;object-fit:contain;filter:brightness(0) invert(1) drop-shadow(0 0 12px rgba(255,255,255,.10)); }
     .logo-copy { text-align:left;line-height:1; }
-    .logo-copy b { display:block;font-size:22px;letter-spacing:1px; }
-    .logo-copy small { display:block;margin-top:7px;color:#777;font-size:8px;letter-spacing:2.4px; }
-    .rock-badge { display:inline-block;margin-left:4px;padding:3px 5px;background:#fff;color:#000;font-size:7px;font-weight:900;letter-spacing:1px;transform:rotate(-4deg); }
+    .logo-copy b { display:block;font-size:20px;letter-spacing:.10em;font-weight:800; }
+    .logo-copy small { display:block;margin-top:8px;color:#8fa2b8;font-size:7px;letter-spacing:.22em;font-weight:650; }
+    .rock-badge { display:inline-block;margin-left:5px;padding:3px 6px;background:#173a63;color:#fff;border:1px solid #315a86;border-radius:4px;font-size:7px;font-weight:800;letter-spacing:.10em;transform:rotate(-3deg); }
 
     .subtitle {
       margin-top: 5px;
-      color: #999;
-      font-size: 13px;
+      color: #7f8c9c;
+      font-size: 12px;
+      letter-spacing: .04em;
     }
 
     .scanner-box {
@@ -95,7 +100,7 @@
 
       overflow: hidden;
 
-      border: 1px solid #292929;
+      border: 1px solid #24486f;
 
       box-shadow:
         0 15px 40px rgba(0, 0, 0, .45);
@@ -125,7 +130,7 @@
       bottom: 15%;
 
       border:
-        2px solid rgba(255, 255, 255, .9);
+        2px solid rgba(74, 118, 166, .95);
 
       border-radius: 18px;
 
@@ -140,10 +145,10 @@
 
       height: 2px;
 
-      background: #ffffff;
+      background: #d9ff3f;
 
       box-shadow:
-        0 0 12px rgba(255, 255, 255, .9);
+        0 0 15px rgba(217, 255, 63, .75);
 
       animation:
         scan 2s linear infinite;
@@ -205,13 +210,17 @@
 
       font-size: 15px;
 
-      font-weight: 700;
+      font-weight: 750;
+
+      letter-spacing: .04em;
 
       cursor: pointer;
 
-      background: #ffffff;
+      background: #173a63;
 
-      color: #000000;
+      color: #ffffff;
+
+      border: 1px solid #315a86;
 
       min-height: 50px;
 
@@ -274,7 +283,9 @@
     }
 
     .manual input:focus {
-      border-color: #fff;
+      border-color: #315a86;
+
+      box-shadow: 0 0 0 3px rgba(23, 58, 99, .25);
     }
 
     .manual button {
@@ -298,7 +309,8 @@
     }
 
     .success {
-      color: #8fffaa;
+      color: #d9ff3f;
+      text-shadow: 0 0 14px rgba(217, 255, 63, .12);
     }
 
     .warning {
@@ -308,7 +320,7 @@
     .camera-info {
       text-align: center;
 
-      color: #555;
+      color: #687687;
 
       font-size: 10px;
 
@@ -324,8 +336,8 @@
         padding-right: 12px;
       }
 
-      .logo img { width:50px;height:50px; }
-      .logo-copy b { font-size:19px; }
+      .logo img { width:52px;height:52px; }
+      .logo-copy b { font-size:16px;letter-spacing:.08em; }
 
       .scanner-box {
         border-radius: 18px;
@@ -570,30 +582,459 @@
     } catch (e) { console.log("Audio unavailable", e); }
   }
 
+  function makeGrungeCurve(amount = 110) {
+    const samples = 4096;
+    const curve = new Float32Array(samples);
+
+    for (let i = 0; i < samples; i++) {
+      const x = (i * 2 / samples) - 1;
+
+      /*
+       * Asymmetric clipping gives the synth more of a dirty
+       * guitar-amp feel than a clean digital buzz.
+       */
+      const shaped =
+        ((3 + amount) * x * 18 * Math.PI / 180) /
+        (Math.PI + amount * Math.abs(x));
+
+      curve[i] =
+        x < 0
+          ? shaped * 0.92
+          : shaped * 1.08;
+    }
+
+    return curve;
+  }
+
+
   function playRockScanSound() {
+
     try {
+
       armRockAudio();
-      if (!audioCtx) return;
-      const now = audioCtx.currentTime;
-      const master = audioCtx.createGain();
-      const drive = audioCtx.createWaveShaper();
-      const filter = audioCtx.createBiquadFilter();
-      const curve = new Float32Array(2048);
-      for (let i=0;i<curve.length;i++) { const x=i*2/curve.length-1; curve[i]=(1+28)*x/(1+28*Math.abs(x)); }
-      drive.curve = curve; drive.oversample = "4x";
-      filter.type = "lowpass"; filter.frequency.setValueAtTime(2600, now); filter.Q.value = 0.7;
-      master.gain.setValueAtTime(0.0001, now);
-      master.gain.exponentialRampToValueAtTime(0.34, now+0.012);
-      master.gain.exponentialRampToValueAtTime(0.0001, now+0.42);
-      drive.connect(filter); filter.connect(master); master.connect(audioCtx.destination);
-      [82.41,123.47,164.81].forEach((f,idx)=>{
-        const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
-        o.type=idx===0?"sawtooth":"square"; o.frequency.setValueAtTime(f,now);
-        o.detune.value=idx===1?-5:(idx===2?6:0); g.gain.value=idx===0?0.42:0.20;
-        o.connect(g); g.connect(drive); o.start(now); o.stop(now+0.36);
-      });
-      if (navigator.vibrate) navigator.vibrate(45);
-    } catch (e) { console.log("Rock scan sound failed", e); }
+
+      if (!audioCtx) {
+        return;
+      }
+
+
+      const now =
+        audioCtx.currentTime;
+
+
+      /*
+       * ============================================================
+       * GRUNGE AMP CHAIN
+       * ============================================================
+       *
+       * Power chord -> hard drive -> amp EQ -> compressor
+       * -> tiny slapback -> output.
+       *
+       * Everything is generated in-browser. No MP3/audio file.
+       * ============================================================
+       */
+
+      const input =
+        audioCtx.createGain();
+
+      const drive =
+        audioCtx.createWaveShaper();
+
+      const lowCut =
+        audioCtx.createBiquadFilter();
+
+      const bite =
+        audioCtx.createBiquadFilter();
+
+      const cab =
+        audioCtx.createBiquadFilter();
+
+      const compressor =
+        audioCtx.createDynamicsCompressor();
+
+      const dry =
+        audioCtx.createGain();
+
+      const delay =
+        audioCtx.createDelay(0.2);
+
+      const delayGain =
+        audioCtx.createGain();
+
+      const master =
+        audioCtx.createGain();
+
+
+      drive.curve =
+        makeGrungeCurve(145);
+
+      drive.oversample =
+        "4x";
+
+
+      lowCut.type =
+        "highpass";
+
+      lowCut.frequency.setValueAtTime(
+        68,
+        now
+      );
+
+
+      bite.type =
+        "peaking";
+
+      bite.frequency.setValueAtTime(
+        1250,
+        now
+      );
+
+      bite.Q.setValueAtTime(
+        0.8,
+        now
+      );
+
+      bite.gain.setValueAtTime(
+        7.5,
+        now
+      );
+
+
+      cab.type =
+        "lowpass";
+
+      cab.frequency.setValueAtTime(
+        3450,
+        now
+      );
+
+      cab.Q.setValueAtTime(
+        0.62,
+        now
+      );
+
+
+      compressor.threshold.setValueAtTime(
+        -20,
+        now
+      );
+
+      compressor.knee.setValueAtTime(
+        10,
+        now
+      );
+
+      compressor.ratio.setValueAtTime(
+        8,
+        now
+      );
+
+      compressor.attack.setValueAtTime(
+        0.003,
+        now
+      );
+
+      compressor.release.setValueAtTime(
+        0.16,
+        now
+      );
+
+
+      dry.gain.setValueAtTime(
+        0.92,
+        now
+      );
+
+
+      delay.delayTime.setValueAtTime(
+        0.052,
+        now
+      );
+
+      delayGain.gain.setValueAtTime(
+        0.17,
+        now
+      );
+
+
+      master.gain.setValueAtTime(
+        0.0001,
+        now
+      );
+
+      master.gain.exponentialRampToValueAtTime(
+        0.48,
+        now + 0.010
+      );
+
+      master.gain.setValueAtTime(
+        0.42,
+        now + 0.090
+      );
+
+      master.gain.exponentialRampToValueAtTime(
+        0.0001,
+        now + 0.69
+      );
+
+
+      input.connect(
+        drive
+      );
+
+      drive.connect(
+        lowCut
+      );
+
+      lowCut.connect(
+        bite
+      );
+
+      bite.connect(
+        cab
+      );
+
+      cab.connect(
+        compressor
+      );
+
+      compressor.connect(
+        dry
+      );
+
+      dry.connect(
+        master
+      );
+
+      compressor.connect(
+        delay
+      );
+
+      delay.connect(
+        delayGain
+      );
+
+      delayGain.connect(
+        master
+      );
+
+      master.connect(
+        audioCtx.destination
+      );
+
+
+      /*
+       * ============================================================
+       * DIRTY POWER CHORD
+       * ============================================================
+       *
+       * E2 + B2 + E3, doubled and slightly detuned.
+       * The tiny pitch sag mimics a hard guitar pick / amp attack.
+       * ============================================================
+       */
+
+      const voices = [
+        { f: 82.41,  type: "sawtooth", detune: -7, gain: 0.38 },
+        { f: 82.41,  type: "square",   detune:  8, gain: 0.18 },
+        { f: 123.47, type: "sawtooth", detune: -4, gain: 0.28 },
+        { f: 123.47, type: "square",   detune:  6, gain: 0.13 },
+        { f: 164.81, type: "sawtooth", detune:  3, gain: 0.22 }
+      ];
+
+
+      voices.forEach(
+        function(voice, index) {
+
+          const oscillator =
+            audioCtx.createOscillator();
+
+          const gain =
+            audioCtx.createGain();
+
+
+          oscillator.type =
+            voice.type;
+
+
+          oscillator.frequency.setValueAtTime(
+            voice.f * 1.018,
+            now
+          );
+
+          oscillator.frequency.exponentialRampToValueAtTime(
+            voice.f * 0.992,
+            now + 0.10
+          );
+
+          oscillator.frequency.exponentialRampToValueAtTime(
+            voice.f * 0.985,
+            now + 0.58
+          );
+
+
+          oscillator.detune.setValueAtTime(
+            voice.detune,
+            now
+          );
+
+
+          gain.gain.setValueAtTime(
+            0.0001,
+            now
+          );
+
+          gain.gain.exponentialRampToValueAtTime(
+            voice.gain,
+            now + 0.006 + (index * 0.001)
+          );
+
+          gain.gain.setValueAtTime(
+            voice.gain * 0.72,
+            now + 0.12
+          );
+
+          gain.gain.exponentialRampToValueAtTime(
+            0.0001,
+            now + 0.61
+          );
+
+
+          oscillator.connect(
+            gain
+          );
+
+          gain.connect(
+            input
+          );
+
+
+          oscillator.start(
+            now
+          );
+
+          oscillator.stop(
+            now + 0.64
+          );
+
+        }
+      );
+
+
+      /*
+       * Pick/noise transient:
+       * short dirty scratch at the front of the chord.
+       */
+
+      const noiseLength =
+        Math.floor(
+          audioCtx.sampleRate * 0.055
+        );
+
+      const noiseBuffer =
+        audioCtx.createBuffer(
+          1,
+          noiseLength,
+          audioCtx.sampleRate
+        );
+
+      const noiseData =
+        noiseBuffer.getChannelData(0);
+
+
+      for (
+        let i = 0;
+        i < noiseLength;
+        i++
+      ) {
+
+        const envelope =
+          1 - (i / noiseLength);
+
+        noiseData[i] =
+          (Math.random() * 2 - 1) *
+          envelope *
+          envelope;
+
+      }
+
+
+      const noise =
+        audioCtx.createBufferSource();
+
+      const noiseFilter =
+        audioCtx.createBiquadFilter();
+
+      const noiseGain =
+        audioCtx.createGain();
+
+
+      noise.buffer =
+        noiseBuffer;
+
+
+      noiseFilter.type =
+        "bandpass";
+
+      noiseFilter.frequency.setValueAtTime(
+        1750,
+        now
+      );
+
+      noiseFilter.Q.setValueAtTime(
+        0.65,
+        now
+      );
+
+
+      noiseGain.gain.setValueAtTime(
+        0.16,
+        now
+      );
+
+      noiseGain.gain.exponentialRampToValueAtTime(
+        0.0001,
+        now + 0.055
+      );
+
+
+      noise.connect(
+        noiseFilter
+      );
+
+      noiseFilter.connect(
+        noiseGain
+      );
+
+      noiseGain.connect(
+        drive
+      );
+
+
+      noise.start(
+        now
+      );
+
+      noise.stop(
+        now + 0.06
+      );
+
+
+      if (navigator.vibrate) {
+        navigator.vibrate(
+          [35, 20, 55]
+        );
+      }
+
+
+    } catch (e) {
+
+      console.log(
+        "Grunge scan sound failed",
+        e
+      );
+
+    }
+
   }
 
 
@@ -1522,7 +1963,7 @@
         );
 
       },
-      430
+      690
     );
 
   }
