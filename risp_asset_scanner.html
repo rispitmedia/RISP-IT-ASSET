@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <title>RISP IT ASSET Scanner</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0b0b0d;
+      color: #ffffff;
+      font-family: Arial, Helvetica, sans-serif;
+      display: flex;
+      justify-content: center;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 520px;
+      min-height: 100vh;
+      padding: 20px 16px 30px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header {
+      text-align: center;
+      padding-top: 10px;
+      margin-bottom: 18px;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .subtitle {
+      margin-top: 5px;
+      color: #999;
+      font-size: 13px;
+    }
+
+    .scanner-box {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      background: #000;
+      border-radius: 22px;
+      overflow: hidden;
+      border: 1px solid #292929;
+      box-shadow: 0 15px 40px rgba(0,0,0,.45);
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      background: #000;
+    }
+
+    canvas {
+      display: none;
+    }
+
+    .scan-frame {
+      position: absolute;
+      inset: 15%;
+      border: 2px solid rgba(255,255,255,.9);
+      border-radius: 18px;
+      pointer-events: none;
+    }
+
+    .scan-line {
+      position: absolute;
+      left: 17%;
+      right: 17%;
+      height: 2px;
+      background: #ffffff;
+      box-shadow: 0 0 12px rgba(255,255,255,.9);
+      animation: scan 2s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes scan {
+      0% {
+        top: 18%;
+      }
+
+      50% {
+        top: 80%;
+      }
+
+      100% {
+        top: 18%;
+      }
+    }
+
+    .status {
+      text-align: center;
+      margin: 18px 0 12px;
+      min-height: 20px;
+      color: #bdbdbd;
+      font-size: 14px;
+    }
+
+    .buttons {
+      display: grid;
+      gap: 10px;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 12px;
+      padding: 15px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #ffffff;
+      color: #000000;
+    }
+
+    button.secondary {
+      background: #202024;
+      color: #ffffff;
+      border: 1px solid #343438;
+    }
+
+    button:disabled {
+      opacity: .45;
+      cursor: not-allowed;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .manual {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #292929;
+    }
+
+    .manual input {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid #343438;
+      background: #17171a;
+      color: #fff;
+      outline: none;
+      font-size: 15px;
+    }
+
+    .manual input:focus {
+      border-color: #fff;
+    }
+
+    .manual button {
+      margin-top: 9px;
+    }
+
+    .hint {
+      text-align: center;
+      color: #777;
+      font-size: 12px;
+      line-height: 1.5;
+      margin-top: 16px;
+    }
+
+    .error {
+      color: #ff7777;
+    }
+
+    .success {
+      color: #8fffaa;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="header">
+    <div class="logo">RISP IT ASSET</div>
+    <div class="subtitle">QR Asset Scanner</div>
+  </div>
+
+  <div class="scanner-box">
+
+    <video
+      id="video"
+      autoplay
+      muted
+      playsinline
+      webkit-playsinline>
+    </video>
+
+    <canvas id="canvas"></canvas>
+
+    <div class="scan-frame"></div>
+    <div class="scan-line"></div>
+
+  </div>
+
+  <div id="status" class="status">
+    Ready to scan
+  </div>
+
+  <div class="buttons">
+
+    <button id="startBtn" onclick="startCamera()">
+      START CAMERA
+    </button>
+
+    <button
+      class="secondary"
+      onclick="document.getElementById('fileInput').click()">
+      UPLOAD QR IMAGE
+    </button>
+
+    <input
+      id="fileInput"
+      type="file"
+      accept="image/*"
+      onchange="scanUploadedImage(event)">
+
+    <button
+      class="secondary"
+      onclick="goBack()">
+      BACK
+    </button>
+
+  </div>
+
+  <div class="manual">
+
+    <input
+      id="manualInput"
+      type="text"
+      placeholder="Enter Asset Tag / Libib / Serial">
+
+    <button onclick="manualSearch()">
+      SEARCH
+    </button>
+
+  </div>
+
+  <div class="hint">
+    Allow camera access when Safari asks.<br>
+    Scan the QR code inside the frame.
+  </div>
+
+</div>
+
+<script>
+
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d", {
+    willReadFrequently: true
+  });
+
+  const statusEl = document.getElementById("status");
+  const startBtn = document.getElementById("startBtn");
+
+  let stream = null;
+  let scanning = false;
+  let scanLocked = false;
+
+  const params = new URLSearchParams(window.location.search);
+
+  const returnUrl =
+    params.get("return") ||
+    "";
+
+  function setStatus(message, type = "") {
+
+    statusEl.textContent = message;
+
+    statusEl.className = "status";
+
+    if (type) {
+      statusEl.classList.add(type);
+    }
+  }
+
+
+  async function startCamera() {
+
+    if (scanning) {
+      return;
+    }
+
+    scanLocked = false;
+
+    if (!window.isSecureContext) {
+
+      setStatus(
+        "Camera requires HTTPS.",
+        "error"
+      );
+
+      return;
+    }
+
+    if (!navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia) {
+
+      setStatus(
+        "Camera is not supported by this browser.",
+        "error"
+      );
+
+      return;
+    }
+
+    stopCamera();
+
+    setStatus(
+      "Starting camera..."
+    );
+
+    try {
+
+      /*
+       * IMPORTANT:
+       * Use the rear camera on iPhone / Android.
+       */
+
+      stream = await navigator.mediaDevices.getUserMedia({
+
+        audio: false,
+
+        video: {
+          facingMode: {
+            ideal: "environment"
+          },
+
+          width: {
+            ideal: 1280
+          },
+
+          height: {
+            ideal: 720
+          }
+        }
+
+      });
+
+      video.srcObject = stream;
+
+      video.setAttribute(
+        "playsinline",
+        ""
+      );
+
+      video.setAttribute(
+        "webkit-playsinline",
+        ""
+      );
+
+      await video.play();
+
+      scanning = true;
+
+      startBtn.textContent =
+        "CAMERA RUNNING";
+
+      startBtn.disabled = true;
+
+      setStatus(
+        "Point the camera at the QR code."
+      );
+
+      requestAnimationFrame(scanFrame);
+
+    } catch (error) {
+
+      console.error(error);
+
+      scanning = false;
+
+      startBtn.disabled = false;
+
+      startBtn.textContent =
+        "START CAMERA";
+
+      if (error.name === "NotAllowedError") {
+
+        setStatus(
+          "Camera permission was denied. Allow Camera for Safari and reload this page.",
+          "error"
+        );
+
+      } else if (error.name === "NotFoundError") {
+
+        setStatus(
+          "No camera was found on this device.",
+          "error"
+        );
+
+      } else if (error.name === "NotReadableError") {
+
+        setStatus(
+          "Camera is already being used by another app.",
+          "error"
+        );
+
+      } else {
+
+        setStatus(
+          "Unable to start camera: " + error.message,
+          "error"
+        );
+
+      }
+
+    }
+
+  }
+
+
+  function scanFrame() {
+
+    if (!scanning ||
+        scanLocked) {
+
+      return;
+    }
+
+    if (video.readyState >= 2 &&
+        video.videoWidth > 0 &&
+        video.videoHeight > 0) {
+
+      canvas.width =
+        video.videoWidth;
+
+      canvas.height =
+        video.videoHeight;
+
+      ctx.drawImage(
+        video,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+      const imageData =
+        ctx.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+
+      const code =
+        jsQR(
+          imageData.data,
+          imageData.width,
+          imageData.height,
+          {
+            inversionAttempts:
+              "attemptBoth"
+          }
+        );
+
+      if (code) {
+
+        handleQRCode(
+          code.data
+        );
+
+        return;
+      }
+
+    }
+
+    requestAnimationFrame(
+      scanFrame
+    );
+
+  }
+
+
+  function handleQRCode(value) {
+
+    if (scanLocked) {
+      return;
+    }
+
+    scanLocked = true;
+
+    stopCamera();
+
+    setStatus(
+      "QR detected. Opening asset...",
+      "success"
+    );
+
+    setTimeout(
+      function() {
+
+        redirectWithScan(
+          value
+        );
+
+      },
+      300
+    );
+
+  }
+
+
+  function redirectWithScan(value) {
+
+    if (!returnUrl) {
+
+      setStatus(
+        "Scanner return URL is missing.",
+        "error"
+      );
+
+      return;
+    }
+
+    try {
+
+      const url =
+        new URL(returnUrl);
+
+      url.searchParams.set(
+        "scan",
+        value
+      );
+
+      window.location.href =
+        url.toString();
+
+    } catch (error) {
+
+      setStatus(
+        "Invalid return URL.",
+        "error"
+      );
+
+      console.error(error);
+
+    }
+
+  }
+
+
+  function stopCamera() {
+
+    scanning = false;
+
+    if (stream) {
+
+      stream
+        .getTracks()
+        .forEach(
+          track => track.stop()
+        );
+
+      stream = null;
+    }
+
+    video.srcObject = null;
+
+    startBtn.disabled = false;
+
+    startBtn.textContent =
+      "START CAMERA";
+
+  }
+
+
+  function scanUploadedImage(event) {
+
+    const file =
+      event.target.files[0];
+
+    if (!file) {
+      return;
+    }
+
+    setStatus(
+      "Reading QR image..."
+    );
+
+    const reader =
+      new FileReader();
+
+    reader.onload =
+      function(e) {
+
+        const img =
+          new Image();
+
+        img.onload =
+          function() {
+
+            canvas.width =
+              img.naturalWidth;
+
+            canvas.height =
+              img.naturalHeight;
+
+            ctx.drawImage(
+              img,
+              0,
+              0,
+              canvas.width,
+              canvas.height
+            );
+
+            const imageData =
+              ctx.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+              );
+
+            const code =
+              jsQR(
+                imageData.data,
+                imageData.width,
+                imageData.height,
+                {
+                  inversionAttempts:
+                    "attemptBoth"
+                }
+              );
+
+            if (code) {
+
+              handleQRCode(
+                code.data
+              );
+
+            } else {
+
+              setStatus(
+                "No QR code found in this image.",
+                "error"
+              );
+
+            }
+
+          };
+
+        img.onerror =
+          function() {
+
+            setStatus(
+              "Unable to read image.",
+              "error"
+            );
+
+          };
+
+        img.src =
+          e.target.result;
+
+      };
+
+    reader.readAsDataURL(file);
+
+    event.target.value = "";
+
+  }
+
+
+  function manualSearch() {
+
+    const input =
+      document.getElementById(
+        "manualInput"
+      );
+
+    const value =
+      input.value.trim();
+
+    if (!value) {
+
+      setStatus(
+        "Please enter an Asset Tag, Libib number, or Serial.",
+        "error"
+      );
+
+      input.focus();
+
+      return;
+    }
+
+    redirectWithScan(
+      value
+    );
+
+  }
+
+
+  function goBack() {
+
+    if (returnUrl) {
+
+      window.location.href =
+        returnUrl;
+
+    } else {
+
+      history.back();
+
+    }
+
+  }
+
+
+  /*
+   * Automatically try to start the camera
+   * only after a user interaction is available.
+   *
+   * On iPhone Safari, START CAMERA is the
+   * safest way to trigger permission.
+   */
+
+</script>
+
+</body>
+</html>
