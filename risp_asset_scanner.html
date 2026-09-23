@@ -505,7 +505,7 @@
 
   /*
    * ================================================================
-   * RISP IT ASSET SCANNER v6.1 — v5.8 BRAND SYNC
+   * RISP IT ASSET SCANNER v6.3 — ORIGINAL GRUNGE STINGER
    * iPhone / Safari compatible version
    * ================================================================
    *
@@ -622,427 +622,150 @@
     try {
 
       armRockAudio();
+      if (!audioCtx) return;
 
-      if (!audioCtx) {
-        return;
+      const now = audioCtx.currentTime;
+
+      /*
+       * ============================================================
+       * ORIGINAL 3-SECOND GRUNGE STINGER
+       * ============================================================
+       * Dirty power chords, pick noise, cabinet roll-off and slapback.
+       * Generated in-browser: no sampled/copyrighted song audio.
+       * ============================================================
+       */
+
+      const input = audioCtx.createGain();
+      const drive = audioCtx.createWaveShaper();
+      const lowCut = audioCtx.createBiquadFilter();
+      const bite = audioCtx.createBiquadFilter();
+      const cab = audioCtx.createBiquadFilter();
+      const compressor = audioCtx.createDynamicsCompressor();
+      const delay = audioCtx.createDelay(0.25);
+      const delayGain = audioCtx.createGain();
+      const master = audioCtx.createGain();
+
+      drive.curve = makeGrungeCurve(230);
+      drive.oversample = "4x";
+
+      lowCut.type = "highpass";
+      lowCut.frequency.setValueAtTime(64, now);
+
+      bite.type = "peaking";
+      bite.frequency.setValueAtTime(1450, now);
+      bite.Q.setValueAtTime(0.85, now);
+      bite.gain.setValueAtTime(7.8, now);
+
+      cab.type = "lowpass";
+      cab.frequency.setValueAtTime(3900, now);
+      cab.Q.setValueAtTime(0.72, now);
+
+      compressor.threshold.setValueAtTime(-22, now);
+      compressor.knee.setValueAtTime(8, now);
+      compressor.ratio.setValueAtTime(10, now);
+      compressor.attack.setValueAtTime(0.0025, now);
+      compressor.release.setValueAtTime(0.15, now);
+
+      delay.delayTime.setValueAtTime(0.071, now);
+      delayGain.gain.setValueAtTime(0.12, now);
+
+      master.gain.setValueAtTime(0.0001, now);
+      master.gain.exponentialRampToValueAtTime(0.42, now + 0.012);
+      master.gain.setValueAtTime(0.40, now + 2.55);
+      master.gain.exponentialRampToValueAtTime(0.0001, now + 2.95);
+
+      input.connect(drive);
+      drive.connect(lowCut);
+      lowCut.connect(bite);
+      bite.connect(cab);
+      cab.connect(compressor);
+      compressor.connect(master);
+      compressor.connect(delay);
+      delay.connect(delayGain);
+      delayGain.connect(master);
+      master.connect(audioCtx.destination);
+
+      function hitPowerChord(root, offset, duration, level) {
+        const t = now + offset;
+        const freqs = [root, root * 1.498307, root * 2];
+        const detunes = [-8, 5, 2];
+        const voiceLevels = [1, 0.72, 0.52];
+
+        freqs.forEach(function(freq, index) {
+          const oscA = audioCtx.createOscillator();
+          const oscB = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+
+          oscA.type = "sawtooth";
+          oscB.type = index === 0 ? "square" : "sawtooth";
+
+          oscA.frequency.setValueAtTime(freq * 1.008, t);
+          oscA.frequency.exponentialRampToValueAtTime(freq * 0.997, t + Math.min(0.09, duration * 0.4));
+          oscB.frequency.setValueAtTime(freq * 0.994, t);
+
+          oscA.detune.setValueAtTime(detunes[index], t);
+          oscB.detune.setValueAtTime(detunes[index] + 9, t);
+
+          gain.gain.setValueAtTime(0.0001, t);
+          gain.gain.exponentialRampToValueAtTime(level * voiceLevels[index], t + 0.006);
+          gain.gain.setValueAtTime(level * voiceLevels[index] * 0.72, t + Math.min(0.08, duration * 0.35));
+          gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+
+          oscA.connect(gain);
+          oscB.connect(gain);
+          gain.connect(input);
+
+          oscA.start(t);
+          oscB.start(t);
+          oscA.stop(t + duration + 0.025);
+          oscB.stop(t + duration + 0.025);
+        });
+
+        const noiseLength = Math.max(1, Math.floor(audioCtx.sampleRate * 0.038));
+        const noiseBuffer = audioCtx.createBuffer(1, noiseLength, audioCtx.sampleRate);
+        const noiseData = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < noiseLength; i++) {
+          const env = 1 - (i / noiseLength);
+          noiseData[i] = ((Math.random() * 2) - 1) * env;
+        }
+
+        const noise = audioCtx.createBufferSource();
+        const noiseFilter = audioCtx.createBiquadFilter();
+        const noiseGain = audioCtx.createGain();
+        noise.buffer = noiseBuffer;
+        noiseFilter.type = "bandpass";
+        noiseFilter.frequency.setValueAtTime(2100, t);
+        noiseFilter.Q.setValueAtTime(0.75, t);
+        noiseGain.gain.setValueAtTime(0.11, t);
+        noiseGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.038);
+        noise.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(drive);
+        noise.start(t);
+        noise.stop(t + 0.045);
       }
 
-
-      const now =
-        audioCtx.currentTime;
-
-
-      /*
-       * ============================================================
-       * GRUNGE AMP CHAIN
-       * ============================================================
-       *
-       * Power chord -> hard drive -> amp EQ -> compressor
-       * -> tiny slapback -> output.
-       *
-       * Everything is generated in-browser. No MP3/audio file.
-       * ============================================================
-       */
-
-      const input =
-        audioCtx.createGain();
-
-      const drive =
-        audioCtx.createWaveShaper();
-
-      const lowCut =
-        audioCtx.createBiquadFilter();
-
-      const bite =
-        audioCtx.createBiquadFilter();
-
-      const cab =
-        audioCtx.createBiquadFilter();
-
-      const compressor =
-        audioCtx.createDynamicsCompressor();
-
-      const dry =
-        audioCtx.createGain();
-
-      const delay =
-        audioCtx.createDelay(0.2);
-
-      const delayGain =
-        audioCtx.createGain();
-
-      const master =
-        audioCtx.createGain();
-
-
-      drive.curve =
-        makeGrungeCurve(145);
-
-      drive.oversample =
-        "4x";
-
-
-      lowCut.type =
-        "highpass";
-
-      lowCut.frequency.setValueAtTime(
-        68,
-        now
-      );
-
-
-      bite.type =
-        "peaking";
-
-      bite.frequency.setValueAtTime(
-        1250,
-        now
-      );
-
-      bite.Q.setValueAtTime(
-        0.8,
-        now
-      );
-
-      bite.gain.setValueAtTime(
-        7.5,
-        now
-      );
-
-
-      cab.type =
-        "lowpass";
-
-      cab.frequency.setValueAtTime(
-        3450,
-        now
-      );
-
-      cab.Q.setValueAtTime(
-        0.62,
-        now
-      );
-
-
-      compressor.threshold.setValueAtTime(
-        -20,
-        now
-      );
-
-      compressor.knee.setValueAtTime(
-        10,
-        now
-      );
-
-      compressor.ratio.setValueAtTime(
-        8,
-        now
-      );
-
-      compressor.attack.setValueAtTime(
-        0.003,
-        now
-      );
-
-      compressor.release.setValueAtTime(
-        0.16,
-        now
-      );
-
-
-      dry.gain.setValueAtTime(
-        0.92,
-        now
-      );
-
-
-      delay.delayTime.setValueAtTime(
-        0.052,
-        now
-      );
-
-      delayGain.gain.setValueAtTime(
-        0.17,
-        now
-      );
-
-
-      master.gain.setValueAtTime(
-        0.0001,
-        now
-      );
-
-      master.gain.exponentialRampToValueAtTime(
-        0.48,
-        now + 0.010
-      );
-
-      master.gain.setValueAtTime(
-        0.42,
-        now + 0.090
-      );
-
-      master.gain.exponentialRampToValueAtTime(
-        0.0001,
-        now + 0.69
-      );
-
-
-      input.connect(
-        drive
-      );
-
-      drive.connect(
-        lowCut
-      );
-
-      lowCut.connect(
-        bite
-      );
-
-      bite.connect(
-        cab
-      );
-
-      cab.connect(
-        compressor
-      );
-
-      compressor.connect(
-        dry
-      );
-
-      dry.connect(
-        master
-      );
-
-      compressor.connect(
-        delay
-      );
-
-      delay.connect(
-        delayGain
-      );
-
-      delayGain.connect(
-        master
-      );
-
-      master.connect(
-        audioCtx.destination
-      );
-
-
-      /*
-       * ============================================================
-       * DIRTY POWER CHORD
-       * ============================================================
-       *
-       * E2 + B2 + E3, doubled and slightly detuned.
-       * The tiny pitch sag mimics a hard guitar pick / amp attack.
-       * ============================================================
-       */
-
-      const voices = [
-        { f: 82.41,  type: "sawtooth", detune: -7, gain: 0.38 },
-        { f: 82.41,  type: "square",   detune:  8, gain: 0.18 },
-        { f: 123.47, type: "sawtooth", detune: -4, gain: 0.28 },
-        { f: 123.47, type: "square",   detune:  6, gain: 0.13 },
-        { f: 164.81, type: "sawtooth", detune:  3, gain: 0.22 }
+      /* Original chord/rhythm sequence — deliberately not a song transcription. */
+      const riff = [
+        { root: 82.41,  t: 0.00, d: 0.30, l: 0.27 },
+        { root: 82.41,  t: 0.38, d: 0.17, l: 0.23 },
+        { root: 98.00,  t: 0.68, d: 0.35, l: 0.26 },
+        { root: 73.42,  t: 1.15, d: 0.30, l: 0.27 },
+        { root: 123.47, t: 1.55, d: 0.42, l: 0.25 },
+        { root: 98.00,  t: 2.08, d: 0.22, l: 0.26 },
+        { root: 82.41,  t: 2.38, d: 0.48, l: 0.30 }
       ];
 
-
-      voices.forEach(
-        function(voice, index) {
-
-          const oscillator =
-            audioCtx.createOscillator();
-
-          const gain =
-            audioCtx.createGain();
-
-
-          oscillator.type =
-            voice.type;
-
-
-          oscillator.frequency.setValueAtTime(
-            voice.f * 1.018,
-            now
-          );
-
-          oscillator.frequency.exponentialRampToValueAtTime(
-            voice.f * 0.992,
-            now + 0.10
-          );
-
-          oscillator.frequency.exponentialRampToValueAtTime(
-            voice.f * 0.985,
-            now + 0.58
-          );
-
-
-          oscillator.detune.setValueAtTime(
-            voice.detune,
-            now
-          );
-
-
-          gain.gain.setValueAtTime(
-            0.0001,
-            now
-          );
-
-          gain.gain.exponentialRampToValueAtTime(
-            voice.gain,
-            now + 0.006 + (index * 0.001)
-          );
-
-          gain.gain.setValueAtTime(
-            voice.gain * 0.72,
-            now + 0.12
-          );
-
-          gain.gain.exponentialRampToValueAtTime(
-            0.0001,
-            now + 0.61
-          );
-
-
-          oscillator.connect(
-            gain
-          );
-
-          gain.connect(
-            input
-          );
-
-
-          oscillator.start(
-            now
-          );
-
-          oscillator.stop(
-            now + 0.64
-          );
-
-        }
-      );
-
-
-      /*
-       * Pick/noise transient:
-       * short dirty scratch at the front of the chord.
-       */
-
-      const noiseLength =
-        Math.floor(
-          audioCtx.sampleRate * 0.055
-        );
-
-      const noiseBuffer =
-        audioCtx.createBuffer(
-          1,
-          noiseLength,
-          audioCtx.sampleRate
-        );
-
-      const noiseData =
-        noiseBuffer.getChannelData(0);
-
-
-      for (
-        let i = 0;
-        i < noiseLength;
-        i++
-      ) {
-
-        const envelope =
-          1 - (i / noiseLength);
-
-        noiseData[i] =
-          (Math.random() * 2 - 1) *
-          envelope *
-          envelope;
-
-      }
-
-
-      const noise =
-        audioCtx.createBufferSource();
-
-      const noiseFilter =
-        audioCtx.createBiquadFilter();
-
-      const noiseGain =
-        audioCtx.createGain();
-
-
-      noise.buffer =
-        noiseBuffer;
-
-
-      noiseFilter.type =
-        "bandpass";
-
-      noiseFilter.frequency.setValueAtTime(
-        1750,
-        now
-      );
-
-      noiseFilter.Q.setValueAtTime(
-        0.65,
-        now
-      );
-
-
-      noiseGain.gain.setValueAtTime(
-        0.16,
-        now
-      );
-
-      noiseGain.gain.exponentialRampToValueAtTime(
-        0.0001,
-        now + 0.055
-      );
-
-
-      noise.connect(
-        noiseFilter
-      );
-
-      noiseFilter.connect(
-        noiseGain
-      );
-
-      noiseGain.connect(
-        drive
-      );
-
-
-      noise.start(
-        now
-      );
-
-      noise.stop(
-        now + 0.06
-      );
-
+      riff.forEach(function(hit) {
+        hitPowerChord(hit.root, hit.t, hit.d, hit.l);
+      });
 
       if (navigator.vibrate) {
-        navigator.vibrate(
-          [35, 20, 55]
-        );
+        navigator.vibrate([45, 35, 55, 35, 80]);
       }
 
-
     } catch (e) {
-
-      console.log(
-        "Grunge scan sound failed",
-        e
-      );
-
+      console.log("Grunge scan sound failed", e);
     }
 
   }
@@ -1975,7 +1698,7 @@
         );
 
       },
-      690
+      2920
     );
 
   }
