@@ -3,33 +3,39 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-  <meta name="theme-color" content="#081a30">
+  <meta name="theme-color" content="#06101c">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="RISP IT ASSET">
   <title>RISP IT ASSET</title>
-  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="manifest" href="./manifest.webmanifest?v=730">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=723">
+  <link rel="stylesheet" href="./styles.css?v=730">
 </head>
 <body>
   <div class="splash" id="splash">
+    <div class="splash-grid"></div>
     <div class="splash-glow"></div>
-    <img src="./icon-512.png" alt="" class="splash-logo">
+    <div class="splash-mark"><img src="./icon-512.png" alt=""></div>
     <div class="splash-title">RISP IT ASSET</div>
-    <div class="splash-sub">LIVE INVENTORY • V7</div>
+    <div class="splash-sub">CONTROL • SUPPORT • MAINTAIN</div>
+    <div class="splash-signal"><i></i><i></i><i></i><i></i><i></i></div>
     <div class="splash-credit">ENGINEERED BY NEWVANA</div>
   </div>
 
   <div class="app">
     <header class="app-header">
-      <button class="brand" type="button" data-route="home">
-        <img src="./icon-192.png" alt="RISP IT ASSET">
-        <span>
+      <button class="brand" type="button" data-route="home" aria-label="Home">
+        <span class="brand-mark"><img src="./icon-192.png" alt="RISP"></span>
+        <span class="brand-copy">
           <strong>RISP IT ASSET</strong>
-          <small id="modeLabel">V7 • READ ONLY</small>
+          <small>CONTROL • SUPPORT • MAINTAIN</small>
+        </span>
+        <span class="brand-live" aria-hidden="true">
+          <b>⚡</b>
+          <span class="signal-bars"><i></i><i></i><i></i><i></i><i></i></span>
         </span>
       </button>
 
@@ -48,7 +54,7 @@
               <h1 id="heroCount">—</h1>
               <p>assets connected to RISP IT ASSET</p>
             </div>
-            <div class="readonly-pill">READ ONLY</div>
+            <div class="control-pill">CONTROL</div>
           </div>
         </div>
 
@@ -71,7 +77,6 @@
           <div><small>CATEGORIES</small><h2>Browse inventory</h2></div>
           <button type="button" class="text-button" id="clearFilterBtn">RESET</button>
         </div>
-
         <div class="category-rail" id="categoryRail">
           <button class="category-chip active" data-category="__ALL__">ALL</button>
         </div>
@@ -80,7 +85,7 @@
           <div class="sync-banner-icon">!</div>
           <div>
             <b id="syncBannerTitle">V7 API not paired</b>
-            <p id="syncBannerText">Pair the dedicated read-only API once, then the app can sync directly without an Apps Script iframe.</p>
+            <p id="syncBannerText">Tap SETUP and enter the V7 API deployment URL + connection key.</p>
           </div>
           <button id="openBackendBtn" type="button">SETUP</button>
         </div>
@@ -89,11 +94,8 @@
           <div><small id="inventorySubtitle">INVENTORY</small><h2 id="inventoryTitle">All Devices</h2></div>
           <span class="count-badge" id="visibleCount">0</span>
         </div>
-
         <div class="asset-list skeleton-list" id="assetList">
-          <div class="asset-skeleton"></div>
-          <div class="asset-skeleton"></div>
-          <div class="asset-skeleton"></div>
+          <div class="asset-skeleton"></div><div class="asset-skeleton"></div><div class="asset-skeleton"></div>
         </div>
         <div class="bottom-spacer"></div>
       </section>
@@ -102,7 +104,7 @@
         <div class="page-head">
           <div class="eyebrow">SEARCH INVENTORY</div>
           <h1>Find anything.</h1>
-          <p>Asset Tag, serial number, brand, model, assigned user or department.</p>
+          <p>Asset Tag, serial number, brand, model, assigned user, department or Libib QR.</p>
         </div>
         <div class="search-box">
           <span>⌕</span>
@@ -112,21 +114,16 @@
         <div class="search-meta"><span id="searchResultCount">0 results</span><span>LIVE CACHE</span></div>
         <div class="asset-list" id="searchResults"></div>
         <div class="empty-state hidden" id="searchEmpty">
-          <div class="empty-icon">⌕</div>
-          <h3>No matching assets</h3>
-          <p>Try Asset Tag, Serial, Brand, Model or Assigned To.</p>
+          <div class="empty-icon">⌕</div><h3>No matching assets</h3><p>Try Asset Tag, Serial, Brand, Model or Assigned To.</p>
         </div>
         <div class="bottom-spacer"></div>
       </section>
 
       <section class="screen" data-screen="detail">
         <div class="detail-topbar">
-          <button class="back-button" id="detailBack" type="button">‹</button>
-          <div>
-            <small>DEVICE DETAIL</small>
-            <b id="detailTopTag">Loading…</b>
-          </div>
-          <span class="readonly-pill tiny">READ ONLY</span>
+          <button class="back-button" id="detailBack" type="button" aria-label="Back">‹</button>
+          <div><small>DEVICE DETAIL</small><b id="detailTopTag">Loading…</b></div>
+          <button class="icon-action" id="detailMoreBtn" type="button" aria-label="Edit">•••</button>
         </div>
 
         <div class="detail-photo-shell" id="detailPhotoShell">
@@ -134,33 +131,34 @@
           <img id="detailPhoto" alt="" hidden>
           <div class="detail-photo-shade"></div>
           <div class="detail-photo-copy">
-            <span id="detailType">—</span>
-            <h1 id="detailTag">—</h1>
-            <p id="detailDevice">—</p>
+            <span id="detailType">—</span><h1 id="detailTag">—</h1><p id="detailDevice">—</p>
           </div>
+          <button class="photo-fab" id="changePhotoBtn" type="button" aria-label="Change photo">⌑</button>
         </div>
 
         <div class="detail-status-row">
-          <div><small>STATUS</small><b id="detailStatus">—</b></div>
+          <button id="detailStatusCard" type="button"><small>STATUS</small><b id="detailStatus">—</b><span>CHANGE ›</span></button>
           <div><small>ASSIGNED TO</small><b id="detailAssigned">—</b></div>
         </div>
 
+        <div class="detail-actions">
+          <button id="editAssetBtn" type="button"><span>✎</span><b>Edit</b></button>
+          <button id="copyAssetBtn" type="button"><span>⧉</span><b>Copy ID</b></button>
+          <button id="refreshAssetBtn" type="button"><span>↻</span><b>Refresh</b></button>
+        </div>
+
         <div class="detail-section">
-          <div class="section-head compact">
-            <div><small>IDENTIFICATION</small><h2>Device information</h2></div>
-          </div>
+          <div class="section-head compact"><div><small>IDENTIFICATION</small><h2>Device information</h2></div></div>
           <div class="info-card">
-            <div class="info-row"><span>Asset ID</span><b id="dAssetId">—</b></div>
-            <div class="info-row"><span>Serial Number</span><b id="dSerial">—</b></div>
-            <div class="info-row"><span>Service Tag</span><b id="dService">—</b></div>
-            <div class="info-row"><span>Libib / QR</span><b id="dLibib">—</b></div>
+            <button class="info-row copy-row" data-copy-id="dAssetId"><span>Asset ID</span><b id="dAssetId">—</b></button>
+            <button class="info-row copy-row" data-copy-id="dSerial"><span>Serial Number</span><b id="dSerial">—</b></button>
+            <button class="info-row copy-row" data-copy-id="dService"><span>Service Tag</span><b id="dService">—</b></button>
+            <button class="info-row copy-row" data-copy-id="dLibib"><span>Libib / QR</span><b id="dLibib">—</b></button>
           </div>
         </div>
 
         <div class="detail-section">
-          <div class="section-head compact">
-            <div><small>ASSIGNMENT</small><h2>Operational info</h2></div>
-          </div>
+          <div class="section-head compact"><div><small>ASSIGNMENT</small><h2>Operational info</h2></div></div>
           <div class="info-card">
             <div class="info-row"><span>Department</span><b id="dDepartment">—</b></div>
             <div class="info-row"><span>Color</span><b id="dColor">—</b></div>
@@ -171,96 +169,170 @@
           </div>
         </div>
 
-        <div class="safe-note">
-          <span>🔒</span>
-          <div><b>SENSITIVE DATA STAYS OUT OF V7</b><p>Password, Product Key and account credential fields are not sent to the PWA in Step 2.</p></div>
+        <div class="detail-section" id="notesSection">
+          <div class="section-head compact"><div><small>NOTES</small><h2>Asset notes</h2></div></div>
+          <div class="notes-card" id="dNotes">—</div>
         </div>
+
+        <div class="safe-note">
+          <span>🔒</span><div><b>PRIVATE CREDENTIALS STAY PRIVATE</b><p>Passwords, Product Keys and account credentials are never returned to or edited by the v7 PWA.</p></div>
+        </div>
+        <button class="danger-link" id="deleteAssetBtn" type="button">DELETE DEVICE</button>
         <div class="bottom-spacer"></div>
       </section>
 
       <section class="screen" data-screen="scan">
         <div class="page-head scan-head">
           <div class="eyebrow"><span class="live-dot"></span> QR SCANNER</div>
-          <h1>Scanner is next.</h1>
-          <p>Step 2 proves the live data connection first. Camera integration comes after this is stable.</p>
+          <h1>Scan. Find. Control.</h1>
+          <p>Use the rear camera, upload a QR image, or enter a code manually.</p>
         </div>
-        <div class="scanner-shell">
+        <div class="scanner-shell" id="scannerShell">
+          <video id="scannerVideo" playsinline muted></video>
+          <canvas id="scannerCanvas" hidden></canvas>
           <div class="scanner-corners"><i></i><i></i><i></i><i></i></div>
-          <div class="scanner-line"></div>
-          <div class="scanner-mark">QR</div>
+          <div class="scanner-line" id="scannerLine"></div>
+          <div class="scanner-mark" id="scannerMark">QR</div>
+          <div class="scanner-state" id="scannerState">CAMERA READY</div>
         </div>
-        <button class="wide-button disabled" type="button">STEP 4 • CAMERA CONNECTION</button>
+        <div class="scan-actions">
+          <button class="primary-button" id="startCameraBtn" type="button">START CAMERA</button>
+          <label class="secondary-button file-button">UPLOAD QR<input id="qrImageInput" type="file" accept="image/*"></label>
+        </div>
+        <div class="manual-scan">
+          <input id="manualScanInput" type="text" placeholder="Libib / Asset Tag / Serial">
+          <button id="manualScanBtn" type="button">FIND</button>
+        </div>
+        <div class="scan-result hidden" id="scanResult">
+          <small>LAST SCAN</small><b id="scanResultValue">—</b><p id="scanResultText">—</p>
+          <div class="scan-result-actions">
+            <button id="scanOpenBtn" type="button">OPEN DEVICE</button>
+            <button id="scanAddBtn" type="button">ADD DEVICE</button>
+          </div>
+        </div>
         <div class="bottom-spacer"></div>
       </section>
 
       <section class="screen" data-screen="add">
-        <div class="locked-page">
-          <div class="locked-icon">＋</div>
-          <small>STEP 3</small>
-          <h1>Add & Edit</h1>
-          <p>Writes are intentionally locked while we test the live read-only connection. Your v6.6 backend can still edit normally.</p>
-          <div class="lock-status"><span></span> DATABASE PROTECTED</div>
+        <div class="page-head">
+          <div class="eyebrow">NEW ASSET</div>
+          <h1>Add device.</h1>
+          <p>Asset ID is generated by the server. Private credential fields remain in the Admin Web only.</p>
         </div>
+        <form class="asset-form" id="addAssetForm">
+          <div class="form-grid" id="addFormFields"></div>
+          <div class="form-photo-card">
+            <div><small>DEVICE PHOTO</small><b>Optional photo after save</b><p>The image is compressed on this device before upload.</p></div>
+            <label class="photo-picker">CHOOSE PHOTO<input id="addPhotoInput" type="file" accept="image/*" capture="environment"></label>
+            <img id="addPhotoPreview" alt="" hidden>
+          </div>
+          <button class="save-button" id="addSaveBtn" type="submit">＋ ADD DEVICE</button>
+        </form>
+        <div class="bottom-spacer"></div>
       </section>
 
-      <section class="screen" data-screen="labels">
-        <div class="locked-page">
-          <div class="locked-icon">▦</div>
-          <small>LATER MIGRATION</small>
-          <h1>QR Label Studio</h1>
-          <p>The stable v6 label engine stays untouched until the core PWA is fully proven.</p>
-          <div class="lock-status"><span></span> v6 ENGINE SAFE</div>
+      <section class="screen" data-screen="edit">
+        <div class="detail-topbar">
+          <button class="back-button" id="editBack" type="button">‹</button>
+          <div><small>EDIT DEVICE</small><b id="editTopTag">—</b></div>
+          <span class="control-pill tiny">SAFE EDIT</span>
         </div>
+        <form class="asset-form" id="editAssetForm">
+          <div class="form-grid" id="editFormFields"></div>
+          <div class="immutable-note"><span>⌁</span><div><b>ASSET ID LOCKED</b><p id="editAssetIdText">—</p></div></div>
+          <button class="save-button" id="editSaveBtn" type="submit">SAVE CHANGES</button>
+          <button class="secondary-wide" id="editCancelBtn" type="button">CANCEL</button>
+        </form>
+        <div class="bottom-spacer"></div>
+      </section>
+
+      <section class="screen" data-screen="more">
+        <div class="page-head">
+          <div class="eyebrow">RISP IT ASSET</div>
+          <h1>Control centre.</h1>
+          <p>Connection, sync, Admin Web and system information.</p>
+        </div>
+        <div class="more-card">
+          <button id="moreSyncBtn" type="button"><span class="more-icon">↻</span><div><b>Sync inventory</b><small>Pull fresh data from ASSET_DATABASE</small></div><i>›</i></button>
+          <button id="moreConnectionBtn" type="button"><span class="more-icon">⚡</span><div><b>V7 API connection</b><small>Deployment URL and connection key</small></div><i>›</i></button>
+          <button id="openAdminWebBtn" type="button"><span class="more-icon">⌘</span><div><b>Open Admin Web</b><small>Full legacy v6 management + QR Label Studio</small></div><i>↗</i></button>
+        </div>
+        <div class="system-card">
+          <div><small>APP</small><b>RISP IT ASSET V7</b></div>
+          <div><small>MODE</small><b>FULL CONTROL</b></div>
+          <div><small>BACKEND</small><b id="backendVersion">—</b></div>
+          <div><small>ENGINEERED</small><b>NEWVANA</b></div>
+        </div>
+        <div class="safe-note">
+          <span>🛡️</span><div><b>SAFE-FIELD WRITE BRIDGE</b><p>V7 can manage normal asset data, status and photos. Passwords, Product Keys and account credentials remain available only in the private Admin Web.</p></div>
+        </div>
+        <div class="bottom-spacer"></div>
       </section>
     </main>
 
-    <nav class="tabbar">
-      <button class="tab active" data-route="home"><span>⌂</span><small>HOME</small></button>
-      <button class="tab" data-route="search"><span>⌕</span><small>SEARCH</small></button>
-      <button class="tab scan-tab" data-route="scan"><span class="scan-orb">⌁</span><small>SCAN</small></button>
-      <button class="tab" data-route="add"><span>＋</span><small>ADD</small></button>
-      <button class="tab" data-route="labels"><span>▦</span><small>LABELS</small></button>
+    <nav class="tabbar" aria-label="Main navigation">
+      <button class="tab active" data-route="home" aria-label="Home">
+        <svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-5v-6h-5v6h-5A1.5 1.5 0 0 1 3 19.5z"/></svg><small>HOME</small>
+      </button>
+      <button class="tab" data-route="search" aria-label="Search">
+        <svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg><small>SEARCH</small>
+      </button>
+      <button class="tab scan-tab" data-route="scan" aria-label="Scan QR">
+        <span class="scan-icon"><svg viewBox="0 0 24 24"><path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4M8 8h2v2H8zM14 8h2v2h-2zM8 14h2v2H8zM14 14h2v2h-2z"/></svg></span><small>SCAN</small>
+      </button>
+      <button class="tab" data-route="add" aria-label="Add device">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><small>ADD</small>
+      </button>
+      <button class="tab" data-route="more" aria-label="More">
+        <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg><small>MORE</small>
+      </button>
     </nav>
   </div>
-
 
   <div class="sheet-backdrop" id="connectionSheet" aria-hidden="true">
     <div class="sheet connection-sheet">
       <div class="grabber"></div>
-      <div class="connect-head">
-        <div class="connect-icon">⚡</div>
-        <div><small>V7 SECURE BRIDGE</small><h2>Connect inventory</h2></div>
-      </div>
-      <p class="connect-copy">Use the separate <b>RISP V7 API</b> deployment. The URL and connection key are saved only on this device.</p>
-
-      <label class="connect-field">
-        <span>V7 API DEPLOYMENT URL</span>
-        <input id="apiUrlInput" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec">
-      </label>
-
-      <label class="connect-field">
-        <span>CONNECTION KEY</span>
-        <div class="key-field">
-          <input id="apiKeyInput" type="password" autocomplete="off" placeholder="Paste your connection key">
-          <button id="toggleKeyBtn" type="button">SHOW</button>
-        </div>
-      </label>
-
-      <div class="connect-note">
-        <b>READ-ONLY STEP 2</b>
-        <p>Passwords, Product Keys and account credentials are never returned by this API.</p>
-      </div>
-
-      <div class="connect-actions">
-        <button class="sheet-secondary" id="closeConnectionBtn" type="button">CANCEL</button>
-        <button class="sheet-primary" id="saveConnectionBtn" type="button">SAVE & CONNECT</button>
-      </div>
+      <div class="connect-head"><div class="connect-icon">⚡</div><div><small>V7 SECURE API</small><h2>Connect inventory</h2></div></div>
+      <p class="connect-copy">The API URL and connection key are saved only on this device. Updating the app does not normally require pairing again.</p>
+      <label class="connect-field"><span>V7 API DEPLOYMENT URL</span><input id="apiUrlInput" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec"></label>
+      <label class="connect-field"><span>CONNECTION KEY</span><div class="key-field"><input id="apiKeyInput" type="password" autocomplete="off" placeholder="Paste your connection key"><button id="toggleKeyBtn" type="button">SHOW</button></div></label>
+      <div class="connect-note"><b>FULL CONTROL • SAFE FIELDS</b><p>Normal inventory fields can be written. Credential fields are blocked server-side.</p></div>
+      <div class="connect-actions"><button class="sheet-secondary" id="closeConnectionBtn" type="button">CANCEL</button><button class="sheet-primary" id="saveConnectionBtn" type="button">SAVE & CONNECT</button></div>
       <button class="disconnect-link" id="disconnectBtn" type="button">Forget saved connection</button>
     </div>
   </div>
 
-  <iframe id="backendBridge" class="backend-bridge" title="RISP backend bridge"></iframe>
+  <div class="sheet-backdrop" id="statusSheet" aria-hidden="true">
+    <div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheet-title"><small>QUICK CONTROL</small><h2>Change status</h2><p id="statusAssetLabel">—</p></div>
+      <div class="status-options" id="statusOptions"></div>
+      <button class="sheet-secondary full" id="closeStatusBtn" type="button">CANCEL</button>
+    </div>
+  </div>
+
+  <div class="sheet-backdrop" id="photoSheet" aria-hidden="true">
+    <div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheet-title"><small>DEVICE PHOTO</small><h2>Change photo</h2><p id="photoAssetLabel">Choose a photo or take one with the camera.</p></div>
+      <div class="photo-preview-shell"><img id="photoPreview" alt="" hidden><div id="photoPreviewEmpty">PHOTO PREVIEW</div></div>
+      <label class="sheet-primary file-button big">CHOOSE / TAKE PHOTO<input id="detailPhotoInput" type="file" accept="image/*" capture="environment"></label>
+      <div class="connect-actions"><button class="sheet-secondary" id="closePhotoBtn" type="button">CANCEL</button><button class="sheet-primary" id="savePhotoBtn" type="button" disabled>SAVE PHOTO</button></div>
+    </div>
+  </div>
+
+  <div class="sheet-backdrop" id="deleteSheet" aria-hidden="true">
+    <div class="sheet danger-sheet">
+      <div class="grabber"></div>
+      <div class="danger-icon">!</div>
+      <div class="sheet-title center"><small>PERMANENT ACTION</small><h2>Delete device?</h2><p id="deleteAssetLabel">—</p></div>
+      <p class="danger-copy">This removes the database row and trashes its asset photo. This cannot be undone from the app.</p>
+      <div class="connect-actions"><button class="sheet-secondary" id="cancelDeleteBtn" type="button">CANCEL</button><button class="delete-button" id="confirmDeleteBtn" type="button">DELETE DEVICE</button></div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
-  <script src="./app.js?v=723"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <script src="./app.js?v=730"></script>
 </body>
 </html>

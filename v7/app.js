@@ -1,621 +1,181 @@
-
 (function(){
   'use strict';
 
-  const CACHE_KEY = 'RISP_V7_STEP2_SAFE_CACHE_23';
-  const CONNECTION_STORAGE_KEY = 'RISP_V7_SECURE_CONNECTION_23';
-  const BRIDGE_SOURCE = 'RISP_V7_PUBLIC_BRIDGE';
-  const APP_SOURCE = 'RISP_V7_APP';
+  const CACHE_KEY='RISP_V7_STEP2_SAFE_CACHE_23';
+  const CONNECTION_STORAGE_KEY='RISP_V7_SECURE_CONNECTION_23';
+  const LEGACY_ADMIN_URL='https://script.google.com/a/risphuket.ac.th/macros/s/AKfycbzL7ydFfQCYTp5RC9oVB9-KloS4_t3o_83Hp5pz8sMbNdEMOZw6s30EPR4-JDV2YgUcZg/exec';
+  const DEVICE_TYPES=['Laptop','Desktop PC','MacBook','Mac mini','iMac','Tablet / iPad','Monitor','Printer','Projector','Network Equipment','Server','Other'];
+  const STATUSES=['Active','Inactive','In Use','Available','Repair','Maintenance','Storage','Retired','Lost','Other'];
+  const FORM_FIELDS=[
+    ['ASSET_TAG','Asset Tag *','text',false],['DEVICE_TYPE','Category *','device',false],['BRAND','Brand','text',false],['MODEL','Model','text',false],
+    ['SERIAL','Serial Number','text',false],['LIBIB','Libib / QR Code','text',false],['SERVICE_TAG','Service Tag','text',false],['DEPARTMENT','Department','text',false],
+    ['ASSIGNED_TO','Assigned To','text',false],['COLOR','Color','text',false],['STATUS','Status','status',false],['PURCHASE_DATE','Purchase Date','date',false],
+    ['WARRANTY','Warranty','text',false],['COST','Cost (THB)','number',false],['NOTES','Notes','textarea',true]
+  ];
 
-  const splash = document.getElementById('splash');
-  const screens = Array.from(document.querySelectorAll('[data-screen]'));
-  const tabs = Array.from(document.querySelectorAll('.tab[data-route]'));
-  const routeButtons = Array.from(document.querySelectorAll('[data-route]'));
-  const bridge = document.getElementById('backendBridge');
-  const syncButton = document.getElementById('syncButton');
-  const syncText = document.getElementById('syncText');
-  const syncBanner = document.getElementById('syncBanner');
-  const openBackendBtn = document.getElementById('openBackendBtn');
-  const categoryRail = document.getElementById('categoryRail');
-  const assetList = document.getElementById('assetList');
-  const searchInput = document.getElementById('searchInput');
-  const searchResults = document.getElementById('searchResults');
-  const searchEmpty = document.getElementById('searchEmpty');
-  const searchResultCount = document.getElementById('searchResultCount');
-  const connectionSheet = document.getElementById('connectionSheet');
-  const apiUrlInput = document.getElementById('apiUrlInput');
-  const apiKeyInput = document.getElementById('apiKeyInput');
-  const saveConnectionBtn = document.getElementById('saveConnectionBtn');
-  const closeConnectionBtn = document.getElementById('closeConnectionBtn');
-  const disconnectBtn = document.getElementById('disconnectBtn');
-  const toggleKeyBtn = document.getElementById('toggleKeyBtn');
+  const $=id=>document.getElementById(id);
+  const splash=$('splash');
+  const screens=Array.from(document.querySelectorAll('[data-screen]'));
+  const tabs=Array.from(document.querySelectorAll('.tab[data-route]'));
+  const routeButtons=Array.from(document.querySelectorAll('[data-route]'));
+  const syncButton=$('syncButton'),syncText=$('syncText'),syncBanner=$('syncBanner');
+  const categoryRail=$('categoryRail'),assetList=$('assetList');
+  const searchInput=$('searchInput'),searchResults=$('searchResults'),searchEmpty=$('searchEmpty'),searchResultCount=$('searchResultCount');
+  const connectionSheet=$('connectionSheet'),statusSheet=$('statusSheet'),photoSheet=$('photoSheet'),deleteSheet=$('deleteSheet');
+  const apiUrlInput=$('apiUrlInput'),apiKeyInput=$('apiKeyInput');
 
-  let ASSETS = [];
-  let assetMap = Object.create(null);
-  let currentCategory = '__ALL__';
-  let currentSpecialFilter = '';
-  let currentDetailId = '';
-  let bridgeReady = false;
-  let serverConnected = false;
-  let lastSyncAt = 0;
-  let requestSeq = 0;
-  const pendingDetail = Object.create(null);
+  let ASSETS=[];
+  let assetMap=Object.create(null);
+  let currentCategory='__ALL__';
+  let currentSpecialFilter='';
+  let currentDetailId='';
+  let currentRoute='home';
+  let previousRoute='home';
+  let serverConnected=false;
+  let lastSyncAt=0;
+  let requestSeq=0;
+  let addPhotoFile=null;
+  let detailPhotoData=null;
+  let scannerStream=null;
+  let scannerLoopActive=false;
+  let scannerBusy=false;
+  let scannerLastTick=0;
+  let scannedAssetId='';
+  let scannedRaw='';
+  let pendingScanForAdd='';
+  let backendVersion='—';
 
-  const TOKEN = (() => {
-    try {
-      const a = new Uint32Array(4);
-      crypto.getRandomValues(a);
-      return Array.from(a).map(n => n.toString(36)).join('');
-    } catch (e) {
-      return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2);
-    }
-  })();
+  function standalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}
+  function normalize(v){return String(v==null?'':v).trim().toUpperCase()}
+  function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
+  function value(v){const s=String(v==null?'':v).trim();return s||'—'}
+  function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+  function showToast(msg,ms){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),ms||2100)}
+  function setSync(state,text){syncButton.classList.remove('connected','syncing','error');if(state)syncButton.classList.add(state);syncText.textContent=text}
+  function setBackendVersion(v){backendVersion=String(v||'—');$('backendVersion').textContent=backendVersion}
 
-  function standalone(){
-    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  function route(name,push){
+    const target=document.querySelector('[data-screen="'+name+'"]');if(!target)return;
+    if(currentRoute==='scan'&&name!=='scan')stopCamera();
+    if(name!==currentRoute){previousRoute=currentRoute;currentRoute=name}
+    screens.forEach(el=>el.classList.toggle('active',el===target));
+    tabs.forEach(el=>el.classList.toggle('active',['detail','edit'].indexOf(name)===-1&&el.dataset.route===name));
+    target.scrollTop=0;
+    if(name==='scan')resetScannerUi(false);
+    if(name==='add')prepareAddForm();
+    if(name==='more')$('backendVersion').textContent=backendVersion;
+    if(push!==false){try{history.replaceState({screen:name,id:currentDetailId},'','#'+(name==='detail'?'detail/'+encodeURIComponent(currentDetailId):name))}catch(e){}}
   }
 
-  function normalize(v){
-    return String(v == null ? '' : v).trim().toUpperCase();
-  }
-
-  function esc(v){
-    return String(v == null ? '' : v)
-      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-      .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
-  }
-
-  function value(v){
-    const s = String(v == null ? '' : v).trim();
-    return s || '—';
-  }
-
-  function showToast(msg){
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 1900);
-  }
-
-  function setSync(state, text){
-    syncButton.classList.remove('connected','syncing','error');
-    if (state) syncButton.classList.add(state);
-    syncText.textContent = text;
-  }
-
-  function route(name, push){
-    const target = document.querySelector('[data-screen="' + name + '"]');
-    if (!target) return;
-    screens.forEach(el => el.classList.toggle('active', el === target));
-    tabs.forEach(el => el.classList.toggle('active', name !== 'detail' && el.dataset.route === name));
-    target.scrollTop = 0;
-    if (push !== false && name !== 'detail') {
-      try { history.replaceState({screen:name}, '', '#' + name); } catch(e) {}
-    }
-  }
-
-  routeButtons.forEach(btn => btn.addEventListener('click', function(){
-    if (this.dataset.route) route(this.dataset.route);
-  }));
+  routeButtons.forEach(btn=>btn.addEventListener('click',function(){if(this.dataset.route)route(this.dataset.route)}));
 
   function normalizeApiUrl(raw){
-    let rawUrl = String(raw || '').trim();
-    if (!rawUrl) return '';
-
-    // Users may paste any of Google's current Apps Script web-app URL forms:
-    //   https://script.google.com/macros/s/.../exec
-    //   https://script.google.com/a/domain.tld/macros/s/.../exec
-    //   https://script.google.com/a/macros/domain.tld/s/.../exec
-    // Be strict about the host and /exec endpoint, but do not reject valid
-    // Google Workspace path variants.
-    if (!/^https?:\/\//i.test(rawUrl)) rawUrl = 'https://' + rawUrl;
-
-    try {
-      const u = new URL(rawUrl);
-      if (u.protocol !== 'https:') return '';
-      if (u.hostname.toLowerCase() !== 'script.google.com') return '';
-
-      let path = u.pathname.replace(/\/+$/,'');
-      if (!/\/exec$/i.test(path)) return '';
-      if (path.indexOf('/s/') === -1) return '';
-
-      // Remove query/hash so the app can append its own bridge parameters safely.
-      u.search = '';
-      u.hash = '';
-      u.pathname = path;
-      return u.toString().replace(/\/+$/,'');
-    } catch (err) {
-      return '';
-    }
+    let rawUrl=String(raw||'').trim();if(!rawUrl)return'';if(!/^https?:\/\//i.test(rawUrl))rawUrl='https://'+rawUrl;
+    try{const u=new URL(rawUrl);if(u.protocol!=='https:'||u.hostname.toLowerCase()!=='script.google.com')return'';let path=u.pathname.replace(/\/+$/,'');if(!/\/exec$/i.test(path)||path.indexOf('/s/')===-1)return'';u.search='';u.hash='';u.pathname=path;return u.toString().replace(/\/+$/,'')}catch(e){return''}
   }
+  function loadConnection(){try{const raw=localStorage.getItem(CONNECTION_STORAGE_KEY);if(!raw)return null;const p=JSON.parse(raw);const url=normalizeApiUrl(p&&p.url);const key=String(p&&p.key||'').trim();if(!url||key.length<24)return null;return{url,key}}catch(e){return null}}
+  function saveConnection(url,key){localStorage.setItem(CONNECTION_STORAGE_KEY,JSON.stringify({url,key,savedAt:Date.now()}))}
+  function forgetConnection(){try{localStorage.removeItem(CONNECTION_STORAGE_KEY)}catch(e){}serverConnected=false;setSync('','SETUP');syncBanner.classList.remove('hidden');$('syncBannerTitle').textContent='V7 API not paired';$('syncBannerText').textContent='Tap SETUP and enter the V7 API deployment URL + connection key.'}
+  function openSheet(el){el.classList.add('open');el.setAttribute('aria-hidden','false')}
+  function closeSheet(el){el.classList.remove('open');el.setAttribute('aria-hidden','true')}
+  function openConnectionSheet(){const s=loadConnection();apiUrlInput.value=s?s.url:'';apiKeyInput.value=s?s.key:'';apiKeyInput.type='password';$('toggleKeyBtn').textContent='SHOW';openSheet(connectionSheet)}
 
-  function loadConnection(){
-    try {
-      const raw=localStorage.getItem(CONNECTION_STORAGE_KEY);
-      if (!raw) return null;
-      const parsed=JSON.parse(raw);
-      const url=normalizeApiUrl(parsed && parsed.url);
-      const key=String(parsed && parsed.key || '').trim();
-      if (!url || key.length < 24) return null;
-      return {url:url,key:key};
-    } catch(e){ return null; }
+  function safeCacheAsset(a){
+    const keys=['ASSET_ID','ASSET_TAG','DEVICE_TYPE','BRAND','MODEL','SERIAL','LIBIB','SERVICE_TAG','DEPARTMENT','ASSIGNED_TO','COLOR','STATUS','PURCHASE_DATE','WARRANTY','COST','NOTES','UPDATED','PHOTO_FILE_ID'];
+    const out={};keys.forEach(k=>out[k]=String(a&&a[k]||''));return out;
   }
+  function saveCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify({savedAt:Date.now(),assets:ASSETS.map(safeCacheAsset)}))}catch(e){}}
+  function loadCache(){try{const raw=localStorage.getItem(CACHE_KEY);if(!raw)return null;const d=JSON.parse(raw);return d&&Array.isArray(d.assets)?d:null}catch(e){return null}}
+  function rebuildMap(){assetMap=Object.create(null);ASSETS.forEach(a=>{if(a&&a.ASSET_ID)assetMap[normalize(a.ASSET_ID)]=a})}
 
-  function saveConnection(url,key){
-    localStorage.setItem(CONNECTION_STORAGE_KEY, JSON.stringify({url:url,key:key,savedAt:Date.now()}));
-  }
+  function statusClass(status){const s=normalize(status);if(['ACTIVE','IN USE','AVAILABLE'].includes(s))return'active';if(s.includes('REPAIR')||s.includes('MAINTENANCE'))return'repair';if(['INACTIVE','RETIRED','LOST'].includes(s))return'inactive';return''}
+  function isActive(a){return['ACTIVE','IN USE','AVAILABLE'].includes(normalize(a.STATUS))}
+  function isAttention(a){const s=normalize(a.STATUS);return s.includes('REPAIR')||s.includes('MAINTENANCE')}
+  function imageCandidates(asset,size){const id=String(asset&&asset.PHOTO_FILE_ID||'').trim();if(!id)return[];const e=encodeURIComponent(id);size=size||420;return['https://lh3.googleusercontent.com/d/'+e+'=w'+size,'https://drive.google.com/thumbnail?id='+e+'&sz=w'+size,'https://drive.google.com/uc?export=view&id='+e]}
+  function photoMarkup(asset,size){const urls=imageCandidates(asset,size||420),type=String(asset.DEVICE_TYPE||'IT').slice(0,11);if(!urls.length)return'<div class="asset-photo"><span class="photo-fallback">'+esc(type)+'</span></div>';return'<div class="asset-photo"><img loading="lazy" src="'+esc(urls[0])+'" data-f1="'+esc(urls[1]||'')+'" data-f2="'+esc(urls[2]||'')+'" alt="'+esc(asset.ASSET_TAG||'Asset')+'"><span class="photo-fallback" style="display:none">'+esc(type)+'</span></div>'}
+  function attachImageFallbacks(root){(root||document).querySelectorAll('img[data-f1]').forEach(img=>{if(img.dataset.bound==='1')return;img.dataset.bound='1';img.addEventListener('error',function(){const stage=Number(this.dataset.stage||'0');if(stage===0&&this.dataset.f1){this.dataset.stage='1';this.src=this.dataset.f1;return}if(stage<=1&&this.dataset.f2){this.dataset.stage='2';this.src=this.dataset.f2;return}this.style.display='none';const fb=this.parentElement&&this.parentElement.querySelector('.photo-fallback');if(fb)fb.style.display=''})})}
+  function cardHtml(asset){return'<button class="asset-card" type="button" data-asset-id="'+esc(asset.ASSET_ID)+'">'+photoMarkup(asset,420)+'<div class="asset-main"><div class="asset-kicker">'+esc(value(asset.DEVICE_TYPE))+'</div><div class="asset-tag">'+esc(value(asset.ASSET_TAG))+'</div><div class="asset-device">'+esc([asset.BRAND,asset.MODEL].filter(Boolean).join(' ')||'—')+'</div><div class="asset-assigned">ASSIGNED TO<b>'+esc(asset.ASSIGNED_TO||'Unassigned')+'</b></div></div><div class="asset-side"><span class="status-pill '+statusClass(asset.STATUS)+'">'+esc(value(asset.STATUS))+'</span><span class="chev">›</span></div></button>'}
+  function bindCards(root){(root||document).querySelectorAll('[data-asset-id]').forEach(btn=>{if(btn.dataset.bound==='1')return;btn.dataset.bound='1';btn.addEventListener('click',()=>openDetail(btn.dataset.assetId))});attachImageFallbacks(root)}
 
-  function forgetConnection(){
-    try { localStorage.removeItem(CONNECTION_STORAGE_KEY); } catch(e){}
-    try { bridge.src='about:blank'; } catch(e) {}
-    bridgeReady=false; serverConnected=false;
-    setSync('', 'SETUP');
-    syncBanner.classList.remove('hidden');
-    document.getElementById('syncBannerTitle').textContent='V7 API not paired';
-    document.getElementById('syncBannerText').textContent='Tap SETUP and enter the dedicated V7 API deployment URL + connection key.';
-  }
+  function categoryName(type){const n=normalize(type);if(n==='MAC MINI'||n==='IMAC'||n==='DESKTOP PC')return'DESKTOP';if(n==='TABLET / IPAD')return'TABLET';return String(type||'Other').trim()||'Other'}
+  function renderCategories(){const counts={};ASSETS.forEach(a=>{const k=categoryName(a.DEVICE_TYPE);counts[k]=(counts[k]||0)+1});const ordered=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]||a.localeCompare(b));categoryRail.innerHTML='<button class="category-chip '+(currentCategory==='__ALL__'?'active':'')+'" data-category="__ALL__">ALL</button>'+ordered.map(k=>'<button class="category-chip '+(normalize(currentCategory)===normalize(k)?'active':'')+'" data-category="'+esc(k)+'">'+esc(k.toUpperCase())+' · '+counts[k]+'</button>').join('');categoryRail.querySelectorAll('[data-category]').forEach(b=>b.addEventListener('click',()=>{currentCategory=b.dataset.category;currentSpecialFilter='';renderHome()}))}
+  function filteredAssets(){let list=ASSETS.slice();if(currentSpecialFilter==='Active')list=list.filter(isActive);else if(currentSpecialFilter==='Repair')list=list.filter(isAttention);else if(currentSpecialFilter==='__UNASSIGNED__')list=list.filter(a=>!String(a.ASSIGNED_TO||'').trim());else if(currentCategory!=='__ALL__')list=list.filter(a=>normalize(categoryName(a.DEVICE_TYPE))===normalize(currentCategory));return list}
+  function renderStats(){const active=ASSETS.filter(isActive).length,attention=ASSETS.filter(isAttention).length,unassigned=ASSETS.filter(a=>!String(a.ASSIGNED_TO||'').trim()).length;$('heroCount').textContent=ASSETS.length;$('statTotal').textContent=ASSETS.length;$('statActive').textContent=active;$('statAttention').textContent=attention;$('statUnassigned').textContent=unassigned}
+  function renderHome(){renderStats();renderCategories();const list=filteredAssets();$('visibleCount').textContent=list.length;let title='All Devices';if(currentSpecialFilter==='Active')title='Active Devices';else if(currentSpecialFilter==='Repair')title='Needs Attention';else if(currentSpecialFilter==='__UNASSIGNED__')title='Unassigned';else if(currentCategory!=='__ALL__')title=currentCategory;$('inventoryTitle').textContent=title;assetList.classList.remove('skeleton-list');assetList.innerHTML=list.length?list.map(cardHtml).join(''):'<div class="empty-state"><div class="empty-icon">⌁</div><h3>No devices here</h3><p>Reset the filter or sync the inventory.</p></div>';bindCards(assetList)}
+  document.querySelectorAll('[data-stat-filter]').forEach(btn=>btn.addEventListener('click',()=>{const f=btn.dataset.statFilter;currentCategory='__ALL__';currentSpecialFilter=f==='__ALL__'?'':f;renderHome()}));$('clearFilterBtn').addEventListener('click',()=>{currentCategory='__ALL__';currentSpecialFilter='';renderHome()});
 
-  function openConnectionSheet(){
-    const saved=loadConnection();
-    apiUrlInput.value=saved ? saved.url : '';
-    apiKeyInput.value=saved ? saved.key : '';
-    apiKeyInput.type='password';
-    toggleKeyBtn.textContent='SHOW';
-    connectionSheet.classList.add('open');
-    connectionSheet.setAttribute('aria-hidden','false');
-  }
+  function searchHaystack(a){return[a.ASSET_ID,a.ASSET_TAG,a.DEVICE_TYPE,a.BRAND,a.MODEL,a.SERIAL,a.LIBIB,a.SERVICE_TAG,a.DEPARTMENT,a.ASSIGNED_TO,a.STATUS].join(' ').toUpperCase()}
+  function renderSearch(){const q=normalize(searchInput.value);const list=q?ASSETS.filter(a=>searchHaystack(a).includes(q)):ASSETS.slice(0,40);searchResultCount.textContent=list.length+' result'+(list.length===1?'':'s');searchResults.innerHTML=list.map(cardHtml).join('');searchEmpty.classList.toggle('hidden',list.length>0);bindCards(searchResults)}
+  searchInput.addEventListener('input',renderSearch);$('clearSearchBtn').addEventListener('click',()=>{searchInput.value='';renderSearch();searchInput.focus()});
 
-  function closeConnectionSheet(){
-    connectionSheet.classList.remove('open');
-    connectionSheet.setAttribute('aria-hidden','true');
-  }
+  function applyAssets(assets,fromServer){ASSETS=Array.isArray(assets)?assets.map(a=>Object.assign({},a)):[];rebuildMap();renderHome();renderSearch();if(fromServer){serverConnected=true;lastSyncAt=Date.now();setSync('connected','LIVE');syncBanner.classList.add('hidden');saveCache()}if(currentDetailId&&assetMap[normalize(currentDetailId)])setDetail(assetMap[normalize(currentDetailId)])}
 
-  function saveCache(){
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({
-        savedAt: Date.now(),
-        assets: ASSETS
-      }));
-    } catch(e) {}
-  }
+  function dateToInput(v){const s=String(v||'').trim();if(!s)return'';let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');return''}
+  function setDetail(asset){asset=asset||{};$('detailTopTag').textContent=value(asset.ASSET_TAG);$('detailType').textContent=value(asset.DEVICE_TYPE).toUpperCase();$('detailTag').textContent=value(asset.ASSET_TAG);$('detailDevice').textContent=[asset.BRAND,asset.MODEL].filter(Boolean).join(' ')||'—';$('detailStatus').textContent=value(asset.STATUS);$('detailAssigned').textContent=asset.ASSIGNED_TO||'Unassigned';$('dAssetId').textContent=value(asset.ASSET_ID);$('dSerial').textContent=value(asset.SERIAL);$('dService').textContent=value(asset.SERVICE_TAG);$('dLibib').textContent=value(asset.LIBIB);$('dDepartment').textContent=value(asset.DEPARTMENT);$('dColor').textContent=value(asset.COLOR);$('dPurchase').textContent=value(asset.PURCHASE_DATE);$('dWarranty').textContent=value(asset.WARRANTY);$('dCost').textContent=value(asset.COST);$('dUpdated').textContent=value(asset.UPDATED);$('dNotes').textContent=value(asset.NOTES);const img=$('detailPhoto'),fb=$('detailPhotoFallback'),urls=imageCandidates(asset,1100);img.hidden=true;fb.style.display='grid';fb.textContent=String(asset.DEVICE_TYPE||'IT').slice(0,11).toUpperCase();if(urls.length){let idx=0;img.onload=()=>{img.hidden=false;fb.style.display='none'};img.onerror=()=>{idx++;if(idx<urls.length)img.src=urls[idx];else{img.hidden=true;fb.style.display='grid'}};img.src=urls[0]}}
+  async function openDetail(id){currentDetailId=String(id||'');const lite=assetMap[normalize(currentDetailId)]||{};setDetail(lite);route('detail',false);try{history.replaceState({screen:'detail',id:currentDetailId},'','#detail/'+encodeURIComponent(currentDetailId))}catch(e){};if(loadConnection()){try{const d=await fetchAsset(currentDetailId);mergeDetail(d)}catch(e){showToast(e.message||'Could not load detail')}}}
+  function mergeDetail(detail){if(!detail||!detail.ASSET_ID)return;const k=normalize(detail.ASSET_ID);const merged=Object.assign({},assetMap[k]||{},detail);assetMap[k]=merged;let found=false;ASSETS=ASSETS.map(a=>{if(normalize(a.ASSET_ID)===k){found=true;return merged}return a});if(!found)ASSETS.push(merged);if(normalize(currentDetailId)===k)setDetail(merged);saveCache()}
+  $('detailBack').addEventListener('click',()=>route(['home','search','scan'].includes(previousRoute)?previousRoute:'home'));
+  $('detailMoreBtn').addEventListener('click',openEditCurrent);$('editAssetBtn').addEventListener('click',openEditCurrent);$('refreshAssetBtn').addEventListener('click',async()=>{if(!currentDetailId)return;try{showToast('Refreshing…');mergeDetail(await fetchAsset(currentDetailId));showToast('Device refreshed')}catch(e){showToast(e.message)}});
+  $('copyAssetBtn').addEventListener('click',()=>copyText($('dAssetId').textContent));document.querySelectorAll('.copy-row').forEach(b=>b.addEventListener('click',()=>copyText($(b.dataset.copyId).textContent)));
+  function copyText(t){const s=String(t||'').trim();if(!s||s==='—')return;const p=navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(s):Promise.reject();p.then(()=>showToast('Copied')).catch(()=>{const ta=document.createElement('textarea');ta.value=s;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showToast('Copied')}catch(e){}ta.remove()})}
 
-  function loadCache(){
-    try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      if (!raw) return null;
-      const data = JSON.parse(raw);
-      if (!data || !Array.isArray(data.assets)) return null;
-      return data;
-    } catch(e) { return null; }
-  }
+  function nextRequestId(prefix){requestSeq++;return prefix+'_'+requestSeq+'_'+Date.now().toString(36)}
+  function jsonpRequest(action,extra,timeoutMs){const saved=loadConnection();if(!saved)return Promise.reject(new Error('V7 API is not paired.'));extra=extra||{};timeoutMs=Math.max(3000,Number(timeoutMs)||12000);return new Promise((resolve,reject)=>{const cb='RISPv7_'+nextRequestId('r').replace(/[^A-Za-z0-9_$]/g,'_');const script=document.createElement('script');let done=false;const cleanup=()=>{if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}try{script.remove()}catch(e){}};window[cb]=payload=>{cleanup();if(!payload||payload.success===false){reject(new Error(payload&&payload.error?payload.error:'V7 API returned an invalid response.'));return}resolve(payload)};const p=new URLSearchParams();p.set('v7api',String(action||'bootstrap'));p.set('key',saved.key);p.set('callback',cb);p.set('t',Date.now());Object.keys(extra).forEach(k=>{if(extra[k]!=null&&String(extra[k])!=='')p.set(k,String(extra[k]))});script.async=true;script.src=saved.url+'?'+p.toString();script.onerror=()=>{cleanup();reject(new Error('Could not reach the V7 API deployment.'))};const timer=setTimeout(()=>{cleanup();reject(new Error('V7 API timed out.'))},timeoutMs);document.head.appendChild(script)})}
+  async function fetchAsset(id){const p=await jsonpRequest('asset',{id},12000);if(!p.asset)throw new Error('Device not found.');if(p.version)setBackendVersion(p.version);return p.asset}
+  async function syncInventory(showMsg){if(!loadConnection())throw new Error('V7 API is not paired.');setSync('syncing','SYNC');const p=await jsonpRequest('bootstrap',{},15000);if(p.version)setBackendVersion(p.version);if(!Array.isArray(p.assets))throw new Error('Inventory payload is missing assets.');applyAssets(p.assets,true);if(showMsg!==false)showToast('Inventory synced');return p.assets}
+  function showApiError(err){serverConnected=false;setSync('error','RETRY');syncBanner.classList.remove('hidden');$('syncBannerTitle').textContent='V7 API connection failed';$('syncBannerText').textContent=err&&err.message?err.message:String(err||'Unknown API error')}
+  async function connectApi(){const saved=loadConnection();if(!saved){setSync('','SETUP');syncBanner.classList.remove('hidden');$('syncBannerTitle').textContent='V7 API not paired';$('syncBannerText').textContent='Tap SETUP and enter the V7 API deployment URL + connection key.';return}setSync('syncing','CONNECT');try{await syncInventory(false)}catch(e){showApiError(e)}}
 
-  function rebuildMap(){
-    assetMap = Object.create(null);
-    ASSETS.forEach(a => {
-      if (a && a.ASSET_ID) assetMap[normalize(a.ASSET_ID)] = a;
-    });
-  }
+  async function writeRequest(action,data){const saved=loadConnection();if(!saved)throw new Error('V7 API is not paired.');const body=new URLSearchParams();body.set('v7write',action);body.set('key',saved.key);body.set('t',Date.now());Object.keys(data||{}).forEach(k=>{if(data[k]!=null)body.set(k,String(data[k]))});await fetch(saved.url,{method:'POST',mode:'no-cors',body});}
 
-  function statusClass(status){
-    const s = normalize(status);
-    if (s === 'ACTIVE' || s === 'IN USE' || s === 'AVAILABLE') return 'active';
-    if (s.indexOf('REPAIR') !== -1 || s.indexOf('MAINTENANCE') !== -1) return 'repair';
-    if (s === 'INACTIVE' || s === 'RETIRED' || s === 'LOST') return 'inactive';
-    return '';
-  }
+  syncButton.addEventListener('click',()=>loadConnection()?syncInventory(true).catch(showApiError):openConnectionSheet());$('openBackendBtn').addEventListener('click',openConnectionSheet);$('moreSyncBtn').addEventListener('click',()=>syncInventory(true).catch(showApiError));$('moreConnectionBtn').addEventListener('click',openConnectionSheet);
+  $('closeConnectionBtn').addEventListener('click',()=>closeSheet(connectionSheet));connectionSheet.addEventListener('click',e=>{if(e.target===connectionSheet)closeSheet(connectionSheet)});$('toggleKeyBtn').addEventListener('click',()=>{const show=apiKeyInput.type==='password';apiKeyInput.type=show?'text':'password';$('toggleKeyBtn').textContent=show?'HIDE':'SHOW'});$('saveConnectionBtn').addEventListener('click',()=>{const url=normalizeApiUrl(apiUrlInput.value),key=String(apiKeyInput.value||'').trim();if(!url){showToast('Paste a valid Apps Script /exec URL');return}if(key.length<24){showToast('Connection key looks too short');return}saveConnection(url,key);closeSheet(connectionSheet);showToast('API paired — connecting…');connectApi()});$('disconnectBtn').addEventListener('click',()=>{forgetConnection();closeSheet(connectionSheet);showToast('Connection forgotten')});$('openAdminWebBtn').addEventListener('click',()=>window.open(LEGACY_ADMIN_URL,'_blank','noopener'));
 
-  function imageCandidates(asset, size){
-    const id = String(asset && asset.PHOTO_FILE_ID || '').trim();
-    if (!id) return [];
-    const encoded = encodeURIComponent(id);
-    size = size || 420;
-    return [
-      'https://lh3.googleusercontent.com/d/' + encoded + '=w' + size,
-      'https://drive.google.com/thumbnail?id=' + encoded + '&sz=w' + size,
-      'https://drive.google.com/uc?export=view&id=' + encoded
-    ];
-  }
+  function fieldHtml(prefix,key,label,type,full,val){const id=prefix+'_'+key;let control='';val=val==null?'':String(val);if(type==='device')control='<select id="'+id+'">'+DEVICE_TYPES.map(x=>'<option value="'+esc(x)+'" '+(normalize(x)===normalize(val||'Other')?'selected':'')+'>'+esc(x)+'</option>').join('')+'</select>';else if(type==='status')control='<select id="'+id+'">'+STATUSES.map(x=>'<option value="'+esc(x)+'" '+(normalize(x)===normalize(val||'Active')?'selected':'')+'>'+esc(x)+'</option>').join('')+'</select>';else if(type==='textarea')control='<textarea id="'+id+'">'+esc(val)+'</textarea>';else if(type==='date')control='<input id="'+id+'" type="date" value="'+esc(dateToInput(val))+'">';else if(type==='number')control='<input id="'+id+'" inputmode="decimal" value="'+esc(val.replace(/[^0-9.,-]/g,''))+'" placeholder="0.00">';else control='<input id="'+id+'" type="text" value="'+esc(val)+'" '+(key==='ASSET_TAG'?'required':'')+'>';return'<div class="field '+(full?'full':'')+'"><label for="'+id+'">'+esc(label)+'</label>'+control+'</div>'}
+  function renderFormFields(prefix,asset){asset=asset||{};return FORM_FIELDS.map(f=>fieldHtml(prefix,f[0],f[1],f[2],f[3],asset[f[0]]||'')).join('')}
+  function collectForm(prefix){const out={};FORM_FIELDS.forEach(f=>{const el=$(prefix+'_'+f[0]);if(el)out[f[0]]=String(el.value||'').trim()});return out}
+  function prepareAddForm(){if(!$('addFormFields').children.length){$('addFormFields').innerHTML=renderFormFields('add',{DEVICE_TYPE:'Laptop',STATUS:'Active'});}if(pendingScanForAdd){$('add_LIBIB').value=pendingScanForAdd;pendingScanForAdd='';showToast('Scanned code added to Libib / QR') }}
+  prepareAddForm();
+  $('addPhotoInput').addEventListener('change',function(){addPhotoFile=this.files&&this.files[0]?this.files[0]:null;const img=$('addPhotoPreview');if(addPhotoFile){img.src=URL.createObjectURL(addPhotoFile);img.hidden=false}else img.hidden=true});
+  $('addAssetForm').addEventListener('submit',async e=>{e.preventDefault();const payload=collectForm('add');if(!payload.ASSET_TAG){showToast('Asset Tag is required');return}const existing=ASSETS.find(a=>normalize(a.ASSET_TAG)===normalize(payload.ASSET_TAG));if(existing){showToast('Asset Tag already exists');return}const btn=$('addSaveBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='SAVING…';try{await writeRequest('add',{payload:JSON.stringify(payload)});await sleep(1100);await syncInventory(false);const created=ASSETS.find(a=>normalize(a.ASSET_TAG)===normalize(payload.ASSET_TAG));if(!created)throw new Error('Save was not confirmed. Check the Admin Web.');if(addPhotoFile){showToast('Uploading photo…');await uploadPhotoForAsset(created.ASSET_ID,addPhotoFile)}$('addAssetForm').reset();$('addFormFields').innerHTML=renderFormFields('add',{DEVICE_TYPE:'Laptop',STATUS:'Active'});$('addPhotoPreview').hidden=true;addPhotoFile=null;showToast('Device added');openDetail(created.ASSET_ID)}catch(err){showToast(err.message||'Could not add device',3200)}finally{btn.disabled=false;btn.textContent=old}});
 
-  function photoMarkup(asset, size){
-    const urls = imageCandidates(asset, size || 420);
-    const type = String(asset.DEVICE_TYPE || 'IT').slice(0,10);
-    if (!urls.length) return '<div class="asset-photo"><span class="photo-fallback">' + esc(type) + '</span></div>';
-    return '<div class="asset-photo">' +
-      '<img src="' + esc(urls[0]) + '" data-f1="' + esc(urls[1] || '') + '" data-f2="' + esc(urls[2] || '') + '" alt="' + esc(asset.ASSET_TAG || 'Asset') + '">' +
-      '<span class="photo-fallback" style="display:none">' + esc(type) + '</span></div>';
-  }
+  function openEditCurrent(){const asset=assetMap[normalize(currentDetailId)];if(!asset)return;stopCamera();$('editTopTag').textContent=value(asset.ASSET_TAG);$('editAssetIdText').textContent=value(asset.ASSET_ID);$('editFormFields').innerHTML=renderFormFields('edit',asset);route('edit')}
+  $('editBack').addEventListener('click',()=>route('detail'));$('editCancelBtn').addEventListener('click',()=>route('detail'));
+  $('editAssetForm').addEventListener('submit',async e=>{e.preventDefault();const payload=collectForm('edit');if(!payload.ASSET_TAG){showToast('Asset Tag is required');return}const btn=$('editSaveBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='SAVING…';try{await writeRequest('edit',{id:currentDetailId,payload:JSON.stringify(payload)});await sleep(900);const refreshed=await fetchAsset(currentDetailId);mergeDetail(refreshed);await syncInventory(false);showToast('Changes saved');route('detail')}catch(err){showToast(err.message||'Could not save changes',3200)}finally{btn.disabled=false;btn.textContent=old}});
 
-  function attachImageFallbacks(root){
-    (root || document).querySelectorAll('img[data-f1]').forEach(img => {
-      if (img.dataset.bound === '1') return;
-      img.dataset.bound = '1';
-      img.addEventListener('error', function(){
-        const stage = Number(this.dataset.stage || '0');
-        if (stage === 0 && this.dataset.f1) {
-          this.dataset.stage = '1'; this.src = this.dataset.f1; return;
-        }
-        if (stage <= 1 && this.dataset.f2) {
-          this.dataset.stage = '2'; this.src = this.dataset.f2; return;
-        }
-        this.style.display='none';
-        const fb=this.parentElement && this.parentElement.querySelector('.photo-fallback');
-        if (fb) fb.style.display='';
-      });
-    });
-  }
+  function openStatusSheet(){const a=assetMap[normalize(currentDetailId)];if(!a)return;$('statusAssetLabel').textContent=value(a.ASSET_TAG);$('statusOptions').innerHTML=STATUSES.map(s=>'<button type="button" class="status-option '+statusClass(s)+' '+(normalize(s)===normalize(a.STATUS)?'current':'')+'" data-status="'+esc(s)+'"><i></i><b>'+esc(s)+'</b></button>').join('');$('statusOptions').querySelectorAll('[data-status]').forEach(b=>b.addEventListener('click',()=>saveStatus(b.dataset.status)));openSheet(statusSheet)}
+  $('detailStatusCard').addEventListener('click',openStatusSheet);$('closeStatusBtn').addEventListener('click',()=>closeSheet(statusSheet));statusSheet.addEventListener('click',e=>{if(e.target===statusSheet)closeSheet(statusSheet)});
+  async function saveStatus(status){const id=currentDetailId,a=assetMap[normalize(id)];if(!a)return;closeSheet(statusSheet);const old=a.STATUS;a.STATUS=status;setDetail(a);renderHome();showToast('Saving status…');try{await writeRequest('status',{id,status});await sleep(700);const refreshed=await fetchAsset(id);mergeDetail(refreshed);if(normalize(refreshed.STATUS)!==normalize(status))throw new Error('Status was not confirmed.');renderHome();renderSearch();showToast('Status saved')}catch(e){a.STATUS=old;mergeDetail(a);showToast(e.message||'Could not change status',3200)}}
 
-  function cardHtml(asset){
-    return '<button class="asset-card" type="button" data-asset-id="' + esc(asset.ASSET_ID) + '">' +
-      photoMarkup(asset, 420) +
-      '<div class="asset-main">' +
-        '<div class="asset-kicker">' + esc(value(asset.DEVICE_TYPE)) + '</div>' +
-        '<div class="asset-tag">' + esc(value(asset.ASSET_TAG)) + '</div>' +
-        '<div class="asset-device">' + esc([asset.BRAND,asset.MODEL].filter(Boolean).join(' ') || '—') + '</div>' +
-        '<div class="asset-assigned">ASSIGNED TO<b>' + esc(asset.ASSIGNED_TO || 'Unassigned') + '</b></div>' +
-      '</div>' +
-      '<div class="asset-side"><span class="status-pill ' + statusClass(asset.STATUS) + '">' + esc(value(asset.STATUS)) + '</span><span class="chev">›</span></div>' +
-    '</button>';
-  }
+  $('changePhotoBtn').addEventListener('click',()=>{const a=assetMap[normalize(currentDetailId)];$('photoAssetLabel').textContent=a?value(a.ASSET_TAG):'Device photo';detailPhotoData=null;$('detailPhotoInput').value='';$('photoPreview').hidden=true;$('photoPreviewEmpty').style.display='';$('savePhotoBtn').disabled=true;openSheet(photoSheet)});$('closePhotoBtn').addEventListener('click',()=>closeSheet(photoSheet));photoSheet.addEventListener('click',e=>{if(e.target===photoSheet)closeSheet(photoSheet)});
+  $('detailPhotoInput').addEventListener('change',async function(){const file=this.files&&this.files[0];if(!file)return;try{showToast('Preparing photo…');detailPhotoData=await compressImage(file,1500,.82);$('photoPreview').src=detailPhotoData.dataUrl;$('photoPreview').hidden=false;$('photoPreviewEmpty').style.display='none';$('savePhotoBtn').disabled=false}catch(e){showToast('Could not read photo')}});
+  $('savePhotoBtn').addEventListener('click',async()=>{if(!detailPhotoData||!currentDetailId)return;const btn=$('savePhotoBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='UPLOADING…';try{const before=String((assetMap[normalize(currentDetailId)]||{}).PHOTO_FILE_ID||'');await writeRequest('photo',{id:currentDetailId,dataUrl:detailPhotoData.dataUrl,fileName:detailPhotoData.fileName,mimeType:detailPhotoData.mimeType});await sleep(1200);const refreshed=await fetchAsset(currentDetailId);if(String(refreshed.PHOTO_FILE_ID||'')===before)throw new Error('Photo upload was not confirmed.');mergeDetail(refreshed);await syncInventory(false);closeSheet(photoSheet);showToast('Photo updated')}catch(e){showToast(e.message||'Could not upload photo',3200)}finally{btn.disabled=false;btn.textContent=old}});
+  async function uploadPhotoForAsset(assetId,file){const d=await compressImage(file,1500,.82);await writeRequest('photo',{id:assetId,dataUrl:d.dataUrl,fileName:d.fileName,mimeType:d.mimeType});await sleep(1200);const a=await fetchAsset(assetId);mergeDetail(a);return a}
+  function compressImage(file,maxSide,quality){return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onerror=reject;fr.onload=()=>{const img=new Image();img.onerror=reject;img.onload=()=>{let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;const scale=Math.min(1,maxSide/Math.max(w,h));w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d',{alpha:false});ctx.drawImage(img,0,0,w,h);const dataUrl=c.toDataURL('image/jpeg',quality);resolve({dataUrl,fileName:'asset_'+Date.now()+'.jpg',mimeType:'image/jpeg'})};img.src=fr.result};fr.readAsDataURL(file)})}
 
-  function bindCards(root){
-    (root || document).querySelectorAll('[data-asset-id]').forEach(el => {
-      el.addEventListener('click', function(){ openDetail(this.dataset.assetId); });
-    });
-    attachImageFallbacks(root);
-  }
+  $('deleteAssetBtn').addEventListener('click',()=>{const a=assetMap[normalize(currentDetailId)];$('deleteAssetLabel').textContent=a?value(a.ASSET_TAG)+' • '+value(a.ASSET_ID):value(currentDetailId);openSheet(deleteSheet)});$('cancelDeleteBtn').addEventListener('click',()=>closeSheet(deleteSheet));deleteSheet.addEventListener('click',e=>{if(e.target===deleteSheet)closeSheet(deleteSheet)});$('confirmDeleteBtn').addEventListener('click',async()=>{const id=currentDetailId,btn=$('confirmDeleteBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='DELETING…';try{await writeRequest('delete',{id});await sleep(900);await syncInventory(false);if(assetMap[normalize(id)])throw new Error('Delete was not confirmed.');closeSheet(deleteSheet);currentDetailId='';showToast('Device deleted');route('home')}catch(e){showToast(e.message||'Could not delete device',3200)}finally{btn.disabled=false;btn.textContent=old}});
 
-  function renderStats(){
-    const total = ASSETS.length;
-    const active = ASSETS.filter(a => ['ACTIVE','IN USE','AVAILABLE'].includes(normalize(a.STATUS))).length;
-    const attention = ASSETS.filter(a => {
-      const s = normalize(a.STATUS);
-      return s.includes('REPAIR') || s.includes('MAINTENANCE');
-    }).length;
-    const unassigned = ASSETS.filter(a => !String(a.ASSIGNED_TO || '').trim()).length;
-    document.getElementById('heroCount').textContent = total || '0';
-    document.getElementById('statTotal').textContent = total;
-    document.getElementById('statActive').textContent = active;
-    document.getElementById('statAttention').textContent = attention;
-    document.getElementById('statUnassigned').textContent = unassigned;
-  }
+  /* QR scanner */
+  function resetScannerUi(clear){if(clear){scannedAssetId='';scannedRaw='';$('scanResult').classList.add('hidden')}$('scannerState').textContent=scannerStream?'CAMERA LIVE':'CAMERA READY';$('scannerMark').style.opacity=scannerStream?'.15':'1'}
+  async function startCamera(){if(scannerStream)return;try{scannerStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});const v=$('scannerVideo');v.srcObject=scannerStream;await v.play();scannerLoopActive=true;resetScannerUi(false);$('startCameraBtn').textContent='STOP CAMERA';scannerLoop()}catch(e){$('scannerState').textContent='CAMERA BLOCKED';showToast('Camera unavailable. Check browser permission.',3200)}}
+  function stopCamera(){scannerLoopActive=false;scannerBusy=false;if(scannerStream){scannerStream.getTracks().forEach(t=>t.stop());scannerStream=null}$('scannerVideo').srcObject=null;$('startCameraBtn').textContent='START CAMERA';resetScannerUi(false)}
+  $('startCameraBtn').addEventListener('click',()=>scannerStream?stopCamera():startCamera());
+  async function scannerLoop(ts){if(!scannerLoopActive||!scannerStream)return;requestAnimationFrame(scannerLoop);if(scannerBusy||!ts||ts-scannerLastTick<220)return;scannerLastTick=ts;const video=$('scannerVideo');if(video.readyState<2)return;scannerBusy=true;try{let result='';if('BarcodeDetector'in window){try{const detector=new BarcodeDetector({formats:['qr_code']});const codes=await detector.detect(video);if(codes&&codes[0])result=codes[0].rawValue||''}catch(e){}}if(!result&&window.jsQR){const c=$('scannerCanvas'),max=720,scale=Math.min(1,max/video.videoWidth);c.width=Math.max(1,Math.round(video.videoWidth*scale));c.height=Math.max(1,Math.round(video.videoHeight*scale));const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(video,0,0,c.width,c.height);const img=ctx.getImageData(0,0,c.width,c.height);const qr=window.jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});if(qr&&qr.data)result=qr.data}if(result){stopCamera();handleScanValue(result)}}finally{scannerBusy=false}}
+  $('manualScanBtn').addEventListener('click',()=>{const v=$('manualScanInput').value.trim();if(v)handleScanValue(v)});$('manualScanInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('manualScanBtn').click()}});
+  $('qrImageInput').addEventListener('change',async function(){const file=this.files&&this.files[0];if(!file)return;try{const val=await scanImageFile(file);if(val)handleScanValue(val);else showToast('No QR code found in image')}catch(e){showToast('Could not scan image')}});
+  function scanImageFile(file){return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onerror=reject;fr.onload=async()=>{const img=new Image();img.onerror=reject;img.onload=async()=>{try{if('BarcodeDetector'in window){try{const det=new BarcodeDetector({formats:['qr_code']});const codes=await det.detect(img);if(codes&&codes[0]){resolve(codes[0].rawValue||'');return}}catch(e){}}const c=$('scannerCanvas'),max=1600,scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));c.width=Math.round(img.naturalWidth*scale);c.height=Math.round(img.naturalHeight*scale);const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,c.width,c.height);if(window.jsQR){const d=ctx.getImageData(0,0,c.width,c.height),qr=window.jsQR(d.data,d.width,d.height,{inversionAttempts:'attemptBoth'});resolve(qr&&qr.data?qr.data:'')}else resolve('')}catch(e){reject(e)}};img.src=fr.result};fr.readAsDataURL(file)})}
+  function scanTokens(raw){const s=String(raw||'').trim();const arr=[normalize(s),normalize(s.replace(/\s+/g,'')),normalize(s.replace(/[^A-Za-z0-9]/g,''))];const digits=s.replace(/\D/g,'');if(digits)arr.push(digits);try{const u=new URL(s);const p=u.searchParams;['id','asset','scan','libib','code'].forEach(k=>{if(p.get(k))arr.push(normalize(p.get(k)))})}catch(e){}return Array.from(new Set(arr.filter(Boolean)))}
+  function resolveScan(raw){const tokens=scanTokens(raw);for(const a of ASSETS){const fields=[a.ASSET_ID,a.ASSET_TAG,a.LIBIB,a.SERIAL,a.SERVICE_TAG];for(const f of fields){const ft=scanTokens(f);if(tokens.some(t=>ft.includes(t)))return a}}return null}
+  function handleScanValue(raw){scannedRaw=String(raw||'').trim();const asset=resolveScan(scannedRaw);$('scanResultValue').textContent=scannedRaw;$('scanResult').classList.remove('hidden');if(asset){scannedAssetId=asset.ASSET_ID;$('scanResultText').textContent='Matched '+value(asset.ASSET_TAG)+' • '+value(asset.DEVICE_TYPE);$('scanOpenBtn').hidden=false;$('scanAddBtn').hidden=true;$('scannerState').textContent='MATCH FOUND';if(navigator.vibrate)navigator.vibrate(50);showToast('Asset found')}else{scannedAssetId='';$('scanResultText').textContent='No existing asset matched this code.';$('scanOpenBtn').hidden=true;$('scanAddBtn').hidden=false;$('scannerState').textContent='NO MATCH';showToast('No asset match')}}
+  $('scanOpenBtn').addEventListener('click',()=>{if(scannedAssetId)openDetail(scannedAssetId)});$('scanAddBtn').addEventListener('click',()=>{pendingScanForAdd=scannedRaw;route('add')});
 
-  function renderCategories(){
-    const counts = Object.create(null);
-    ASSETS.forEach(a => {
-      const t = String(a.DEVICE_TYPE || 'Other').trim() || 'Other';
-      counts[t] = (counts[t] || 0) + 1;
-    });
-    const cats = Object.keys(counts).sort((a,b) => counts[b]-counts[a] || a.localeCompare(b));
-    categoryRail.innerHTML = '<button class="category-chip ' + (currentCategory==='__ALL__' && !currentSpecialFilter ? 'active' : '') + '" data-category="__ALL__">ALL</button>' +
-      cats.map(c => '<button class="category-chip ' + (currentCategory===c && !currentSpecialFilter ? 'active' : '') + '" data-category="' + esc(c) + '">' + esc(c.toUpperCase()) + ' · ' + counts[c] + '</button>').join('');
-    categoryRail.querySelectorAll('[data-category]').forEach(btn => btn.addEventListener('click', function(){
-      currentSpecialFilter=''; currentCategory=this.dataset.category; renderHomeList(); renderCategories();
-    }));
-  }
+  function setupVisibilitySync(){document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&loadConnection()&&Date.now()-lastSyncAt>120000)syncInventory(false).catch(()=>{})})}
 
-  function homeFilteredAssets(){
-    let items = ASSETS.slice();
-    if (currentSpecialFilter === '__UNASSIGNED__') {
-      items = items.filter(a => !String(a.ASSIGNED_TO || '').trim());
-    } else if (currentSpecialFilter === 'Active') {
-      items = items.filter(a => ['ACTIVE','IN USE','AVAILABLE'].includes(normalize(a.STATUS)));
-    } else if (currentSpecialFilter === 'Repair') {
-      items = items.filter(a => {
-        const s=normalize(a.STATUS); return s.includes('REPAIR') || s.includes('MAINTENANCE');
-      });
-    } else if (currentCategory !== '__ALL__') {
-      items = items.filter(a => String(a.DEVICE_TYPE || 'Other') === currentCategory);
-    }
-    return items;
-  }
+  const cache=loadCache();if(cache&&cache.assets&&cache.assets.length){applyAssets(cache.assets,false);setSync('','CACHE')}else $('visibleCount').textContent='—';
+  setTimeout(()=>splash.classList.add('hidden'),standalone()?480:620);
+  if(loadConnection())connectApi();else{setSync('','SETUP');syncBanner.classList.remove('hidden')}
+  setupVisibilitySync();
+  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=730').catch(()=>{}));
 
-  function renderHomeList(){
-    const items = homeFilteredAssets();
-    let title='All Devices', subtitle='INVENTORY';
-    if (currentSpecialFilter === '__UNASSIGNED__') { title='Unassigned'; subtitle='NEEDS OWNER'; }
-    else if (currentSpecialFilter === 'Active') { title='Active Devices'; subtitle='STATUS FILTER'; }
-    else if (currentSpecialFilter === 'Repair') { title='Needs Attention'; subtitle='REPAIR / MAINTENANCE'; }
-    else if (currentCategory !== '__ALL__') { title=currentCategory; subtitle='CATEGORY'; }
-    document.getElementById('inventoryTitle').textContent=title;
-    document.getElementById('inventorySubtitle').textContent=subtitle;
-    document.getElementById('visibleCount').textContent=items.length;
-    assetList.classList.remove('skeleton-list');
-    assetList.innerHTML = items.length ? items.map(cardHtml).join('') :
-      '<div class="empty-state"><div class="empty-icon">⌁</div><h3>No devices here</h3><p>Choose another category or reset the filter.</p></div>';
-    bindCards(assetList);
-  }
-
-  function renderSearch(){
-    const q = normalize(searchInput.value);
-    const items = !q ? ASSETS.slice(0,30) : ASSETS.filter(a => normalize([
-      a.ASSET_ID,a.ASSET_TAG,a.DEVICE_TYPE,a.BRAND,a.MODEL,a.SERIAL,a.LIBIB,a.SERVICE_TAG,a.DEPARTMENT,a.ASSIGNED_TO,a.STATUS
-    ].join(' ')).includes(q));
-    searchResultCount.textContent = items.length + (items.length===1 ? ' result' : ' results');
-    searchResults.innerHTML = items.map(cardHtml).join('');
-    searchEmpty.classList.toggle('hidden', items.length !== 0);
-    bindCards(searchResults);
-  }
-
-  function applyAssets(assets, fromServer){
-    ASSETS = Array.isArray(assets) ? assets : [];
-    rebuildMap();
-    renderStats();
-    renderCategories();
-    renderHomeList();
-    renderSearch();
-    if (fromServer) {
-      saveCache();
-      lastSyncAt=Date.now();
-      syncBanner.classList.add('hidden');
-      setSync('connected','LIVE');
-      serverConnected=true;
-    }
-  }
-
-  document.querySelectorAll('[data-stat-filter]').forEach(btn => btn.addEventListener('click', function(){
-    const f=this.dataset.statFilter;
-    currentCategory='__ALL__';
-    currentSpecialFilter = f==='__ALL__' ? '' : f;
-    renderCategories(); renderHomeList();
-  }));
-
-  document.getElementById('clearFilterBtn').addEventListener('click', function(){
-    currentCategory='__ALL__'; currentSpecialFilter=''; renderCategories(); renderHomeList();
-  });
-
-  searchInput.addEventListener('input', renderSearch);
-  document.getElementById('clearSearchBtn').addEventListener('click', function(){
-    searchInput.value=''; renderSearch(); searchInput.focus();
-  });
-
-  function safeDetailMerge(lite, detail){
-    return Object.assign({}, lite || {}, detail || {});
-  }
-
-  function setDetail(asset){
-    asset = asset || {};
-    document.getElementById('detailTopTag').textContent=value(asset.ASSET_TAG);
-    document.getElementById('detailType').textContent=value(asset.DEVICE_TYPE).toUpperCase();
-    document.getElementById('detailTag').textContent=value(asset.ASSET_TAG);
-    document.getElementById('detailDevice').textContent=[asset.BRAND,asset.MODEL].filter(Boolean).join(' ') || '—';
-    document.getElementById('detailStatus').textContent=value(asset.STATUS);
-    document.getElementById('detailAssigned').textContent=asset.ASSIGNED_TO || 'Unassigned';
-    document.getElementById('dAssetId').textContent=value(asset.ASSET_ID);
-    document.getElementById('dSerial').textContent=value(asset.SERIAL);
-    document.getElementById('dService').textContent=value(asset.SERVICE_TAG);
-    document.getElementById('dLibib').textContent=value(asset.LIBIB);
-    document.getElementById('dDepartment').textContent=value(asset.DEPARTMENT);
-    document.getElementById('dColor').textContent=value(asset.COLOR);
-    document.getElementById('dPurchase').textContent=value(asset.PURCHASE_DATE);
-    document.getElementById('dWarranty').textContent=value(asset.WARRANTY);
-    document.getElementById('dCost').textContent=value(asset.COST);
-    document.getElementById('dUpdated').textContent=value(asset.UPDATED);
-
-    const img=document.getElementById('detailPhoto');
-    const fb=document.getElementById('detailPhotoFallback');
-    const urls=imageCandidates(asset,1000);
-    img.hidden=true; fb.style.display='grid'; fb.textContent=String(asset.DEVICE_TYPE || 'IT').slice(0,10).toUpperCase();
-    if (urls.length) {
-      let idx=0;
-      img.onload=function(){img.hidden=false;fb.style.display='none';};
-      img.onerror=function(){
-        idx++;
-        if (idx<urls.length) img.src=urls[idx];
-        else {img.hidden=true;fb.style.display='grid';}
-      };
-      img.src=urls[0];
-    }
-  }
-
-  function openDetail(id){
-    currentDetailId=String(id || '');
-    const lite=assetMap[normalize(currentDetailId)] || {};
-    setDetail(lite);
-    route('detail', false);
-    try { history.replaceState({screen:'detail',id:currentDetailId},'', '#detail/' + encodeURIComponent(currentDetailId)); } catch(e) {}
-    if (bridgeReady) requestAsset(currentDetailId);
-  }
-
-  document.getElementById('detailBack').addEventListener('click', function(){
-    route('home');
-  });
-
-  function nextRequestId(prefix){
-    requestSeq += 1;
-    return prefix + '-' + requestSeq + '-' + Date.now().toString(36);
-  }
-
-  // STEP 2.3: direct JSONP API.
-  // Apps Script ContentService is loaded as a <script>, so there is no CORS,
-  // iframe sandbox, postMessage, or third-party Google sign-in dependency.
-  function jsonpRequest(action, extra, timeoutMs){
-    const saved=loadConnection();
-    if (!saved) return Promise.reject(new Error('V7 API is not paired.'));
-
-    extra=extra || {};
-    timeoutMs=Math.max(3000, Number(timeoutMs) || 12000);
-
-    return new Promise(function(resolve,reject){
-      const rid=nextRequestId('jsonp').replace(/[^A-Za-z0-9_$]/g,'_');
-      const cb='RISPv7_' + rid;
-      const script=document.createElement('script');
-      let finished=false;
-
-      function cleanup(){
-        if (finished) return;
-        finished=true;
-        clearTimeout(timer);
-        try { delete window[cb]; } catch(e) { window[cb]=undefined; }
-        try { script.remove(); } catch(e) {}
-      }
-
-      window[cb]=function(payload){
-        cleanup();
-        if (!payload || payload.success === false) {
-          reject(new Error(payload && payload.error ? payload.error : 'V7 API returned an invalid response.'));
-          return;
-        }
-        resolve(payload);
-      };
-
-      const params=new URLSearchParams();
-      params.set('v7api', String(action || 'bootstrap'));
-      params.set('key', saved.key);
-      params.set('callback', cb);
-      params.set('t', String(Date.now()));
-      Object.keys(extra).forEach(function(k){
-        if (extra[k] != null && String(extra[k]) !== '') params.set(k,String(extra[k]));
-      });
-
-      script.async=true;
-      script.src=saved.url + '?' + params.toString();
-      script.onerror=function(){
-        cleanup();
-        reject(new Error('Could not reach the V7 API deployment.'));
-      };
-
-      const timer=setTimeout(function(){
-        cleanup();
-        reject(new Error('V7 API timed out.'));
-      },timeoutMs);
-
-      document.head.appendChild(script);
-    });
-  }
-
-  function showApiError(err){
-    bridgeReady=false;
-    serverConnected=false;
-    setSync('error','RETRY');
-    syncBanner.classList.remove('hidden');
-    document.getElementById('syncBannerTitle').textContent='V7 API connection failed';
-    document.getElementById('syncBannerText').textContent=(err && err.message) ? err.message : String(err || 'Unknown API error');
-  }
-
-  function requestBootstrap(){
-    if (!loadConnection()) { openConnectionSheet(); return; }
-    setSync('syncing','SYNC');
-    jsonpRequest('bootstrap',{},15000)
-      .then(function(payload){
-        bridgeReady=true;
-        if (Array.isArray(payload.assets)) {
-          applyAssets(payload.assets,true);
-          showToast('Inventory synced');
-        } else {
-          throw new Error('Inventory payload is missing assets.');
-        }
-      })
-      .catch(showApiError);
-  }
-
-  function requestAsset(id){
-    if (!id || !loadConnection()) return;
-    jsonpRequest('asset',{id:String(id)},12000)
-      .then(function(payload){
-        const detail=payload && payload.asset;
-        if (!detail || !detail.ASSET_ID) return;
-        const key=normalize(detail.ASSET_ID);
-        const merged=safeDetailMerge(assetMap[key],detail);
-        assetMap[key]=merged;
-        for (let i=0;i<ASSETS.length;i++) {
-          if (normalize(ASSETS[i].ASSET_ID)===key) { ASSETS[i]=merged; break; }
-        }
-        if (normalize(currentDetailId)===key) setDetail(merged);
-      })
-      .catch(function(err){ showToast((err && err.message) || 'Could not load device detail'); });
-  }
-
-  function connectBridge(){
-    const saved=loadConnection();
-    if (!saved) {
-      bridgeReady=false; serverConnected=false;
-      setSync('', 'SETUP');
-      syncBanner.classList.remove('hidden');
-      document.getElementById('syncBannerTitle').textContent='V7 API not paired';
-      document.getElementById('syncBannerText').textContent='Tap SETUP and enter the dedicated V7 API deployment URL + connection key.';
-      return;
-    }
-    bridgeReady=true;
-    serverConnected=false;
-    setSync('syncing','CONNECT');
-    requestBootstrap();
-  }
-
-  syncButton.addEventListener('click', function(){
-    if (loadConnection()) requestBootstrap();
-    else openConnectionSheet();
-  });
-
-  openBackendBtn.addEventListener('click', openConnectionSheet);
-
-  closeConnectionBtn.addEventListener('click', closeConnectionSheet);
-  connectionSheet.addEventListener('click', function(e){
-    if (e.target === connectionSheet) closeConnectionSheet();
-  });
-  toggleKeyBtn.addEventListener('click', function(){
-    const show=apiKeyInput.type === 'password';
-    apiKeyInput.type=show ? 'text' : 'password';
-    toggleKeyBtn.textContent=show ? 'HIDE' : 'SHOW';
-  });
-  saveConnectionBtn.addEventListener('click', function(){
-    const url=normalizeApiUrl(apiUrlInput.value);
-    const key=String(apiKeyInput.value || '').trim();
-    if (!url) { showToast('Paste a valid Apps Script /exec URL'); return; }
-    if (key.length < 24) { showToast('Connection key looks too short'); return; }
-    try {
-      saveConnection(url,key);
-      const verify=loadConnection();
-      if (!verify) { showToast('Saved, but URL could not be validated'); return; }
-    } catch(e) { showToast('Could not save connection'); return; }
-    closeConnectionSheet();
-    showToast('API paired — connecting…');
-    connectBridge();
-  });
-  disconnectBtn.addEventListener('click', function(){
-    forgetConnection();
-    closeConnectionSheet();
-    showToast('Connection forgotten');
-  });
-
-  const cache=loadCache();
-  if (cache && cache.assets && cache.assets.length) {
-    applyAssets(cache.assets,false);
-    setSync('', 'CACHE');
-  } else {
-    document.getElementById('visibleCount').textContent='—';
-  }
-
-  setTimeout(() => splash.classList.add('hidden'), standalone() ? 480 : 650);
-
-  if (loadConnection()) {
-    connectBridge();
-  } else {
-    setSync('', 'SETUP');
-    syncBanner.classList.remove('hidden');
-    document.getElementById('syncBannerTitle').textContent='V7 API not paired';
-    document.getElementById('syncBannerText').textContent='Tap SETUP and enter the dedicated V7 API deployment URL + connection key.';
-  }
-
-  setTimeout(function(){
-    if (!serverConnected && loadConnection()) {
-      syncBanner.classList.remove('hidden');
-      document.getElementById('syncBannerTitle').textContent = cache && cache.assets && cache.assets.length ? 'Using saved inventory' : 'Bridge did not connect';
-      document.getElementById('syncBannerText').textContent = cache && cache.assets && cache.assets.length
-        ? 'Saved data is visible. Tap the top-right chip to retry the V7 API.'
-        : 'Check the V7 API URL, connection key, and that the API deployment access is set to Anyone.';
-      if (!cache || !cache.assets || !cache.assets.length) setSync('error','RETRY');
-    }
-  },16000);
-
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load',() => navigator.serviceWorker.register('./sw.js').catch(() => {}));
-  }
-
-  const initial=(location.hash || '#home').slice(1);
-  if (initial.startsWith('detail/')) {
-    const id=decodeURIComponent(initial.slice(7));
-    setTimeout(() => openDetail(id),100);
-  } else {
-    route(['home','search','scan','add','labels'].includes(initial) ? initial : 'home',false);
-  }
+  const initial=(location.hash||'#home').slice(1);if(initial.startsWith('detail/')){const id=decodeURIComponent(initial.slice(7));setTimeout(()=>openDetail(id),100)}else route(['home','search','scan','add','more'].includes(initial)?initial:'home',false);
 })();
