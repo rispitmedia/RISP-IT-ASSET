@@ -12,7 +12,7 @@
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=722">
+  <link rel="stylesheet" href="./styles.css?v=723">
 </head>
 <body>
   <div class="splash" id="splash">
@@ -80,7 +80,7 @@
           <div class="sync-banner-icon">!</div>
           <div>
             <b id="syncBannerTitle">V7 API not paired</b>
-            <p id="syncBannerText">Pair the dedicated read-only bridge once, then the app can sync without Google sign-in inside an iframe.</p>
+            <p id="syncBannerText">Pair the dedicated read-only API once, then the app can sync directly without an Apps Script iframe.</p>
           </div>
           <button id="openBackendBtn" type="button">SETUP</button>
         </div>
@@ -248,7 +248,7 @@
 
       <div class="connect-note">
         <b>READ-ONLY STEP 2</b>
-        <p>Passwords, Product Keys and account credentials are never returned by this bridge.</p>
+        <p>Passwords, Product Keys and account credentials are never returned by this API.</p>
       </div>
 
       <div class="connect-actions">
@@ -261,6 +261,6 @@
 
   <iframe id="backendBridge" class="backend-bridge" title="RISP backend bridge"></iframe>
   <div class="toast" id="toast"></div>
-  <script src="./app.js?v=722"></script>
+  <script src="./app.js?v=723"></script>
 </body>
 </html>

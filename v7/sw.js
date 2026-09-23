@@ -1,7 +1,7 @@
 
-const CACHE_NAME='risp-it-asset-v7-step2-2-pairing-fix-1';
+const CACHE_NAME='risp-it-asset-v7-step2-3-direct-api-1';
 const CORE=[
-  './','./index.html','./styles.css?v=722','./app.js?v=722','./manifest.webmanifest',
+  './','./index.html','./styles.css?v=723','./app.js?v=723','./manifest.webmanifest',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'
 ];
 

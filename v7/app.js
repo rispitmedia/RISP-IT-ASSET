@@ -2,8 +2,8 @@
 (function(){
   'use strict';
 
-  const CACHE_KEY = 'RISP_V7_STEP2_SAFE_CACHE_22';
-  const CONNECTION_STORAGE_KEY = 'RISP_V7_SECURE_CONNECTION_22';
+  const CACHE_KEY = 'RISP_V7_STEP2_SAFE_CACHE_23';
+  const CONNECTION_STORAGE_KEY = 'RISP_V7_SECURE_CONNECTION_23';
   const BRIDGE_SOURCE = 'RISP_V7_PUBLIC_BRIDGE';
   const APP_SOURCE = 'RISP_V7_APP';
 
@@ -147,7 +147,7 @@
 
   function forgetConnection(){
     try { localStorage.removeItem(CONNECTION_STORAGE_KEY); } catch(e){}
-    bridge.src='about:blank';
+    try { bridge.src='about:blank'; } catch(e) {}
     bridgeReady=false; serverConnected=false;
     setSync('', 'SETUP');
     syncBanner.classList.remove('hidden');
@@ -425,69 +425,105 @@
     return prefix + '-' + requestSeq + '-' + Date.now().toString(36);
   }
 
-  function postBridge(message){
-    if (!bridge.contentWindow) return;
-    bridge.contentWindow.postMessage(Object.assign({source:APP_SOURCE,token:TOKEN},message),'*');
+  // STEP 2.3: direct JSONP API.
+  // Apps Script ContentService is loaded as a <script>, so there is no CORS,
+  // iframe sandbox, postMessage, or third-party Google sign-in dependency.
+  function jsonpRequest(action, extra, timeoutMs){
+    const saved=loadConnection();
+    if (!saved) return Promise.reject(new Error('V7 API is not paired.'));
+
+    extra=extra || {};
+    timeoutMs=Math.max(3000, Number(timeoutMs) || 12000);
+
+    return new Promise(function(resolve,reject){
+      const rid=nextRequestId('jsonp').replace(/[^A-Za-z0-9_$]/g,'_');
+      const cb='RISPv7_' + rid;
+      const script=document.createElement('script');
+      let finished=false;
+
+      function cleanup(){
+        if (finished) return;
+        finished=true;
+        clearTimeout(timer);
+        try { delete window[cb]; } catch(e) { window[cb]=undefined; }
+        try { script.remove(); } catch(e) {}
+      }
+
+      window[cb]=function(payload){
+        cleanup();
+        if (!payload || payload.success === false) {
+          reject(new Error(payload && payload.error ? payload.error : 'V7 API returned an invalid response.'));
+          return;
+        }
+        resolve(payload);
+      };
+
+      const params=new URLSearchParams();
+      params.set('v7api', String(action || 'bootstrap'));
+      params.set('key', saved.key);
+      params.set('callback', cb);
+      params.set('t', String(Date.now()));
+      Object.keys(extra).forEach(function(k){
+        if (extra[k] != null && String(extra[k]) !== '') params.set(k,String(extra[k]));
+      });
+
+      script.async=true;
+      script.src=saved.url + '?' + params.toString();
+      script.onerror=function(){
+        cleanup();
+        reject(new Error('Could not reach the V7 API deployment.'));
+      };
+
+      const timer=setTimeout(function(){
+        cleanup();
+        reject(new Error('V7 API timed out.'));
+      },timeoutMs);
+
+      document.head.appendChild(script);
+    });
+  }
+
+  function showApiError(err){
+    bridgeReady=false;
+    serverConnected=false;
+    setSync('error','RETRY');
+    syncBanner.classList.remove('hidden');
+    document.getElementById('syncBannerTitle').textContent='V7 API connection failed';
+    document.getElementById('syncBannerText').textContent=(err && err.message) ? err.message : String(err || 'Unknown API error');
   }
 
   function requestBootstrap(){
-    if (!bridgeReady) return;
+    if (!loadConnection()) { openConnectionSheet(); return; }
     setSync('syncing','SYNC');
-    postBridge({type:'bootstrap',requestId:nextRequestId('boot')});
+    jsonpRequest('bootstrap',{},15000)
+      .then(function(payload){
+        bridgeReady=true;
+        if (Array.isArray(payload.assets)) {
+          applyAssets(payload.assets,true);
+          showToast('Inventory synced');
+        } else {
+          throw new Error('Inventory payload is missing assets.');
+        }
+      })
+      .catch(showApiError);
   }
 
   function requestAsset(id){
-    if (!bridgeReady || !id) return;
-    const rid=nextRequestId('asset');
-    pendingDetail[rid]=String(id);
-    postBridge({type:'asset',assetId:String(id),requestId:rid});
-  }
-
-  function validBridgeOrigin(origin){
-    return origin === 'https://script.google.com' ||
-      /^https:\/\/[^/]*googleusercontent\.com$/.test(origin);
-  }
-
-  window.addEventListener('message', function(event){
-    const msg=event.data || {};
-    if (!validBridgeOrigin(event.origin)) return;
-    if (msg.source !== BRIDGE_SOURCE || msg.token !== TOKEN) return;
-    if (msg.type === 'ready') {
-      bridgeReady=true;
-      setSync('syncing','SYNC');
-      return;
-    }
-    if (msg.type === 'bootstrap') {
-      const p=msg.payload || {};
-      if (Array.isArray(p.assets)) {
-        applyAssets(p.assets,true);
-        showToast('Inventory synced');
-      }
-      return;
-    }
-    if (msg.type === 'asset') {
-      const detail=msg.payload;
-      if (detail && detail.ASSET_ID) {
-        const id=normalize(detail.ASSET_ID);
-        const merged=safeDetailMerge(assetMap[id],detail);
-        assetMap[id]=merged;
+    if (!id || !loadConnection()) return;
+    jsonpRequest('asset',{id:String(id)},12000)
+      .then(function(payload){
+        const detail=payload && payload.asset;
+        if (!detail || !detail.ASSET_ID) return;
+        const key=normalize(detail.ASSET_ID);
+        const merged=safeDetailMerge(assetMap[key],detail);
+        assetMap[key]=merged;
         for (let i=0;i<ASSETS.length;i++) {
-          if (normalize(ASSETS[i].ASSET_ID)===id) { ASSETS[i]=merged; break; }
+          if (normalize(ASSETS[i].ASSET_ID)===key) { ASSETS[i]=merged; break; }
         }
-        if (normalize(currentDetailId)===id) setDetail(merged);
-      }
-      if (msg.requestId) delete pendingDetail[msg.requestId];
-      return;
-    }
-    if (msg.type === 'error') {
-      setSync('error','ERROR');
-      serverConnected=false;
-      syncBanner.classList.remove('hidden');
-      const message=(msg.payload && msg.payload.message) || 'Backend connection failed';
-      document.getElementById('syncBannerTitle').textContent='Secure bridge failed';
-      document.getElementById('syncBannerText').textContent=message;
-    }
-  });
+        if (normalize(currentDetailId)===key) setDetail(merged);
+      })
+      .catch(function(err){ showToast((err && err.message) || 'Could not load device detail'); });
+  }
 
   function connectBridge(){
     const saved=loadConnection();
@@ -499,16 +535,14 @@
       document.getElementById('syncBannerText').textContent='Tap SETUP and enter the dedicated V7 API deployment URL + connection key.';
       return;
     }
-    bridgeReady=false;
+    bridgeReady=true;
     serverConnected=false;
     setSync('syncing','CONNECT');
-    const url=saved.url + '?v7bridge=1&key=' + encodeURIComponent(saved.key) + '&token=' + encodeURIComponent(TOKEN) + '&t=' + Date.now();
-    bridge.src=url;
+    requestBootstrap();
   }
 
   syncButton.addEventListener('click', function(){
-    if (bridgeReady) requestBootstrap();
-    else if (loadConnection()) connectBridge();
+    if (loadConnection()) requestBootstrap();
     else openConnectionSheet();
   });
 
@@ -530,18 +564,11 @@
     if (key.length < 24) { showToast('Connection key looks too short'); return; }
     try {
       saveConnection(url,key);
-      const verify = loadConnection();
-      if (!verify) {
-        showToast('Saved, but URL could not be validated');
-        return;
-      }
-    } catch(e) {
-      showToast('Could not save connection');
-      return;
-    }
-    setSync('syncing','CONNECT');
-    showToast('API paired — connecting…');
+      const verify=loadConnection();
+      if (!verify) { showToast('Saved, but URL could not be validated'); return; }
+    } catch(e) { showToast('Could not save connection'); return; }
     closeConnectionSheet();
+    showToast('API paired — connecting…');
     connectBridge();
   });
   disconnectBtn.addEventListener('click', function(){
@@ -574,11 +601,11 @@
       syncBanner.classList.remove('hidden');
       document.getElementById('syncBannerTitle').textContent = cache && cache.assets && cache.assets.length ? 'Using saved inventory' : 'Bridge did not connect';
       document.getElementById('syncBannerText').textContent = cache && cache.assets && cache.assets.length
-        ? 'Saved data is visible. Tap the top-right chip to retry the secure bridge.'
+        ? 'Saved data is visible. Tap the top-right chip to retry the V7 API.'
         : 'Check the V7 API URL, connection key, and that the API deployment access is set to Anyone.';
       if (!cache || !cache.assets || !cache.assets.length) setSync('error','RETRY');
     }
-  },7000);
+  },16000);
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load',() => navigator.serviceWorker.register('./sw.js').catch(() => {}));
