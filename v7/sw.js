@@ -1,5 +1,5 @@
 
-const CACHE_NAME='risp-it-asset-v7-step2-shell-1';
+const CACHE_NAME='risp-it-asset-v7-step2-1-shell-1';
 const CORE=[
   './','./index.html','./styles.css','./app.js','./manifest.webmanifest',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'

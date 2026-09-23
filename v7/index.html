@@ -79,10 +79,10 @@
         <div class="sync-banner hidden" id="syncBanner">
           <div class="sync-banner-icon">!</div>
           <div>
-            <b id="syncBannerTitle">Backend not connected</b>
-            <p id="syncBannerText">Open the backend once, then return here and tap Sync.</p>
+            <b id="syncBannerTitle">V7 API not paired</b>
+            <p id="syncBannerText">Pair the dedicated read-only bridge once, then the app can sync without Google sign-in inside an iframe.</p>
           </div>
-          <button id="openBackendBtn" type="button">OPEN</button>
+          <button id="openBackendBtn" type="button">SETUP</button>
         </div>
 
         <div class="section-head inventory-head">
@@ -221,6 +221,42 @@
       <button class="tab" data-route="add"><span>＋</span><small>ADD</small></button>
       <button class="tab" data-route="labels"><span>▦</span><small>LABELS</small></button>
     </nav>
+  </div>
+
+
+  <div class="sheet-backdrop" id="connectionSheet" aria-hidden="true">
+    <div class="sheet connection-sheet">
+      <div class="grabber"></div>
+      <div class="connect-head">
+        <div class="connect-icon">⚡</div>
+        <div><small>V7 SECURE BRIDGE</small><h2>Connect inventory</h2></div>
+      </div>
+      <p class="connect-copy">Use the separate <b>RISP V7 API</b> deployment. The URL and connection key are saved only on this device.</p>
+
+      <label class="connect-field">
+        <span>V7 API DEPLOYMENT URL</span>
+        <input id="apiUrlInput" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec">
+      </label>
+
+      <label class="connect-field">
+        <span>CONNECTION KEY</span>
+        <div class="key-field">
+          <input id="apiKeyInput" type="password" autocomplete="off" placeholder="Paste your connection key">
+          <button id="toggleKeyBtn" type="button">SHOW</button>
+        </div>
+      </label>
+
+      <div class="connect-note">
+        <b>READ-ONLY STEP 2</b>
+        <p>Passwords, Product Keys and account credentials are never returned by this bridge.</p>
+      </div>
+
+      <div class="connect-actions">
+        <button class="sheet-secondary" id="closeConnectionBtn" type="button">CANCEL</button>
+        <button class="sheet-primary" id="saveConnectionBtn" type="button">SAVE & CONNECT</button>
+      </div>
+      <button class="disconnect-link" id="disconnectBtn" type="button">Forget saved connection</button>
+    </div>
   </div>
 
   <iframe id="backendBridge" class="backend-bridge" title="RISP backend bridge"></iframe>

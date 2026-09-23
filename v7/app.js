@@ -2,9 +2,9 @@
 (function(){
   'use strict';
 
-  const BACKEND_URL = "https://script.google.com/a/risphuket.ac.th/macros/s/AKfycbzL7ydFfQCYTp5RC9oVB9-KloS4_t3o_83Hp5pz8sMbNdEMOZw6s30EPR4-JDV2YgUcZg/exec";
-  const CACHE_KEY = 'RISP_V7_STEP2_SAFE_CACHE_1';
-  const BRIDGE_SOURCE = 'RISP_V7_BRIDGE';
+  const CACHE_KEY = 'RISP_V7_STEP2_SAFE_CACHE_2';
+  const CONNECTION_STORAGE_KEY = 'RISP_V7_SECURE_CONNECTION_1';
+  const BRIDGE_SOURCE = 'RISP_V7_PUBLIC_BRIDGE';
   const APP_SOURCE = 'RISP_V7_APP';
 
   const splash = document.getElementById('splash');
@@ -22,6 +22,13 @@
   const searchResults = document.getElementById('searchResults');
   const searchEmpty = document.getElementById('searchEmpty');
   const searchResultCount = document.getElementById('searchResultCount');
+  const connectionSheet = document.getElementById('connectionSheet');
+  const apiUrlInput = document.getElementById('apiUrlInput');
+  const apiKeyInput = document.getElementById('apiKeyInput');
+  const saveConnectionBtn = document.getElementById('saveConnectionBtn');
+  const closeConnectionBtn = document.getElementById('closeConnectionBtn');
+  const disconnectBtn = document.getElementById('disconnectBtn');
+  const toggleKeyBtn = document.getElementById('toggleKeyBtn');
 
   let ASSETS = [];
   let assetMap = Object.create(null);
@@ -90,6 +97,55 @@
   routeButtons.forEach(btn => btn.addEventListener('click', function(){
     if (this.dataset.route) route(this.dataset.route);
   }));
+
+  function normalizeApiUrl(raw){
+    let url = String(raw || '').trim();
+    if (!url) return '';
+    url = url.replace(/[?#].*$/,'').replace(/\/+$/,'');
+    if (!/^https:\/\/script\.google\.com\/(?:a\/[^/]+\/)?macros\/s\/[^/]+\/exec$/i.test(url)) return '';
+    return url;
+  }
+
+  function loadConnection(){
+    try {
+      const raw=localStorage.getItem(CONNECTION_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed=JSON.parse(raw);
+      const url=normalizeApiUrl(parsed && parsed.url);
+      const key=String(parsed && parsed.key || '').trim();
+      if (!url || key.length < 24) return null;
+      return {url:url,key:key};
+    } catch(e){ return null; }
+  }
+
+  function saveConnection(url,key){
+    localStorage.setItem(CONNECTION_STORAGE_KEY, JSON.stringify({url:url,key:key,savedAt:Date.now()}));
+  }
+
+  function forgetConnection(){
+    try { localStorage.removeItem(CONNECTION_STORAGE_KEY); } catch(e){}
+    bridge.src='about:blank';
+    bridgeReady=false; serverConnected=false;
+    setSync('', 'SETUP');
+    syncBanner.classList.remove('hidden');
+    document.getElementById('syncBannerTitle').textContent='V7 API not paired';
+    document.getElementById('syncBannerText').textContent='Tap SETUP and enter the dedicated V7 API deployment URL + connection key.';
+  }
+
+  function openConnectionSheet(){
+    const saved=loadConnection();
+    apiUrlInput.value=saved ? saved.url : '';
+    apiKeyInput.value=saved ? saved.key : '';
+    apiKeyInput.type='password';
+    toggleKeyBtn.textContent='SHOW';
+    connectionSheet.classList.add('open');
+    connectionSheet.setAttribute('aria-hidden','false');
+  }
+
+  function closeConnectionSheet(){
+    connectionSheet.classList.remove('open');
+    connectionSheet.setAttribute('aria-hidden','true');
+  }
 
   function saveCache(){
     try {
@@ -405,25 +461,58 @@
       serverConnected=false;
       syncBanner.classList.remove('hidden');
       const message=(msg.payload && msg.payload.message) || 'Backend connection failed';
-      document.getElementById('syncBannerTitle').textContent='Backend connection failed';
+      document.getElementById('syncBannerTitle').textContent='Secure bridge failed';
       document.getElementById('syncBannerText').textContent=message;
     }
   });
 
   function connectBridge(){
+    const saved=loadConnection();
+    if (!saved) {
+      bridgeReady=false; serverConnected=false;
+      setSync('', 'SETUP');
+      syncBanner.classList.remove('hidden');
+      document.getElementById('syncBannerTitle').textContent='V7 API not paired';
+      document.getElementById('syncBannerText').textContent='Tap SETUP and enter the dedicated V7 API deployment URL + connection key.';
+      return;
+    }
     bridgeReady=false;
+    serverConnected=false;
     setSync('syncing','CONNECT');
-    const url=BACKEND_URL + '?bridge=1&token=' + encodeURIComponent(TOKEN) + '&t=' + Date.now();
+    const url=saved.url + '?v7bridge=1&key=' + encodeURIComponent(saved.key) + '&token=' + encodeURIComponent(TOKEN) + '&t=' + Date.now();
     bridge.src=url;
   }
 
   syncButton.addEventListener('click', function(){
     if (bridgeReady) requestBootstrap();
-    else connectBridge();
+    else if (loadConnection()) connectBridge();
+    else openConnectionSheet();
   });
 
-  openBackendBtn.addEventListener('click', function(){
-    window.open(BACKEND_URL,'_blank');
+  openBackendBtn.addEventListener('click', openConnectionSheet);
+
+  closeConnectionBtn.addEventListener('click', closeConnectionSheet);
+  connectionSheet.addEventListener('click', function(e){
+    if (e.target === connectionSheet) closeConnectionSheet();
+  });
+  toggleKeyBtn.addEventListener('click', function(){
+    const show=apiKeyInput.type === 'password';
+    apiKeyInput.type=show ? 'text' : 'password';
+    toggleKeyBtn.textContent=show ? 'HIDE' : 'SHOW';
+  });
+  saveConnectionBtn.addEventListener('click', function(){
+    const url=normalizeApiUrl(apiUrlInput.value);
+    const key=String(apiKeyInput.value || '').trim();
+    if (!url) { showToast('Paste a valid Apps Script /exec URL'); return; }
+    if (key.length < 24) { showToast('Connection key looks too short'); return; }
+    try { saveConnection(url,key); } catch(e) { showToast('Could not save connection'); return; }
+    closeConnectionSheet();
+    connectBridge();
+  });
+  disconnectBtn.addEventListener('click', function(){
+    forgetConnection();
+    closeConnectionSheet();
+    showToast('Connection forgotten');
   });
 
   const cache=loadCache();
@@ -435,16 +524,24 @@
   }
 
   setTimeout(() => splash.classList.add('hidden'), standalone() ? 480 : 650);
-  connectBridge();
+
+  if (loadConnection()) {
+    connectBridge();
+  } else {
+    setSync('', 'SETUP');
+    syncBanner.classList.remove('hidden');
+    document.getElementById('syncBannerTitle').textContent='V7 API not paired';
+    document.getElementById('syncBannerText').textContent='Tap SETUP and enter the dedicated V7 API deployment URL + connection key.';
+  }
 
   setTimeout(function(){
-    if (!serverConnected) {
+    if (!serverConnected && loadConnection()) {
       syncBanner.classList.remove('hidden');
-      document.getElementById('syncBannerTitle').textContent = cache && cache.assets && cache.assets.length ? 'Using saved inventory' : 'Backend needs connection';
+      document.getElementById('syncBannerTitle').textContent = cache && cache.assets && cache.assets.length ? 'Using saved inventory' : 'Bridge did not connect';
       document.getElementById('syncBannerText').textContent = cache && cache.assets && cache.assets.length
-        ? 'Saved data is visible. Tap Sync to refresh from Apps Script.'
-        : 'Open the backend once if sign-in is required, then return and tap Sync.';
-      if (!cache || !cache.assets || !cache.assets.length) setSync('error','OFFLINE');
+        ? 'Saved data is visible. Tap the top-right chip to retry the secure bridge.'
+        : 'Check the V7 API URL, connection key, and that the API deployment access is set to Anyone.';
+      if (!cache || !cache.assets || !cache.assets.length) setSync('error','RETRY');
     }
   },7000);
 
