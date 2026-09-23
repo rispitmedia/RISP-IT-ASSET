@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#081a30">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RISP IT ASSET">
+
+  <title>RISP IT ASSET</title>
+
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="splash" id="splash" aria-hidden="true">
+    <div class="splash-glow"></div>
+    <img src="./icon-512.png" alt="" class="splash-logo">
+    <div class="splash-title">RISP IT ASSET</div>
+    <div class="splash-credit">ENGINEERED BY NEWVANA</div>
+  </div>
+
+  <div class="app" id="app">
+    <header class="app-header">
+      <button class="brand" data-route="home" aria-label="Home">
+        <img src="./icon-192.png" alt="RISP IT ASSET">
+        <span>
+          <strong>RISP IT ASSET</strong>
+          <small id="modeLabel">PWA SHELL • STEP 1</small>
+        </span>
+      </button>
+
+      <button class="profile-button" id="installButton" type="button" aria-label="Install help">
+        <span class="profile-dot"></span>
+        <span class="profile-label">APP</span>
+      </button>
+    </header>
+
+    <main class="viewport" id="viewport">
+      <section class="screen active" data-screen="home">
+        <div class="hero">
+          <div class="eyebrow"><span class="live-dot"></span> RISP MOBILE CONTROL</div>
+          <h1>IT inventory.<br><span>Built like an app.</span></h1>
+          <p>This is the new v7 shell. Backend is intentionally not connected yet so we can prove the install and fullscreen experience first.</p>
+
+          <div class="hero-actions">
+            <button class="action primary" data-route="scan">
+              <span class="action-icon">⌁</span>
+              <span><b>SCAN DEVICE</b><small>Native-style scanner screen</small></span>
+            </button>
+            <button class="action secondary" data-route="search">
+              <span class="action-icon">⌕</span>
+              <span><b>SEARCH</b><small>Find an asset fast</small></span>
+            </button>
+          </div>
+        </div>
+
+        <div class="section-title">
+          <div>
+            <small>STEP 1 STATUS</small>
+            <h2>PWA Shell</h2>
+          </div>
+          <span class="version">V7.0</span>
+        </div>
+
+        <div class="status-grid">
+          <article class="mini-card ready">
+            <span>01</span>
+            <b>Standalone UI</b>
+            <small>Ready</small>
+          </article>
+          <article class="mini-card ready">
+            <span>02</span>
+            <b>Home Screen</b>
+            <small>Ready</small>
+          </article>
+          <article class="mini-card">
+            <span>03</span>
+            <b>Backend</b>
+            <small>Step 2</small>
+          </article>
+          <article class="mini-card">
+            <span>04</span>
+            <b>Scanner</b>
+            <small>Later</small>
+          </article>
+        </div>
+
+        <div class="panel install-panel" id="installPanel">
+          <div class="panel-icon">⚡</div>
+          <div class="panel-copy">
+            <small>INSTALL TEST</small>
+            <h3>Open from your Home Screen</h3>
+            <p>Chrome on iPhone → Share → Add to Home Screen → keep <b>Open as Web App</b> ON.</p>
+          </div>
+          <button class="panel-button" id="installHelpButton" type="button">HOW</button>
+        </div>
+
+        <div class="section-title compact">
+          <div>
+            <small>NEXT BUILD</small>
+            <h2>Step 2</h2>
+          </div>
+        </div>
+
+        <article class="roadmap-card">
+          <div class="roadmap-number">02</div>
+          <div>
+            <b>Connect Read-only Inventory</b>
+            <p>Dashboard, Search and Device Detail will read real data from the current Apps Script backend without touching edit/save yet.</p>
+          </div>
+          <span>→</span>
+        </article>
+
+        <div class="bottom-spacer"></div>
+      </section>
+
+      <section class="screen" data-screen="search">
+        <div class="page-head">
+          <div class="eyebrow">SEARCH</div>
+          <h1>Find anything.</h1>
+          <p>UI is ready. Real inventory connection arrives in Step 2.</p>
+        </div>
+
+        <div class="search-box">
+          <span>⌕</span>
+          <input id="demoSearch" type="search" placeholder="Asset Tag, Serial, Brand…" autocomplete="off">
+        </div>
+
+        <div class="empty-state">
+          <div class="empty-icon">⌕</div>
+          <h3>Search engine waiting for backend</h3>
+          <p>Once Step 2 is connected, this screen will search your live RISP inventory.</p>
+        </div>
+
+        <div class="bottom-spacer"></div>
+      </section>
+
+      <section class="screen" data-screen="scan">
+        <div class="page-head scan-head">
+          <div class="eyebrow"><span class="live-dot"></span> QR SCANNER</div>
+          <h1>Point. Scan. Done.</h1>
+          <p>Camera integration comes after the backend read layer is stable.</p>
+        </div>
+
+        <div class="scanner-shell">
+          <div class="scanner-corners">
+            <i></i><i></i><i></i><i></i>
+          </div>
+          <div class="scanner-line"></div>
+          <div class="scanner-mark">QR</div>
+        </div>
+
+        <button class="wide-button disabled" type="button">
+          CAMERA CONNECTION • COMING NEXT
+        </button>
+
+        <div class="bottom-spacer"></div>
+      </section>
+
+      <section class="screen" data-screen="add">
+        <div class="page-head">
+          <div class="eyebrow">ADD DEVICE</div>
+          <h1>New asset.</h1>
+          <p>The native-feeling form shell is ready. Save to Google Sheet will be connected after read-only data passes testing.</p>
+        </div>
+
+        <div class="form-card">
+          <label>Asset Tag<input value="" placeholder="e.g. LAPTOP-001" disabled></label>
+          <label>Category<input value="" placeholder="Laptop" disabled></label>
+          <label>Brand<input value="" placeholder="ASUS" disabled></label>
+          <label>Serial Number<input value="" placeholder="Serial" disabled></label>
+          <button type="button" class="wide-button disabled">SAVE DEVICE • STEP 3</button>
+        </div>
+
+        <div class="bottom-spacer"></div>
+      </section>
+
+      <section class="screen" data-screen="labels">
+        <div class="page-head">
+          <div class="eyebrow">QR LABELS</div>
+          <h1>Label Studio.</h1>
+          <p>Your existing QR print engine stays safe in v6.5.4 while we migrate it later.</p>
+        </div>
+
+        <div class="label-demo">
+          <div class="fake-qr">
+            <span></span><span></span><span></span><span></span><span></span>
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <div>
+            <small>RISP IT ASSET</small>
+            <b>LAPTOP-DEMO</b>
+            <p>Laptop • ASUS</p>
+            <p>Serial Number: DEMO001</p>
+            <em>Asset ID: DEMO</em>
+          </div>
+        </div>
+
+        <div class="empty-state small">
+          <div class="empty-icon">▦</div>
+          <h3>Print engine migration later</h3>
+          <p>We will not touch the stable v6.5.4 label system until the core PWA data flow is proven.</p>
+        </div>
+
+        <div class="bottom-spacer"></div>
+      </section>
+    </main>
+
+    <nav class="tabbar" aria-label="Main navigation">
+      <button class="tab active" data-route="home">
+        <span class="tab-icon">⌂</span>
+        <small>HOME</small>
+      </button>
+      <button class="tab" data-route="search">
+        <span class="tab-icon">⌕</span>
+        <small>SEARCH</small>
+      </button>
+      <button class="tab scan-tab" data-route="scan">
+        <span class="scan-orb">⌁</span>
+        <small>SCAN</small>
+      </button>
+      <button class="tab" data-route="add">
+        <span class="tab-icon">＋</span>
+        <small>ADD</small>
+      </button>
+      <button class="tab" data-route="labels">
+        <span class="tab-icon">▦</span>
+        <small>LABELS</small>
+      </button>
+    </nav>
+  </div>
+
+  <div class="sheet-backdrop" id="installSheet" aria-hidden="true">
+    <div class="sheet">
+      <div class="grabber"></div>
+      <div class="sheet-icon"><img src="./icon-192.png" alt=""></div>
+      <small>INSTALL RISP IT ASSET</small>
+      <h2>Make it feel like a real app.</h2>
+      <p>On iPhone using Chrome:</p>
+      <ol>
+        <li>Tap <b>Share</b>.</li>
+        <li>Choose <b>Add to Home Screen</b>.</li>
+        <li>Keep <b>Open as Web App</b> turned ON.</li>
+        <li>Tap <b>Add</b>, then launch from the new icon.</li>
+      </ol>
+      <div class="sheet-note">When launched from the Home Screen, this v7 shell uses standalone display mode with no Chrome address bar.</div>
+      <button class="wide-button" id="closeSheet" type="button">GOT IT</button>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
