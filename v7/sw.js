@@ -1,6 +1,6 @@
-const CACHE_NAME='risp-it-asset-v7-step3-full-control-1';
+const CACHE_NAME='risp-it-asset-v7-step3-1-pro-control-1';
 const CORE=[
-  './','./index.html','./styles.css?v=730','./app.js?v=730','./manifest.webmanifest?v=730',
+  './','./index.html','./styles.css?v=741','./app.js?v=741','./manifest.webmanifest?v=741',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'
 ];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});

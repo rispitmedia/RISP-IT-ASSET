@@ -40,3 +40,41 @@
 
 @media(max-width:390px){.brand{grid-template-columns:46px minmax(0,1fr) auto;gap:8px}.brand-mark{width:46px;height:46px}.brand-copy strong{font-size:12.5px}.brand-copy small{font-size:5.8px}.brand-live{display:none}.sync-chip{min-width:69px;padding:0 9px}.asset-card{grid-template-columns:102px minmax(0,1fr) auto}.asset-photo{width:102px;height:88px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}}
 @media(min-width:720px){.app{left:50%;width:min(680px,100%);transform:translateX(-50%);border-left:1px solid #14263a;border-right:1px solid #14263a}.splash{left:50%;width:min(680px,100%);transform:translateX(-50%)}body{background:#02060b}}
+
+
+/* ================================================================
+   v7 STEP 3.1 — PRO CONTROL UX / TYPE SCALE / LOWER NAV
+   ================================================================ */
+:root{--tab-h:50px}
+/* Facebook-style lower nav: physically shorter, but clearer icons/text */
+.tabbar{height:calc(var(--tab-h) + var(--safe-bottom));padding:0 7px var(--safe-bottom);align-items:center;background:rgba(3,8,15,.985);box-shadow:0 -7px 24px rgba(0,0,0,.24)}
+.tab{height:50px;gap:2px;justify-content:center}
+.tab svg{width:23px;height:23px;stroke-width:1.9}
+.tab small{font-size:7.8px;letter-spacing:.07em;line-height:1;font-weight:900}
+.scan-icon{width:31px;height:31px;border-radius:9px;background:transparent;border-color:transparent;box-shadow:none}
+.scan-tab.active .scan-icon{background:#10375c;border-color:#376f9f;box-shadow:0 0 13px rgba(55,145,226,.18)}
+.bottom-spacer{height:10px}
+.toast{bottom:calc(var(--tab-h) + 10px + var(--safe-bottom));font-size:9px}
+
+/* Global type balance */
+.eyebrow{font-size:8px}.hero-row p{font-size:11.5px}.stat-card small{font-size:7.5px}.stat-card span{font-size:8.8px}.section-head small{font-size:7.5px}.text-button{font-size:7.5px}.category-chip{font-size:8.5px}.asset-kicker{font-size:7.5px}.asset-device{font-size:10.5px}.asset-assigned{font-size:7px}.status-pill{font-size:7.5px}.page-head p{font-size:10.5px}.field label{font-size:8px!important}.field input,.field select,.field textarea{font-size:12px!important}.photo-picker{font-size:8px}.more-card b{font-size:11px}.more-card small{font-size:8.5px}.system-card small{font-size:6.8px}.system-card b{font-size:9.7px}
+
+/* Dashboard total valuation */
+.value-stat-card{grid-column:1/-1;min-height:94px;position:relative;overflow:hidden;background:linear-gradient(120deg,#081a2c,#0c2744 62%,#0a1a2b);border-color:#28527a;cursor:default}
+.value-stat-card:after{content:"฿";position:absolute;right:15px;top:1px;font-size:82px;font-weight:900;color:rgba(112,181,245,.06);line-height:1}
+.value-stat-card b{font-size:28px;color:#cfe8ff;margin-top:10px}.value-stat-card span{display:flex;align-items:center;gap:7px}.money-mark{font-style:normal;width:22px;height:22px;border-radius:7px;display:inline-grid;place-items:center;background:#103b62;border:1px solid #2a608c;color:#87caff;font-size:12px;font-weight:900}
+.stat-card.active-filter{border-color:#568fc4;background:linear-gradient(145deg,#102842,#0b1d31);box-shadow:0 0 0 1px rgba(92,162,224,.16) inset,0 9px 25px rgba(0,44,84,.14)}
+.stat-card.active-filter small,.stat-card.active-filter span{color:#9dc7ed}
+
+/* Add / Edit custom select fields */
+.select-custom-wrap{display:grid;gap:7px}.custom-other-input[hidden]{display:none!important}.custom-other-input{border-color:#3c6d98!important;background:#0b2034!important}
+.scan-entry-button{width:100%;min-height:62px;margin:0 0 13px;border:1px solid #2e628f;background:linear-gradient(120deg,#0b2340,#0d3155);border-radius:16px;display:grid;grid-template-columns:auto 1fr auto;gap:11px;align-items:center;padding:9px 13px;text-align:left}.scan-entry-button>span{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;border:1px solid #4078a9;background:#0d3c68;font-size:20px}.scan-entry-button b{font-size:9px;letter-spacing:.08em}.scan-entry-button small{display:block;color:#7fa1c2;font-size:8px;margin-top:4px;line-height:1.35}.scan-entry-button i{font-style:normal;font-size:22px;color:#77a7d2}
+.photo-choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.photo-choice-grid .photo-picker{margin:0}.sheet-photo-choices{margin:0 0 6px}.sheet-photo-choices .sheet-primary{width:100%}.edit-photo-card{margin-bottom:12px}
+
+/* Scanner result with real device photo */
+.scan-match{margin:12px 0 3px;display:grid;grid-template-columns:92px minmax(0,1fr) auto;gap:11px;align-items:center;border:1px solid #245176;background:linear-gradient(135deg,#0b2035,#081522);border-radius:16px;padding:9px}.scan-match-photo{width:92px;height:82px;border-radius:12px;overflow:hidden;background:#0c2134;display:grid;place-items:center}.scan-match-photo img{width:100%;height:100%;object-fit:cover}.scan-match-photo>span{font-size:8px;font-weight:900;letter-spacing:.1em;color:#5e83a4}.scan-match-copy{min-width:0}.scan-match-copy small{display:block;color:#6f95b8;font-size:7px;letter-spacing:.13em;font-weight:900}.scan-match-copy b{display:block;font-size:16px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.scan-match-copy p{margin:4px 0 0;color:#8198ae;font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.scan-match-copy>span{display:block;margin-top:7px;color:#a9bfd3;font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.scan-match-status{align-self:start;border:1px solid #31506e;border-radius:999px;padding:6px 8px;font-size:7px;font-weight:900;color:#93abc0}.scan-match-status.active{border-color:#246646;color:#6de594;background:#0a2017}.scan-match-status.repair{border-color:#74501d;color:#ffc064;background:#201607}.scan-match-status.inactive{border-color:#683440;color:#ff8490;background:#211013}
+
+/* Secure private-admin handoff. Credentials NEVER enter the public PWA. */
+.private-note{display:grid!important;grid-template-columns:auto 1fr;gap:10px!important}.private-admin-button{grid-column:1/-1;width:100%;height:43px;margin-top:4px;border:1px solid #365f83;background:#0d2741;color:#b8d9f7;border-radius:12px;font-size:8px;font-weight:900;letter-spacing:.08em}
+
+@media(max-width:390px){.tab svg{width:22px;height:22px}.tab small{font-size:7.4px}.scan-match{grid-template-columns:82px minmax(0,1fr)}.scan-match-photo{width:82px;height:76px}.scan-match-status{grid-column:2;justify-self:start}.photo-choice-grid{grid-template-columns:1fr 1fr}.value-stat-card b{font-size:25px}}
