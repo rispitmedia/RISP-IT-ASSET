@@ -2,88 +2,461 @@
 (function(){
   'use strict';
 
+  const BACKEND_URL = "https://script.google.com/a/risphuket.ac.th/macros/s/AKfycbzL7ydFfQCYTp5RC9oVB9-KloS4_t3o_83Hp5pz8sMbNdEMOZw6s30EPR4-JDV2YgUcZg/exec";
+  const CACHE_KEY = 'RISP_V7_STEP2_SAFE_CACHE_1';
+  const BRIDGE_SOURCE = 'RISP_V7_BRIDGE';
+  const APP_SOURCE = 'RISP_V7_APP';
+
+  const splash = document.getElementById('splash');
   const screens = Array.from(document.querySelectorAll('[data-screen]'));
   const tabs = Array.from(document.querySelectorAll('.tab[data-route]'));
   const routeButtons = Array.from(document.querySelectorAll('[data-route]'));
-  const viewport = document.getElementById('viewport');
-  const splash = document.getElementById('splash');
-  const installSheet = document.getElementById('installSheet');
-  const installHelpButton = document.getElementById('installHelpButton');
-  const installButton = document.getElementById('installButton');
-  const closeSheet = document.getElementById('closeSheet');
-  const modeLabel = document.getElementById('modeLabel');
-  const installPanel = document.getElementById('installPanel');
+  const bridge = document.getElementById('backendBridge');
+  const syncButton = document.getElementById('syncButton');
+  const syncText = document.getElementById('syncText');
+  const syncBanner = document.getElementById('syncBanner');
+  const openBackendBtn = document.getElementById('openBackendBtn');
+  const categoryRail = document.getElementById('categoryRail');
+  const assetList = document.getElementById('assetList');
+  const searchInput = document.getElementById('searchInput');
+  const searchResults = document.getElementById('searchResults');
+  const searchEmpty = document.getElementById('searchEmpty');
+  const searchResultCount = document.getElementById('searchResultCount');
+
+  let ASSETS = [];
+  let assetMap = Object.create(null);
+  let currentCategory = '__ALL__';
+  let currentSpecialFilter = '';
+  let currentDetailId = '';
+  let bridgeReady = false;
+  let serverConnected = false;
+  let lastSyncAt = 0;
+  let requestSeq = 0;
+  const pendingDetail = Object.create(null);
+
+  const TOKEN = (() => {
+    try {
+      const a = new Uint32Array(4);
+      crypto.getRandomValues(a);
+      return Array.from(a).map(n => n.toString(36)).join('');
+    } catch (e) {
+      return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2);
+    }
+  })();
 
   function standalone(){
-    return window.matchMedia('(display-mode: standalone)').matches ||
-      window.navigator.standalone === true;
+    return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   }
 
-  function setModeLabel(){
-    if (standalone()) {
-      modeLabel.textContent = 'STANDALONE • NO BROWSER BAR';
-      if (installPanel) installPanel.style.display = 'none';
-    } else {
-      modeLabel.textContent = 'PWA SHELL • STEP 1';
-    }
+  function normalize(v){
+    return String(v == null ? '' : v).trim().toUpperCase();
+  }
+
+  function esc(v){
+    return String(v == null ? '' : v)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+  }
+
+  function value(v){
+    const s = String(v == null ? '' : v).trim();
+    return s || '—';
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 1900);
+  }
+
+  function setSync(state, text){
+    syncButton.classList.remove('connected','syncing','error');
+    if (state) syncButton.classList.add(state);
+    syncText.textContent = text;
   }
 
   function route(name, push){
     const target = document.querySelector('[data-screen="' + name + '"]');
     if (!target) return;
-
     screens.forEach(el => el.classList.toggle('active', el === target));
-    tabs.forEach(el => el.classList.toggle('active', el.dataset.route === name));
-
+    tabs.forEach(el => el.classList.toggle('active', name !== 'detail' && el.dataset.route === name));
     target.scrollTop = 0;
-
-    if (push !== false) {
-      try { history.replaceState({screen:name}, '', '#' + name); } catch(e){}
+    if (push !== false && name !== 'detail') {
+      try { history.replaceState({screen:name}, '', '#' + name); } catch(e) {}
     }
   }
 
-  routeButtons.forEach(btn => {
-    btn.addEventListener('click', function(){
-      const name = this.dataset.route;
-      if (name) route(name);
+  routeButtons.forEach(btn => btn.addEventListener('click', function(){
+    if (this.dataset.route) route(this.dataset.route);
+  }));
+
+  function saveCache(){
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({
+        savedAt: Date.now(),
+        assets: ASSETS
+      }));
+    } catch(e) {}
+  }
+
+  function loadCache(){
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data || !Array.isArray(data.assets)) return null;
+      return data;
+    } catch(e) { return null; }
+  }
+
+  function rebuildMap(){
+    assetMap = Object.create(null);
+    ASSETS.forEach(a => {
+      if (a && a.ASSET_ID) assetMap[normalize(a.ASSET_ID)] = a;
     });
-  });
-
-  function openInstall(){
-    installSheet.classList.add('open');
-    installSheet.setAttribute('aria-hidden','false');
   }
 
-  function closeInstall(){
-    installSheet.classList.remove('open');
-    installSheet.setAttribute('aria-hidden','true');
+  function statusClass(status){
+    const s = normalize(status);
+    if (s === 'ACTIVE' || s === 'IN USE' || s === 'AVAILABLE') return 'active';
+    if (s.indexOf('REPAIR') !== -1 || s.indexOf('MAINTENANCE') !== -1) return 'repair';
+    if (s === 'INACTIVE' || s === 'RETIRED' || s === 'LOST') return 'inactive';
+    return '';
   }
 
-  if (installHelpButton) installHelpButton.addEventListener('click', openInstall);
-  if (installButton) installButton.addEventListener('click', openInstall);
-  if (closeSheet) closeSheet.addEventListener('click', closeInstall);
-  installSheet.addEventListener('click', e => {
-    if (e.target === installSheet) closeInstall();
+  function imageCandidates(asset, size){
+    const id = String(asset && asset.PHOTO_FILE_ID || '').trim();
+    if (!id) return [];
+    const encoded = encodeURIComponent(id);
+    size = size || 420;
+    return [
+      'https://lh3.googleusercontent.com/d/' + encoded + '=w' + size,
+      'https://drive.google.com/thumbnail?id=' + encoded + '&sz=w' + size,
+      'https://drive.google.com/uc?export=view&id=' + encoded
+    ];
+  }
+
+  function photoMarkup(asset, size){
+    const urls = imageCandidates(asset, size || 420);
+    const type = String(asset.DEVICE_TYPE || 'IT').slice(0,10);
+    if (!urls.length) return '<div class="asset-photo"><span class="photo-fallback">' + esc(type) + '</span></div>';
+    return '<div class="asset-photo">' +
+      '<img src="' + esc(urls[0]) + '" data-f1="' + esc(urls[1] || '') + '" data-f2="' + esc(urls[2] || '') + '" alt="' + esc(asset.ASSET_TAG || 'Asset') + '">' +
+      '<span class="photo-fallback" style="display:none">' + esc(type) + '</span></div>';
+  }
+
+  function attachImageFallbacks(root){
+    (root || document).querySelectorAll('img[data-f1]').forEach(img => {
+      if (img.dataset.bound === '1') return;
+      img.dataset.bound = '1';
+      img.addEventListener('error', function(){
+        const stage = Number(this.dataset.stage || '0');
+        if (stage === 0 && this.dataset.f1) {
+          this.dataset.stage = '1'; this.src = this.dataset.f1; return;
+        }
+        if (stage <= 1 && this.dataset.f2) {
+          this.dataset.stage = '2'; this.src = this.dataset.f2; return;
+        }
+        this.style.display='none';
+        const fb=this.parentElement && this.parentElement.querySelector('.photo-fallback');
+        if (fb) fb.style.display='';
+      });
+    });
+  }
+
+  function cardHtml(asset){
+    return '<button class="asset-card" type="button" data-asset-id="' + esc(asset.ASSET_ID) + '">' +
+      photoMarkup(asset, 420) +
+      '<div class="asset-main">' +
+        '<div class="asset-kicker">' + esc(value(asset.DEVICE_TYPE)) + '</div>' +
+        '<div class="asset-tag">' + esc(value(asset.ASSET_TAG)) + '</div>' +
+        '<div class="asset-device">' + esc([asset.BRAND,asset.MODEL].filter(Boolean).join(' ') || '—') + '</div>' +
+        '<div class="asset-assigned">ASSIGNED TO<b>' + esc(asset.ASSIGNED_TO || 'Unassigned') + '</b></div>' +
+      '</div>' +
+      '<div class="asset-side"><span class="status-pill ' + statusClass(asset.STATUS) + '">' + esc(value(asset.STATUS)) + '</span><span class="chev">›</span></div>' +
+    '</button>';
+  }
+
+  function bindCards(root){
+    (root || document).querySelectorAll('[data-asset-id]').forEach(el => {
+      el.addEventListener('click', function(){ openDetail(this.dataset.assetId); });
+    });
+    attachImageFallbacks(root);
+  }
+
+  function renderStats(){
+    const total = ASSETS.length;
+    const active = ASSETS.filter(a => ['ACTIVE','IN USE','AVAILABLE'].includes(normalize(a.STATUS))).length;
+    const attention = ASSETS.filter(a => {
+      const s = normalize(a.STATUS);
+      return s.includes('REPAIR') || s.includes('MAINTENANCE');
+    }).length;
+    const unassigned = ASSETS.filter(a => !String(a.ASSIGNED_TO || '').trim()).length;
+    document.getElementById('heroCount').textContent = total || '0';
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statActive').textContent = active;
+    document.getElementById('statAttention').textContent = attention;
+    document.getElementById('statUnassigned').textContent = unassigned;
+  }
+
+  function renderCategories(){
+    const counts = Object.create(null);
+    ASSETS.forEach(a => {
+      const t = String(a.DEVICE_TYPE || 'Other').trim() || 'Other';
+      counts[t] = (counts[t] || 0) + 1;
+    });
+    const cats = Object.keys(counts).sort((a,b) => counts[b]-counts[a] || a.localeCompare(b));
+    categoryRail.innerHTML = '<button class="category-chip ' + (currentCategory==='__ALL__' && !currentSpecialFilter ? 'active' : '') + '" data-category="__ALL__">ALL</button>' +
+      cats.map(c => '<button class="category-chip ' + (currentCategory===c && !currentSpecialFilter ? 'active' : '') + '" data-category="' + esc(c) + '">' + esc(c.toUpperCase()) + ' · ' + counts[c] + '</button>').join('');
+    categoryRail.querySelectorAll('[data-category]').forEach(btn => btn.addEventListener('click', function(){
+      currentSpecialFilter=''; currentCategory=this.dataset.category; renderHomeList(); renderCategories();
+    }));
+  }
+
+  function homeFilteredAssets(){
+    let items = ASSETS.slice();
+    if (currentSpecialFilter === '__UNASSIGNED__') {
+      items = items.filter(a => !String(a.ASSIGNED_TO || '').trim());
+    } else if (currentSpecialFilter === 'Active') {
+      items = items.filter(a => ['ACTIVE','IN USE','AVAILABLE'].includes(normalize(a.STATUS)));
+    } else if (currentSpecialFilter === 'Repair') {
+      items = items.filter(a => {
+        const s=normalize(a.STATUS); return s.includes('REPAIR') || s.includes('MAINTENANCE');
+      });
+    } else if (currentCategory !== '__ALL__') {
+      items = items.filter(a => String(a.DEVICE_TYPE || 'Other') === currentCategory);
+    }
+    return items;
+  }
+
+  function renderHomeList(){
+    const items = homeFilteredAssets();
+    let title='All Devices', subtitle='INVENTORY';
+    if (currentSpecialFilter === '__UNASSIGNED__') { title='Unassigned'; subtitle='NEEDS OWNER'; }
+    else if (currentSpecialFilter === 'Active') { title='Active Devices'; subtitle='STATUS FILTER'; }
+    else if (currentSpecialFilter === 'Repair') { title='Needs Attention'; subtitle='REPAIR / MAINTENANCE'; }
+    else if (currentCategory !== '__ALL__') { title=currentCategory; subtitle='CATEGORY'; }
+    document.getElementById('inventoryTitle').textContent=title;
+    document.getElementById('inventorySubtitle').textContent=subtitle;
+    document.getElementById('visibleCount').textContent=items.length;
+    assetList.classList.remove('skeleton-list');
+    assetList.innerHTML = items.length ? items.map(cardHtml).join('') :
+      '<div class="empty-state"><div class="empty-icon">⌁</div><h3>No devices here</h3><p>Choose another category or reset the filter.</p></div>';
+    bindCards(assetList);
+  }
+
+  function renderSearch(){
+    const q = normalize(searchInput.value);
+    const items = !q ? ASSETS.slice(0,30) : ASSETS.filter(a => normalize([
+      a.ASSET_ID,a.ASSET_TAG,a.DEVICE_TYPE,a.BRAND,a.MODEL,a.SERIAL,a.LIBIB,a.SERVICE_TAG,a.DEPARTMENT,a.ASSIGNED_TO,a.STATUS
+    ].join(' ')).includes(q));
+    searchResultCount.textContent = items.length + (items.length===1 ? ' result' : ' results');
+    searchResults.innerHTML = items.map(cardHtml).join('');
+    searchEmpty.classList.toggle('hidden', items.length !== 0);
+    bindCards(searchResults);
+  }
+
+  function applyAssets(assets, fromServer){
+    ASSETS = Array.isArray(assets) ? assets : [];
+    rebuildMap();
+    renderStats();
+    renderCategories();
+    renderHomeList();
+    renderSearch();
+    if (fromServer) {
+      saveCache();
+      lastSyncAt=Date.now();
+      syncBanner.classList.add('hidden');
+      setSync('connected','LIVE');
+      serverConnected=true;
+    }
+  }
+
+  document.querySelectorAll('[data-stat-filter]').forEach(btn => btn.addEventListener('click', function(){
+    const f=this.dataset.statFilter;
+    currentCategory='__ALL__';
+    currentSpecialFilter = f==='__ALL__' ? '' : f;
+    renderCategories(); renderHomeList();
+  }));
+
+  document.getElementById('clearFilterBtn').addEventListener('click', function(){
+    currentCategory='__ALL__'; currentSpecialFilter=''; renderCategories(); renderHomeList();
   });
 
-  // Keep navigation predictable inside the app shell.
-  window.addEventListener('hashchange', () => {
-    const routeName = (location.hash || '#home').slice(1);
-    route(routeName, false);
+  searchInput.addEventListener('input', renderSearch);
+  document.getElementById('clearSearchBtn').addEventListener('click', function(){
+    searchInput.value=''; renderSearch(); searchInput.focus();
   });
 
-  // Service worker: cache the shell so the app can launch instantly after first visit.
+  function safeDetailMerge(lite, detail){
+    return Object.assign({}, lite || {}, detail || {});
+  }
+
+  function setDetail(asset){
+    asset = asset || {};
+    document.getElementById('detailTopTag').textContent=value(asset.ASSET_TAG);
+    document.getElementById('detailType').textContent=value(asset.DEVICE_TYPE).toUpperCase();
+    document.getElementById('detailTag').textContent=value(asset.ASSET_TAG);
+    document.getElementById('detailDevice').textContent=[asset.BRAND,asset.MODEL].filter(Boolean).join(' ') || '—';
+    document.getElementById('detailStatus').textContent=value(asset.STATUS);
+    document.getElementById('detailAssigned').textContent=asset.ASSIGNED_TO || 'Unassigned';
+    document.getElementById('dAssetId').textContent=value(asset.ASSET_ID);
+    document.getElementById('dSerial').textContent=value(asset.SERIAL);
+    document.getElementById('dService').textContent=value(asset.SERVICE_TAG);
+    document.getElementById('dLibib').textContent=value(asset.LIBIB);
+    document.getElementById('dDepartment').textContent=value(asset.DEPARTMENT);
+    document.getElementById('dColor').textContent=value(asset.COLOR);
+    document.getElementById('dPurchase').textContent=value(asset.PURCHASE_DATE);
+    document.getElementById('dWarranty').textContent=value(asset.WARRANTY);
+    document.getElementById('dCost').textContent=value(asset.COST);
+    document.getElementById('dUpdated').textContent=value(asset.UPDATED);
+
+    const img=document.getElementById('detailPhoto');
+    const fb=document.getElementById('detailPhotoFallback');
+    const urls=imageCandidates(asset,1000);
+    img.hidden=true; fb.style.display='grid'; fb.textContent=String(asset.DEVICE_TYPE || 'IT').slice(0,10).toUpperCase();
+    if (urls.length) {
+      let idx=0;
+      img.onload=function(){img.hidden=false;fb.style.display='none';};
+      img.onerror=function(){
+        idx++;
+        if (idx<urls.length) img.src=urls[idx];
+        else {img.hidden=true;fb.style.display='grid';}
+      };
+      img.src=urls[0];
+    }
+  }
+
+  function openDetail(id){
+    currentDetailId=String(id || '');
+    const lite=assetMap[normalize(currentDetailId)] || {};
+    setDetail(lite);
+    route('detail', false);
+    try { history.replaceState({screen:'detail',id:currentDetailId},'', '#detail/' + encodeURIComponent(currentDetailId)); } catch(e) {}
+    if (bridgeReady) requestAsset(currentDetailId);
+  }
+
+  document.getElementById('detailBack').addEventListener('click', function(){
+    route('home');
+  });
+
+  function nextRequestId(prefix){
+    requestSeq += 1;
+    return prefix + '-' + requestSeq + '-' + Date.now().toString(36);
+  }
+
+  function postBridge(message){
+    if (!bridge.contentWindow) return;
+    bridge.contentWindow.postMessage(Object.assign({source:APP_SOURCE,token:TOKEN},message),'*');
+  }
+
+  function requestBootstrap(){
+    if (!bridgeReady) return;
+    setSync('syncing','SYNC');
+    postBridge({type:'bootstrap',requestId:nextRequestId('boot')});
+  }
+
+  function requestAsset(id){
+    if (!bridgeReady || !id) return;
+    const rid=nextRequestId('asset');
+    pendingDetail[rid]=String(id);
+    postBridge({type:'asset',assetId:String(id),requestId:rid});
+  }
+
+  function validBridgeOrigin(origin){
+    return origin === 'https://script.google.com' ||
+      /^https:\/\/[^/]*googleusercontent\.com$/.test(origin);
+  }
+
+  window.addEventListener('message', function(event){
+    const msg=event.data || {};
+    if (!validBridgeOrigin(event.origin)) return;
+    if (msg.source !== BRIDGE_SOURCE || msg.token !== TOKEN) return;
+    if (msg.type === 'ready') {
+      bridgeReady=true;
+      setSync('syncing','SYNC');
+      return;
+    }
+    if (msg.type === 'bootstrap') {
+      const p=msg.payload || {};
+      if (Array.isArray(p.assets)) {
+        applyAssets(p.assets,true);
+        showToast('Inventory synced');
+      }
+      return;
+    }
+    if (msg.type === 'asset') {
+      const detail=msg.payload;
+      if (detail && detail.ASSET_ID) {
+        const id=normalize(detail.ASSET_ID);
+        const merged=safeDetailMerge(assetMap[id],detail);
+        assetMap[id]=merged;
+        for (let i=0;i<ASSETS.length;i++) {
+          if (normalize(ASSETS[i].ASSET_ID)===id) { ASSETS[i]=merged; break; }
+        }
+        if (normalize(currentDetailId)===id) setDetail(merged);
+      }
+      if (msg.requestId) delete pendingDetail[msg.requestId];
+      return;
+    }
+    if (msg.type === 'error') {
+      setSync('error','ERROR');
+      serverConnected=false;
+      syncBanner.classList.remove('hidden');
+      const message=(msg.payload && msg.payload.message) || 'Backend connection failed';
+      document.getElementById('syncBannerTitle').textContent='Backend connection failed';
+      document.getElementById('syncBannerText').textContent=message;
+    }
+  });
+
+  function connectBridge(){
+    bridgeReady=false;
+    setSync('syncing','CONNECT');
+    const url=BACKEND_URL + '?bridge=1&token=' + encodeURIComponent(TOKEN) + '&t=' + Date.now();
+    bridge.src=url;
+  }
+
+  syncButton.addEventListener('click', function(){
+    if (bridgeReady) requestBootstrap();
+    else connectBridge();
+  });
+
+  openBackendBtn.addEventListener('click', function(){
+    window.open(BACKEND_URL,'_blank');
+  });
+
+  const cache=loadCache();
+  if (cache && cache.assets && cache.assets.length) {
+    applyAssets(cache.assets,false);
+    setSync('', 'CACHE');
+  } else {
+    document.getElementById('visibleCount').textContent='—';
+  }
+
+  setTimeout(() => splash.classList.add('hidden'), standalone() ? 480 : 650);
+  connectBridge();
+
+  setTimeout(function(){
+    if (!serverConnected) {
+      syncBanner.classList.remove('hidden');
+      document.getElementById('syncBannerTitle').textContent = cache && cache.assets && cache.assets.length ? 'Using saved inventory' : 'Backend needs connection';
+      document.getElementById('syncBannerText').textContent = cache && cache.assets && cache.assets.length
+        ? 'Saved data is visible. Tap Sync to refresh from Apps Script.'
+        : 'Open the backend once if sign-in is required, then return and tap Sync.';
+      if (!cache || !cache.assets || !cache.assets.length) setSync('error','OFFLINE');
+    }
+  },7000);
+
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
-    });
+    window.addEventListener('load',() => navigator.serviceWorker.register('./sw.js').catch(() => {}));
   }
 
-  setModeLabel();
-  route((location.hash || '#home').slice(1), false);
-
-  // Splash is deliberately brief: app shell appears immediately, no backend wait.
-  window.setTimeout(() => {
-    splash.classList.add('hidden');
-  }, standalone() ? 520 : 720);
+  const initial=(location.hash || '#home').slice(1);
+  if (initial.startsWith('detail/')) {
+    const id=decodeURIComponent(initial.slice(7));
+    setTimeout(() => openDetail(id),100);
+  } else {
+    route(['home','search','scan','add','labels'].includes(initial) ? initial : 'home',false);
+  }
 })();
