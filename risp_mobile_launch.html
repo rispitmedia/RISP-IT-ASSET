@@ -10,34 +10,76 @@
   <meta name="apple-mobile-web-app-title" content="RISP IT ASSET">
   <title>RISP IT ASSET</title>
 
-  <link rel="manifest" href="./risp_app_v652.webmanifest?v=652">
-  <link rel="icon" type="image/png" sizes="192x192" href="./risp_app_icon_v652_192.png?v=652">
-  <link rel="apple-touch-icon" sizes="180x180" href="./risp_touch_icon_v652_180.png?v=652">
-  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="./risp_touch_icon_v652_180.png?v=652">
+  <link rel="manifest" href="./risp_app_v653.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./risp_app_icon_v652_192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./risp_touch_icon_v652_180.png">
+  <link rel="apple-touch-icon-precomposed" sizes="180x180" href="./risp_touch_icon_v652_180.png">
 
   <style>
     *{box-sizing:border-box}
     html,body{margin:0;min-height:100%;background:#051326;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Arial,sans-serif}
     body{min-height:100dvh;display:grid;place-items:center;padding:28px}
-    .shell{text-align:center}
-    .icon{width:116px;height:116px;border-radius:27px;box-shadow:0 16px 50px rgba(0,93,255,.25);margin:0 auto 20px;display:block}
-    h1{font-size:22px;letter-spacing:.05em;margin:0;font-weight:800}
-    p{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#9fb2c9;margin:9px 0 0}
-    .bar{width:116px;height:3px;border-radius:999px;background:#102945;overflow:hidden;margin:25px auto 0}
-    .bar:after{content:"";display:block;width:44%;height:100%;background:#4ca4ff;border-radius:999px;animation:load 1s ease-in-out infinite alternate}
-    @keyframes load{from{transform:translateX(-20%)}to{transform:translateX(150%)}}
+    .shell{width:min(420px,100%);text-align:center}
+    .icon{width:128px;height:128px;border-radius:30px;box-shadow:0 18px 60px rgba(0,93,255,.28);margin:0 auto 22px;display:block}
+    h1{font-size:24px;letter-spacing:.055em;margin:0;font-weight:850}
+    .sub{font-size:12px;line-height:1.6;color:#a9bad0;margin:10px auto 0;max-width:330px}
+    .pill{display:inline-flex;align-items:center;gap:8px;margin-top:18px;padding:8px 12px;border:1px solid #294b72;border-radius:999px;color:#bcd6f5;font-size:11px;font-weight:700;letter-spacing:.08em}
+    .dot{width:8px;height:8px;border-radius:50%;background:#55f08a;box-shadow:0 0 12px #55f08a}
+    .actions{display:grid;gap:10px;margin-top:24px}
+    .btn{display:block;width:100%;border:0;border-radius:15px;padding:15px 18px;font:inherit;font-size:14px;font-weight:850;letter-spacing:.04em;text-decoration:none;cursor:pointer}
+    .primary{background:#fff;color:#071526}
+    .secondary{background:#0f2e52;color:#fff;border:1px solid #2f6092}
+    .hint{margin-top:18px;font-size:11px;line-height:1.55;color:#7f94ab}
+    .installed{display:none}
+    @media (display-mode: standalone) {
+      .install-only{display:none!important}
+      .installed{display:block}
+    }
   </style>
 </head>
 <body>
   <main class="shell">
-    <img class="icon" src="./risp_app_icon_v652_512.png?v=652" alt="RISP IT ASSET">
+    <img class="icon" src="./risp_app_icon_v652_512.png" alt="RISP IT ASSET">
     <h1>RISP IT ASSET</h1>
-    <p>Loading asset control</p>
-    <div class="bar"></div>
+
+    <div class="install-only">
+      <p class="sub">Install from this page so iPhone uses the RISP app icon instead of the default “R”.</p>
+      <div class="pill"><span class="dot"></span> READY TO INSTALL</div>
+
+      <div class="actions">
+        <a class="btn primary" href="https://script.google.com/a/risphuket.ac.th/macros/s/AKfycbzL7ydFfQCYTp5RC9oVB9-KloS4_t3o_83Hp5pz8sMbNdEMOZw6s30EPR4-JDV2YgUcZg/exec">OPEN RISP IT ASSET</a>
+        <button class="btn secondary" type="button" onclick="showInstallTip()">HOW TO ADD TO HOME SCREEN</button>
+      </div>
+
+      <p class="hint" id="tip">Chrome on iPhone: Share → Add to Home Screen → keep “Open as Web App” ON → Add.</p>
+    </div>
+
+    <div class="installed">
+      <p class="sub">Launching RISP IT ASSET…</p>
+    </div>
   </main>
+
   <script>
-    const APP_URL = 'https://script.google.com/a/risphuket.ac.th/macros/s/AKfycbzL7ydFfQCYTp5RC9oVB9-KloS4_t3o_83Hp5pz8sMbNdEMOZw6s30EPR4-JDV2YgUcZg/exec';
-    window.setTimeout(function(){ window.location.replace(APP_URL); }, 180);
+    const APP_URL = "https://script.google.com/a/risphuket.ac.th/macros/s/AKfycbzL7ydFfQCYTp5RC9oVB9-KloS4_t3o_83Hp5pz8sMbNdEMOZw6s30EPR4-JDV2YgUcZg/exec";
+
+    function isStandalone() {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    function showInstallTip() {
+      const el = document.getElementById('tip');
+      el.textContent = 'Use this GitHub launcher page itself: Share → Add to Home Screen → Open as Web App ON → Add.';
+    }
+
+    // IMPORTANT:
+    // Do NOT redirect in a normal browser tab. That would make iOS install
+    // script.google.com and produce the generic "R" icon again.
+    // Only redirect after this launcher has actually been installed/opened as a web app.
+    if (isStandalone()) {
+      window.setTimeout(function () {
+        window.location.replace(APP_URL);
+      }, 350);
+    }
   </script>
 </body>
 </html>
