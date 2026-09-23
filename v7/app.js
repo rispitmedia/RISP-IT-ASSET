@@ -2,8 +2,8 @@
 (function(){
   'use strict';
 
-  const CACHE_KEY = 'RISP_V7_STEP2_SAFE_CACHE_2';
-  const CONNECTION_STORAGE_KEY = 'RISP_V7_SECURE_CONNECTION_1';
+  const CACHE_KEY = 'RISP_V7_STEP2_SAFE_CACHE_22';
+  const CONNECTION_STORAGE_KEY = 'RISP_V7_SECURE_CONNECTION_22';
   const BRIDGE_SOURCE = 'RISP_V7_PUBLIC_BRIDGE';
   const APP_SOURCE = 'RISP_V7_APP';
 
@@ -99,11 +99,34 @@
   }));
 
   function normalizeApiUrl(raw){
-    let url = String(raw || '').trim();
-    if (!url) return '';
-    url = url.replace(/[?#].*$/,'').replace(/\/+$/,'');
-    if (!/^https:\/\/script\.google\.com\/(?:a\/[^/]+\/)?macros\/s\/[^/]+\/exec$/i.test(url)) return '';
-    return url;
+    let rawUrl = String(raw || '').trim();
+    if (!rawUrl) return '';
+
+    // Users may paste any of Google's current Apps Script web-app URL forms:
+    //   https://script.google.com/macros/s/.../exec
+    //   https://script.google.com/a/domain.tld/macros/s/.../exec
+    //   https://script.google.com/a/macros/domain.tld/s/.../exec
+    // Be strict about the host and /exec endpoint, but do not reject valid
+    // Google Workspace path variants.
+    if (!/^https?:\/\//i.test(rawUrl)) rawUrl = 'https://' + rawUrl;
+
+    try {
+      const u = new URL(rawUrl);
+      if (u.protocol !== 'https:') return '';
+      if (u.hostname.toLowerCase() !== 'script.google.com') return '';
+
+      let path = u.pathname.replace(/\/+$/,'');
+      if (!/\/exec$/i.test(path)) return '';
+      if (path.indexOf('/s/') === -1) return '';
+
+      // Remove query/hash so the app can append its own bridge parameters safely.
+      u.search = '';
+      u.hash = '';
+      u.pathname = path;
+      return u.toString().replace(/\/+$/,'');
+    } catch (err) {
+      return '';
+    }
   }
 
   function loadConnection(){
@@ -505,7 +528,19 @@
     const key=String(apiKeyInput.value || '').trim();
     if (!url) { showToast('Paste a valid Apps Script /exec URL'); return; }
     if (key.length < 24) { showToast('Connection key looks too short'); return; }
-    try { saveConnection(url,key); } catch(e) { showToast('Could not save connection'); return; }
+    try {
+      saveConnection(url,key);
+      const verify = loadConnection();
+      if (!verify) {
+        showToast('Saved, but URL could not be validated');
+        return;
+      }
+    } catch(e) {
+      showToast('Could not save connection');
+      return;
+    }
+    setSync('syncing','CONNECT');
+    showToast('API paired — connecting…');
     closeConnectionSheet();
     connectBridge();
   });
