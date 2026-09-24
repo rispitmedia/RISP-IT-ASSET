@@ -1,6 +1,6 @@
-const CACHE_NAME='risp-it-asset-v7-5-2-analytics-money-pin';
+const CACHE_NAME='risp-it-asset-v7-5-3-qr-integrity';
 const CORE=[
-  './','./index.html','./styles.css?v=752','./app.js?v=752','./manifest.webmanifest?v=752',
+  './','./index.html','./styles.css?v=753','./app.js?v=753','./manifest.webmanifest?v=753',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'
 ];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
