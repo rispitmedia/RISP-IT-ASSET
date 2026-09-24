@@ -1,6 +1,6 @@
-const CACHE_NAME='risp-it-asset-v7-step3-2-sync-speed-1';
+const CACHE_NAME='risp-it-asset-v7-3-1-worldclass-1';
 const CORE=[
-  './','./index.html','./styles.css?v=742','./app.js?v=742','./manifest.webmanifest?v=742',
+  './','./index.html','./styles.css?v=731','./app.js?v=731','./manifest.webmanifest?v=731',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'
 ];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
