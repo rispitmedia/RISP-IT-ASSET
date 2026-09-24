@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="RISP IT ASSET">
   <title>RISP IT ASSET</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=731">
+  <link rel="manifest" href="./manifest.webmanifest?v=732">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=731">
+  <link rel="stylesheet" href="./styles.css?v=732">
 </head>
 <body>
   <div class="splash" id="splash">
@@ -39,10 +39,13 @@
         </span>
       </button>
 
-      <button class="sync-chip" id="syncButton" type="button">
-        <span class="sync-dot" id="syncDot"></span>
-        <span id="syncText">CONNECT</span>
-      </button>
+      <div class="header-controls">
+        <button class="theme-chip" id="appThemeBtn" type="button" aria-label="Toggle theme">☀</button>
+        <button class="sync-chip" id="syncButton" type="button">
+          <span class="sync-dot" id="syncDot"></span>
+          <span id="syncText">CONNECT</span>
+        </button>
+      </div>
     </header>
 
     <main class="viewport">
@@ -180,8 +183,8 @@
         </div>
 
         <div class="safe-note private-note">
-          <span>🔐</span><div><b>PRIVATE CREDENTIALS</b><p>Credentials stay outside the public PWA. Open the Google-authenticated Admin Web when you need passwords, Product Keys or account details.</p></div>
-          <button class="private-admin-button" id="openPrivateCredentialsBtn" type="button">OPEN SECURE ADMIN ↗</button>
+          <span>🔐</span><div><b>PRIVATE CREDENTIALS</b><p>Protected by the Super Admin unlock. Credentials are loaded only on demand and are never saved to the app cache.</p></div>
+          <button class="private-admin-button" id="openPrivateCredentialsBtn" type="button">VIEW CREDENTIALS</button>
         </div>
         <button class="danger-link" id="deleteAssetBtn" type="button">DELETE DEVICE</button>
         <div class="bottom-spacer"></div>
@@ -234,8 +237,8 @@
         <form class="asset-form" id="addAssetForm">
           <div class="form-grid" id="addFormFields"></div>
           <div class="locked-credential-card">
-            <div><small>PRIVATE CREDENTIALS</small><b>Microsoft • Email • iCloud</b><p>Microsoft Username/Password, Email/Email Password and iCloud/iCloud Password are stored only in the private Admin Web.</p></div>
-            <button type="button" class="open-admin-from-form" data-open-secure-admin>OPEN SECURE ADMIN ↗</button>
+            <div><small>PRIVATE CREDENTIALS</small><b>Microsoft • Email • iCloud</b><p>Save the device first, then open Device Detail → Private Credentials. No Google sign-in redirect is required.</p></div>
+            <button type="button" class="open-admin-from-form" data-private-help>HOW IT WORKS</button>
           </div>
           <div class="form-photo-card">
             <div><small>DEVICE PHOTO</small><b>Optional photo</b><p>Choose an existing photo from your phone or take a new one. The app compresses it before upload.</p></div>
@@ -259,8 +262,8 @@
         <form class="asset-form" id="editAssetForm">
           <div class="form-grid" id="editFormFields"></div>
           <div class="locked-credential-card">
-            <div><small>PRIVATE CREDENTIALS</small><b>Microsoft • Email • iCloud</b><p>Edit Microsoft Username/Password, Email/Email Password and iCloud/iCloud Password in the Google-authenticated Admin Web.</p></div>
-            <button type="button" class="open-admin-from-form" data-open-secure-admin>OPEN SECURE ADMIN ↗</button>
+            <div><small>PRIVATE CREDENTIALS</small><b>Microsoft • Email • iCloud</b><p>Private account details are available directly from Device Detail after Super Admin unlock.</p></div>
+            <button type="button" class="open-admin-from-form" data-private-help>VIEW FROM DETAIL</button>
           </div>
           <div class="form-photo-card edit-photo-card">
             <div><small>DEVICE PHOTO</small><b>Replace photo with Save Changes</b><p>Select from Photos or take a new picture.</p></div>
@@ -286,7 +289,8 @@
         <div class="more-card">
           <button id="moreSyncBtn" type="button"><span class="more-icon">↻</span><div><b>Sync inventory</b><small>Pull fresh data from ASSET_DATABASE</small></div><i>›</i></button>
           <button id="moreConnectionBtn" type="button"><span class="more-icon">⚡</span><div><b>V7 API connection</b><small>Deployment URL and connection key</small></div><i>›</i></button>
-          <button id="openAdminWebBtn" type="button"><span class="more-icon">⌘</span><div><b>Open Admin Web</b><small>Full legacy v6 management + QR Label Studio</small></div><i>↗</i></button>
+          <button id="moreThemeBtn" type="button"><span class="more-icon">◐</span><div><b>Appearance</b><small id="themeModeLabel">Dark theme</small></div><i>›</i></button>
+          <button id="openAdminWebBtn" type="button"><span class="more-icon">⌘</span><div><b>Open Admin Web</b><small>Private Admin + QR Label Studio</small></div><i>↗</i></button>
         </div>
         <div class="system-card">
           <div><small>APP</small><b>RISP IT ASSET V7</b></div>
@@ -295,7 +299,7 @@
           <div><small>ENGINEERED</small><b>NEWVANA</b></div>
         </div>
         <div class="safe-note">
-          <span>🛡️</span><div><b>SAFE-FIELD WRITE BRIDGE</b><p>V7 can manage normal asset data, status and photos. Passwords, Product Keys, Microsoft, Email and iCloud credentials remain available only in the private Admin Web.</p></div>
+          <span>🛡️</span><div><b>SPLIT-SECURITY BRIDGE</b><p>Normal asset data stays on the fast V7 bridge. Private credentials are fetched only after Super Admin proof and are never saved in the offline inventory cache.</p></div>
         </div>
         <div class="bottom-spacer"></div>
       </section>
@@ -327,7 +331,7 @@
       <p class="connect-copy">The API URL and connection key are saved only on this device. Updating the app does not normally require pairing again.</p>
       <label class="connect-field"><span>V7 API DEPLOYMENT URL</span><input id="apiUrlInput" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec"></label>
       <label class="connect-field"><span>CONNECTION KEY</span><div class="key-field"><input id="apiKeyInput" type="password" autocomplete="off" placeholder="Paste your connection key"><button id="toggleKeyBtn" type="button">SHOW</button></div></label>
-      <div class="connect-note"><b>FULL CONTROL • SAFE FIELDS</b><p>Normal inventory fields can be written. Credential fields are blocked server-side.</p></div>
+      <div class="connect-note"><b>FULL CONTROL • SPLIT SECURITY</b><p>Normal inventory uses the standard bridge. Private credentials require a separate short-lived Super Admin unlock.</p></div>
       <div class="connect-actions"><button class="sheet-secondary" id="closeConnectionBtn" type="button">CANCEL</button><button class="sheet-primary" id="saveConnectionBtn" type="button">SAVE & CONNECT</button></div>
       <button class="disconnect-link" id="disconnectBtn" type="button">Forget saved connection</button>
     </div>
@@ -365,8 +369,25 @@
     </div>
   </div>
 
+
+  <div class="sheet-backdrop" id="credentialSheet" aria-hidden="true">
+    <div class="sheet credential-sheet">
+      <div class="grabber"></div>
+      <div class="connect-head"><div class="connect-icon">🔐</div><div><small>SUPER ADMIN</small><h2>Private credentials</h2></div></div>
+      <p class="connect-copy" id="credentialSheetCopy">Enter your Super Admin PIN once. The unlocked session expires automatically and is not written to local storage.</p>
+      <div id="credentialUnlockPane">
+        <label class="connect-field"><span>SUPER ADMIN PIN</span><div class="key-field"><input id="credentialPinInput" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="8-digit PIN"><button id="toggleCredentialPinBtn" type="button">SHOW</button></div></label>
+        <div class="connect-actions"><button class="sheet-secondary" id="closeCredentialBtn" type="button">CANCEL</button><button class="sheet-primary" id="unlockCredentialBtn" type="button">UNLOCK</button></div>
+      </div>
+      <div id="credentialDataPane" hidden>
+        <div class="credential-grid" id="credentialGrid"></div>
+        <div class="connect-actions"><button class="sheet-secondary" id="lockCredentialBtn" type="button">LOCK</button><button class="sheet-primary" id="closeCredentialDataBtn" type="button">DONE</button></div>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-  <script src="./app.js?v=731"></script>
+  <script src="./app.js?v=732"></script>
 </body>
 </html>
