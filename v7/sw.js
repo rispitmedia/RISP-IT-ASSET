@@ -1,4 +1,4 @@
-const CACHE_NAME='risp-it-asset-v7-5-7-portfolio-redesign';
+const CACHE_NAME='risp-it-asset-v7-5-8-portfolio-switch-fix';
 const CORE=[
   './','./index.html','./styles.css?v=755','./app.js?v=755','./manifest.webmanifest?v=755',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'
