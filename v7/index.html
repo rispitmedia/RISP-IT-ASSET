@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="RISP IT ASSET">
   <title>RISP IT ASSET</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=753">
+  <link rel="manifest" href="./manifest.webmanifest?v=754">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=753">
+  <link rel="stylesheet" href="./styles.css?v=754">
 </head>
 <body>
   <div class="splash" id="splash">
@@ -205,11 +205,13 @@
           <div class="scanner-corners"><i></i><i></i><i></i><i></i></div>
           <div class="scanner-line" id="scannerLine"></div>
           <div class="scanner-mark" id="scannerMark">QR</div>
-          <div class="scanner-state" id="scannerState">CAMERA READY</div>
+          <div class="scanner-state" id="scannerState">SMART SCAN • READY</div>
+          <div class="scanner-tech"><span>WORKER ENGINE</span><span>HI-RES</span><span>AUTOFOCUS</span></div>
         </div>
         <div class="scan-actions">
           <button class="primary-button" id="startCameraBtn" type="button">START CAMERA</button>
           <label class="secondary-button file-button">UPLOAD QR<input id="qrImageInput" type="file" accept="image/*"></label>
+          <button class="secondary-button scanner-flash" id="scannerFlashBtn" type="button" hidden>FLASH</button>
         </div>
         <div class="manual-scan">
           <input id="manualScanInput" type="text" placeholder="Libib / Asset Tag / Serial">
@@ -404,8 +406,9 @@
   </div>
 
   <div class="toast" id="toast"></div>
+  <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.legacy.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script src="./app.js?v=753"></script>
+  <script src="./app.js?v=754"></script>
 </body>
 </html>
