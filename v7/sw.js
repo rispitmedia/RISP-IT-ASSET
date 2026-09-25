@@ -1,6 +1,6 @@
-const CACHE_NAME='risp-it-asset-v7-5-4-app-polish-smart-scan';
+const CACHE_NAME='risp-it-asset-v7-5-5-final-polish';
 const CORE=[
-  './','./index.html','./styles.css?v=754','./app.js?v=754','./manifest.webmanifest?v=754',
+  './','./index.html','./styles.css?v=755','./app.js?v=755','./manifest.webmanifest?v=755',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'
 ];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
