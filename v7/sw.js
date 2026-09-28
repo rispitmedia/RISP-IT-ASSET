@@ -1,10 +1,10 @@
-const CACHE_NAME='risp-it-asset-v7-5-8-portfolio-switch-fix';
+const CACHE_NAME='risp-it-asset-v7-6-0-scan-photo';
 const CORE=[
-  './','./index.html','./styles.css?v=755','./app.js?v=755','./manifest.webmanifest?v=755',
+  './','./index.html','./styles.css?v=760','./app.js?v=760','./photo-tools.js?v=760','./manifest.webmanifest?v=760',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'
 ];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
-self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('risp-it-asset-')&&k!==CACHE_NAME).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',event=>{
   const req=event.request;if(req.method!=='GET')return;const url=new URL(req.url);if(url.origin!==self.location.origin)return;
   if(req.mode==='navigate'){

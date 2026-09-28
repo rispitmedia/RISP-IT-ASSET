@@ -1,13 +1,13 @@
 (function(){
   'use strict';
 
-  const CACHE_KEY='RISP_V7_WORLDCLASS_CACHE_758';
+  const CACHE_KEY='RISP_V7_WORLDCLASS_CACHE_760';
   const CONNECTION_STORAGE_KEY='RISP_V7_SECURE_CONNECTION_23';
   const THEME_STORAGE_KEY='RISP_V7_THEME_V1';
   const CREDENTIAL_TOKEN_SESSION_KEY='RISP_V7_CREDENTIAL_TOKEN_V1';
   const LEGACY_ADMIN_URL='https://script.google.com/a/macros/risphuket.ac.th/s/AKfycbwNwoDgFIomyWJQhQ5WXFX0b87U7YPCdY2r5QSoY_AUm0cvv6r1055dAzRv2TpGWwgrFQ/exec';
   const DEVICE_TYPES=['Laptop','Desktop PC','MacBook','Mac mini','iMac','Tablet','iPad','Monitor','Printer','Projector','Network Equipment','Server','Phone','Other'];
-  const DEPARTMENT_OPTIONS=['IT','Staff','Teacher','IA & Specialist','Other'];
+  const DEPARTMENT_OPTIONS=['IT','Staff','Teacher','Student','IA & Specialist','Other'];
   const STATUSES=['Active','Inactive','In Use','Available','Repair','Maintenance','Storage','Retired','Lost','Other'];
   const BRAND_OPTIONS_BY_TYPE={
     'Laptop':['ASUS','Acer','Dell','HP','Lenovo','Apple','MSI'],
@@ -89,6 +89,35 @@
   let credentialUnlockedUntil=0;
   const protectedPhotoCache=new Map();
 
+  // V7.6.0: modal results and QR audit, kept inside the app closure.
+  let scanRequest=0,scanResolving=false,cameraStarting=null,cameraEpoch=0,cameraWanted=false;
+  const scanBackdrop=document.createElement('div');
+  scanBackdrop.id='scanResultBackdrop';scanBackdrop.className='sheet-backdrop scan-result-backdrop';scanBackdrop.setAttribute('aria-hidden','true');
+  scanBackdrop.innerHTML='<section class="sheet scan-result-sheet" role="dialog" aria-modal="true" aria-label="QR scan result"><button class="scan-result-close" type="button" aria-label="Close scan result">×</button></section>';
+  scanBackdrop.firstChild.appendChild($('scanResult'));document.body.appendChild(scanBackdrop);
+  const scanClose=scanBackdrop.querySelector('button');
+  function dismissScanResult(restart){scanRequest++;scanResolving=false;closeSheet(scanBackdrop);if(restart&&currentRoute==='scan')startCamera();}
+  scanClose.onclick=()=>dismissScanResult(true);
+  scanBackdrop.addEventListener('click',e=>{if(e.target===scanBackdrop)dismissScanResult(true)});
+  const again=document.createElement('button');again.type='button';again.textContent='SCAN AGAIN';again.onclick=()=>dismissScanResult(true);$('scanResult').appendChild(again);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&scanBackdrop.classList.contains('open'))dismissScanResult(true)});
+  let photoJobs={add:0,edit:0,detail:0};
+  const qrAuditButton=document.createElement('button');qrAuditButton.type='button';qrAuditButton.className='secondary-button qr-audit-button';qrAuditButton.textContent='QR ISSUES';
+  document.querySelector('[data-screen="more"]').prepend(qrAuditButton);
+  const auditBackdrop=document.createElement('div');auditBackdrop.className='sheet-backdrop qr-audit-backdrop';auditBackdrop.setAttribute('aria-hidden','true');
+  auditBackdrop.innerHTML='<section class="sheet qr-audit-sheet" role="dialog" aria-modal="true" aria-label="QR issues"><div class="audit-heading"><h2>QR Issues</h2><button type="button" aria-label="Close QR issues">×</button></div><p class="audit-summary" aria-live="polite"></p><div class="audit-list"></div></section>';
+  document.body.appendChild(auditBackdrop);auditBackdrop.querySelector('button').onclick=()=>closeSheet(auditBackdrop);
+  auditBackdrop.addEventListener('click',e=>{if(e.target===auditBackdrop)closeSheet(auditBackdrop)});
+  qrAuditButton.onclick=async()=>{
+    openSheet(auditBackdrop);const summary=auditBackdrop.querySelector('.audit-summary'),list=auditBackdrop.querySelector('.audit-list');summary.textContent='Checking live inventory…';list.replaceChildren();
+    try{
+      const r=await jsonpRequest('qr_health',{},30000);summary.textContent=(r.criticalAssets||0)+' critical • '+(r.warningAssets||0)+' warning • '+(r.total||0)+' checked';
+      const items=Array.isArray(r.items)?r.items:[];
+      list.innerHTML=items.length?items.map(a=>'<button type="button" class="audit-row" data-id="'+esc(a.assetId)+'" title="'+esc(a.issues)+'"><b>'+esc(a.assetTag||a.assetId||'Missing Asset ID')+'</b><span>'+esc([a.deviceType,a.brand,a.model].filter(Boolean).join(' • '))+'</span><strong>'+esc(a.status)+'</strong><p>'+esc(a.issues||'Identifier needs review')+'</p></button>').join(''):'<p>All QR identities verified.</p>';
+      list.querySelectorAll('[data-id]').forEach(b=>{b.onclick=()=>{if(!b.dataset.id){showToast('This row needs an Asset ID in the database.');return;}closeSheet(auditBackdrop);openDetail(b.dataset.id)}});
+    }catch(e){summary.textContent='Could not load QR issues: '+e.message;}
+  };
+
   function standalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}
   function syncAppHeight(){const h=Math.max(320,Math.round(window.innerHeight||document.documentElement.clientHeight||screen.height||800));document.documentElement.style.setProperty('--app-height',h+'px')}
   function applyTheme(theme,persist){const next=theme==='light'?'light':'dark';document.documentElement.setAttribute('data-theme',next);const btn=$('appThemeBtn'),lbl=$('themeModeLabel');if(btn)btn.textContent=next==='dark'?'☀':'☾';if(lbl)lbl.textContent=next==='dark'?'Dark theme • tap for Light':'Light theme • tap for Dark';const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute('content',next==='dark'?'#06101c':'#f3f2ed');if(persist!==false){try{localStorage.setItem(THEME_STORAGE_KEY,next)}catch(e){}}}
@@ -109,7 +138,7 @@
 
   function route(name,push){
     const target=document.querySelector('[data-screen="'+name+'"]');if(!target)return;
-    if(currentRoute==='scan'&&name!=='scan')stopCamera();
+    if(currentRoute==='scan'&&name!=='scan'){scanRequest++;scanResolving=false;closeSheet(scanBackdrop);stopCamera();}
     if(name!==currentRoute){previousRoute=currentRoute;currentRoute=name}
     screens.forEach(el=>el.classList.toggle('active',el===target));
     tabs.forEach(el=>el.classList.toggle('active',['detail','edit'].indexOf(name)===-1&&el.dataset.route===name));
@@ -244,7 +273,12 @@
   function resetAddPhoto(){addPhotoFile=null;['addPhotoLibraryInput','addPhotoCameraInput'].forEach(id=>{const e=$(id);if(e)e.value=''});$('addPhotoPreview').hidden=true;$('addPhotoPreview').removeAttribute('src')}
   function prepareAddForm(){if(!$('addFormFields').children.length){$('addFormFields').innerHTML=renderFormFields('add',{DEVICE_TYPE:'Laptop',STATUS:'Active'});bindCustomFields('add')}if(pendingScanForAdd){$('add_LIBIB').value=pendingScanForAdd;pendingScanForAdd='';showToast('Scanned code added to Libib / QR')}}
   prepareAddForm();
-  function usePhotoFile(file,mode){if(!file)return;const preview=$(mode==='edit'?'editPhotoPreview':'addPhotoPreview');if(mode==='edit')editPhotoFile=file;else addPhotoFile=file;preview.src=URL.createObjectURL(file);preview.hidden=false;showToast('Photo ready')}
+  async function usePhotoFile(file,mode){
+    if(!file)return;const job=++photoJobs[mode],preview=$(mode==='edit'?'editPhotoPreview':'addPhotoPreview'),button=$(mode==='edit'?'editSaveBtn':'addSaveBtn');
+    if(mode==='edit')editPhotoFile=null;else addPhotoFile=null;preview.hidden=true;button.disabled=true;
+    try{const d=await compressImage(file);if(job!==photoJobs[mode])return;if(mode==='edit')editPhotoFile=file;else addPhotoFile=file;preview.src=d.dataUrl;preview.hidden=false;showToast(d.backgroundRemoved?'Background removed • photo ready':'Original photo ready');}
+    catch(e){showToast(e.message||'Could not prepare photo');}finally{if(job===photoJobs[mode])button.disabled=false;}
+  }
   ['addPhotoLibraryInput','addPhotoCameraInput'].forEach(id=>$(id).addEventListener('change',function(){usePhotoFile(this.files&&this.files[0],'add')}));
   $('addScanCodeBtn').addEventListener('click',()=>{stopCamera();resetScannerUi(true);route('scan');showToast('Scan a code for the new device')});
   async function confirmCreatedByTag(tag){for(let i=0;i<5;i++){await syncInventory(false);const a=ASSETS.find(x=>normalize(x.ASSET_TAG)===normalize(tag));if(a)return a;await sleep(220+i*140)}return null}
@@ -267,12 +301,16 @@
 
   function resetPhotoSheet(){detailPhotoData=null;['detailPhotoLibraryInput','detailPhotoCameraInput'].forEach(id=>{const e=$(id);if(e)e.value=''});$('photoPreview').hidden=true;$('photoPreviewEmpty').style.display='';$('savePhotoBtn').disabled=true}
   $('changePhotoBtn').addEventListener('click',()=>{const a=assetMap[normalize(currentDetailId)];$('photoAssetLabel').textContent=a?value(a.ASSET_TAG):'Device photo';resetPhotoSheet();openSheet(photoSheet)});$('closePhotoBtn').addEventListener('click',()=>closeSheet(photoSheet));photoSheet.addEventListener('click',e=>{if(e.target===photoSheet)closeSheet(photoSheet)});
-  async function prepareDetailPhoto(file){if(!file)return;try{showToast('Preparing photo…');detailPhotoData=await compressImage(file,1200,.76);$('photoPreview').src=detailPhotoData.dataUrl;$('photoPreview').hidden=false;$('photoPreviewEmpty').style.display='none';$('savePhotoBtn').disabled=false;showToast('Photo ready')}catch(e){showToast('Could not read photo')}}
+  async function prepareDetailPhoto(file){
+    if(!file)return;const job=++photoJobs.detail;detailPhotoData=null;$('savePhotoBtn').disabled=true;
+    try{const d=await compressImage(file);if(job!==photoJobs.detail)return;detailPhotoData=d;$('photoPreview').src=d.dataUrl;$('photoPreview').hidden=false;$('photoPreviewEmpty').style.display='none';$('savePhotoBtn').disabled=false;showToast(d.backgroundRemoved?'Background removed • Save photo':'Original photo ready • Save photo');}
+    catch(e){showToast(e.message||'Could not prepare photo');}
+  }
   ['detailPhotoLibraryInput','detailPhotoCameraInput'].forEach(id=>$(id).addEventListener('change',function(){prepareDetailPhoto(this.files&&this.files[0])}));
   async function waitForPhotoChange(assetId,before){for(let i=0;i<6;i++){const a=await fetchAsset(assetId);if(String(a.PHOTO_FILE_ID||'')&&String(a.PHOTO_FILE_ID||'')!==String(before||''))return a;await sleep(240+i*100)}throw new Error('Photo upload was not confirmed.')}
   $('savePhotoBtn').addEventListener('click',async()=>{if(!detailPhotoData||!currentDetailId)return;const btn=$('savePhotoBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='UPLOADING…';try{await writeRequest('photo',{id:currentDetailId,dataUrl:detailPhotoData.dataUrl,fileName:detailPhotoData.fileName,mimeType:detailPhotoData.mimeType});closeSheet(photoSheet);showToast('Photo saved ✓');quietBackgroundSync(550)}catch(e){showToast(e.message||'Could not upload photo',3400)}finally{btn.disabled=false;btn.textContent=old}});
   async function uploadPhotoForAsset(assetId,file){const d=await compressImage(file,1200,.76);await writeRequest('photo',{id:assetId,dataUrl:d.dataUrl,fileName:d.fileName,mimeType:d.mimeType});quietBackgroundSync(420);return assetMap[normalize(assetId)]||{ASSET_ID:assetId}}
-  function compressImage(file,maxSide,quality){return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onerror=reject;fr.onload=()=>{const img=new Image();img.onerror=reject;img.onload=()=>{let w=img.naturalWidth||img.width,h=img.naturalHeight||img.height;const scale=Math.min(1,maxSide/Math.max(w,h));w=Math.max(1,Math.round(w*scale));h=Math.max(1,Math.round(h*scale));const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d',{alpha:false});ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);const dataUrl=c.toDataURL('image/jpeg',quality);resolve({dataUrl,fileName:'asset_'+Date.now()+'.jpg',mimeType:'image/jpeg'})};img.src=fr.result};fr.readAsDataURL(file)})}
+  function compressImage(file){return window.RISPPhoto.prepare(file)}
 
   $('deleteAssetBtn').addEventListener('click',()=>{const a=assetMap[normalize(currentDetailId)];$('deleteAssetLabel').textContent=a?value(a.ASSET_TAG)+' • '+value(a.ASSET_ID):value(currentDetailId);openSheet(deleteSheet)});$('cancelDeleteBtn').addEventListener('click',()=>closeSheet(deleteSheet));deleteSheet.addEventListener('click',e=>{if(e.target===deleteSheet)closeSheet(deleteSheet)});$('confirmDeleteBtn').addEventListener('click',async()=>{const id=currentDetailId,btn=$('confirmDeleteBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='DELETING…';try{await writeRequest('delete',{id});ASSETS=ASSETS.filter(a=>normalize(a.ASSET_ID)!==normalize(id));delete assetMap[normalize(id)];saveCache();renderHome();renderSearch();closeSheet(deleteSheet);currentDetailId='';showToast('Device deleted ✓');route('home');quietBackgroundSync(450)}catch(e){showToast(e.message||'Could not delete device',3200)}finally{btn.disabled=false;btn.textContent=old}});
 
@@ -292,31 +330,63 @@
      Fallback: direct BarcodeDetector + jsQR loop if the CDN engine is unavailable. */
   function resetScannerUi(clear){if(clear){scannedAssetId='';scannedRaw='';$('scanResult').classList.add('hidden');$('scanMatch').classList.add('hidden');$('scanMatchPhoto').innerHTML='<span>IT</span>'}$('scannerState').textContent=scannerStream?'SMART SCAN • LIVE':'SMART SCAN • READY';$('scannerMark').style.opacity=scannerStream?'.09':'1'}
   function smartScanRegion(video){
-    const vw=Math.max(1,video.videoWidth||1920),vh=Math.max(1,video.videoHeight||1080),side=Math.round(Math.min(vw,vh)*.72),x=Math.round((vw-side)/2),y=Math.round((vh-side)/2),decode=Math.min(1280,Math.max(900,side));
-    return{x,y,width:side,height:side,downScaledWidth:decode,downScaledHeight:decode};
+    const width=Math.max(1,video.videoWidth||1280),height=Math.max(1,video.videoHeight||720),scale=Math.min(1,960/Math.max(width,height));
+    return {x:0,y:0,width,height,downScaledWidth:Math.max(1,Math.round(width*scale)),downScaledHeight:Math.max(1,Math.round(height*scale))};
   }
   function clearScannerWatchdog(){if(scannerWatchdogTimer){clearInterval(scannerWatchdogTimer);scannerWatchdogTimer=null}}
-  function armScannerWatchdog(){clearScannerWatchdog();scannerHeartbeat=Date.now();scannerWatchdogTimer=setInterval(async()=>{if(currentRoute!=='scan'||scannerBusy)return;const v=$('scannerVideo'),track=v&&v.srcObject&&v.srcObject.getVideoTracks&&v.srcObject.getVideoTracks()[0];const stale=!v||v.readyState<2||!track||track.readyState!=='live';if(stale){await stopCamera();setTimeout(()=>{if(currentRoute==='scan')startCamera().catch(()=>{})},180)}},2200)}
+  function armScannerWatchdog(){clearScannerWatchdog();scannerHeartbeat=Date.now();scannerWatchdogTimer=setInterval(async()=>{if(currentRoute!=='scan'||scannerBusy||scanResolving||scanBackdrop.classList.contains('open'))return;const v=$('scannerVideo'),track=v&&v.srcObject&&v.srcObject.getVideoTracks&&v.srcObject.getVideoTracks()[0];const stale=!v||v.readyState<2||!track||track.readyState!=='live';if(stale){await stopCamera();setTimeout(()=>{if(currentRoute==='scan')startCamera().catch(()=>{})},180)}},2200)}
   async function tuneCameraTrack(){try{const v=$('scannerVideo'),stream=v&&v.srcObject;if(!stream)return;scannerStream=stream;const track=stream.getVideoTracks&&stream.getVideoTracks()[0];if(!track)return;const caps=track.getCapabilities?track.getCapabilities():{},advanced=[];if(Array.isArray(caps.focusMode)&&caps.focusMode.includes('continuous'))advanced.push({focusMode:'continuous'});if(Array.isArray(caps.exposureMode)&&caps.exposureMode.includes('continuous'))advanced.push({exposureMode:'continuous'});if(Array.isArray(caps.whiteBalanceMode)&&caps.whiteBalanceMode.includes('continuous'))advanced.push({whiteBalanceMode:'continuous'});if(caps.zoom&&Number(caps.zoom.min)<=1&&Number(caps.zoom.max)>1)advanced.push({zoom:Math.min(1.18,Number(caps.zoom.max))});const constraints={width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30,max:60}};if(advanced.length)constraints.advanced=advanced;await track.applyConstraints(constraints).catch(()=>{});if(window.QrScanner&&smartQrScanner&&typeof smartQrScanner.hasFlash==='function'){scannerFlashAvailable=await smartQrScanner.hasFlash().catch(()=>false);const flash=$('scannerFlashBtn');if(flash)flash.hidden=!scannerFlashAvailable}}catch(e){}}
   async function startCamera(){
-    if(scannerLoopActive||scannerStream)return;primeAudio();const v=$('scannerVideo');$('scannerState').textContent='STARTING QR CAMERA…';
-    try{
-      if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('Camera API unavailable');
-      if(window.QrScanner){
-        if(smartQrScanner){try{smartQrScanner.destroy()}catch(e){}smartQrScanner=null}
-        smartQrScanner=new QrScanner(v,result=>{const raw=String(result&&result.data!=null?result.data:result||'').trim();scannerHeartbeat=Date.now();if(!raw||scannerBusy)return;scannerBusy=true;Promise.resolve(stopCamera()).finally(()=>Promise.resolve(handleScanValue(raw,'camera')).finally(()=>{scannerBusy=false}))},{preferredCamera:'environment',maxScansPerSecond:30,calculateScanRegion:smartScanRegion,highlightScanRegion:false,highlightCodeOutline:false,returnDetailedScanResult:true,onDecodeError:()=>{scannerHeartbeat=Date.now()}});
-        try{smartQrScanner.setInversionMode('both')}catch(e){}
-        scannerUsingSmartEngine=true;scannerLoopActive=true;await smartQrScanner.start();scannerStream=v.srcObject;await tuneCameraTrack();resetScannerUi(false);$('startCameraBtn').textContent='RESTART CAMERA';$('scannerState').textContent='QR LOCK • AUTOFOCUS • LIVE';armScannerWatchdog();return;
+    cameraWanted=true;
+    if(currentRoute!=='scan'||scanBackdrop.classList.contains('open')||scanResolving||document.visibilityState==='hidden')return;
+    if(cameraStarting)return cameraStarting;
+    if(scannerStream||scannerLoopActive)return;
+    const epoch=++cameraEpoch,v=$('scannerVideo');primeAudio();$('scannerState').textContent='STARTING CAMERA…';
+    const valid=()=>epoch===cameraEpoch&&currentRoute==='scan'&&cameraWanted&&!scanBackdrop.classList.contains('open');
+    cameraStarting=(async()=>{
+      try{
+        if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('Use HTTPS and allow camera access.');
+        if(window.QrScanner){
+          const engine=new QrScanner(v,result=>{const raw=String(result&&result.data!=null?result.data:result||'').trim();if(raw&&!scannerBusy&&!scanResolving){scannerBusy=true;handleScanValue(raw,'camera').finally(()=>{scannerBusy=false})}},{preferredCamera:'environment',maxScansPerSecond:15,calculateScanRegion:smartScanRegion,highlightScanRegion:false,highlightCodeOutline:false,returnDetailedScanResult:true});
+          smartQrScanner=engine;try{engine.setInversionMode('both')}catch(e){}
+          try{await engine.start();if(!valid()){engine.destroy();return;}scannerStream=v.srcObject;scannerUsingSmartEngine=true;scannerLoopActive=true;}
+          catch(e){engine.destroy();if(smartQrScanner===engine)smartQrScanner=null;if(!valid())return;}
+        }
+        if(!scannerStream){
+          const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+          if(!valid()){stream.getTracks().forEach(t=>t.stop());return;}
+          scannerStream=stream;v.srcObject=stream;await v.play();
+          if(!valid()){stream.getTracks().forEach(t=>t.stop());v.srcObject=null;scannerStream=null;return;}
+          scannerLoopActive=true;scannerUsingSmartEngine=false;requestAnimationFrame(scannerLoop);
+        }
+        await tuneCameraTrack();if(!valid())return;
+        resetScannerUi(false);$('startCameraBtn').textContent='RESTART CAMERA';$('scannerState').textContent='CAMERA LIVE • AIM AT QR';armScannerWatchdog();
+      }catch(e){
+        if(valid()){$('scannerState').textContent='CAMERA UNAVAILABLE';showToast(e.name==='NotAllowedError'?'Allow camera access, then tap Start Camera.':(e.message||'Cannot start camera.'),4500);}
+        scannerLoopActive=false;if(scannerStream)scannerStream.getTracks().forEach(t=>t.stop());scannerStream=null;
       }
-      scannerUsingSmartEngine=false;scannerStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30,max:60}},audio:false});v.srcObject=scannerStream;await v.play();scannerLoopActive=true;await tuneCameraTrack();resetScannerUi(false);$('startCameraBtn').textContent='RESTART CAMERA';armScannerWatchdog();scannerLoop();
-    }catch(e){clearScannerWatchdog();scannerLoopActive=false;scannerStream=null;$('scannerState').textContent='CAMERA BLOCKED';showToast('Camera unavailable. Check camera permission.',3400)}
+    })().finally(()=>{cameraStarting=null;});
+    return cameraStarting;
   }
-  async function stopCamera(){clearScannerWatchdog();scannerLoopActive=false;if(smartQrScanner){try{smartQrScanner.stop()}catch(e){}try{smartQrScanner.destroy()}catch(e){}smartQrScanner=null}if(scannerStream){try{scannerStream.getTracks().forEach(t=>t.stop())}catch(e){}}scannerStream=null;scannerUsingSmartEngine=false;scannerFlashAvailable=false;const v=$('scannerVideo');if(v){try{if(v.srcObject)v.srcObject.getTracks().forEach(t=>t.stop())}catch(e){}v.srcObject=null}const flash=$('scannerFlashBtn');if(flash){flash.hidden=true;flash.classList.remove('active');flash.textContent='FLASH'}$('startCameraBtn').textContent='START CAMERA';resetScannerUi(false)}
-  $('startCameraBtn').addEventListener('click',async()=>{await stopCamera();setTimeout(()=>startCamera().catch(()=>{}),120)});
+  async function stopCamera(){
+    cameraWanted=false;cameraEpoch++;clearScannerWatchdog();scannerLoopActive=false;
+    if(smartQrScanner){try{smartQrScanner.destroy()}catch(e){}smartQrScanner=null;}
+    if(scannerStream){scannerStream.getTracks().forEach(t=>t.stop());scannerStream=null;}
+    const v=$('scannerVideo');if(v&&v.srcObject){v.srcObject.getTracks().forEach(t=>t.stop());v.srcObject=null;}
+    scannerUsingSmartEngine=false;scannerFlashAvailable=false;
+    const flash=$('scannerFlashBtn');if(flash){flash.hidden=true;flash.classList.remove('active');flash.textContent='FLASH';}
+    $('startCameraBtn').textContent='START CAMERA';resetScannerUi(false);
+  }
+
+  $('startCameraBtn').addEventListener('click',async()=>{await stopCamera();if(cameraStarting)await cameraStarting;startCamera().catch(()=>{})});
   const flashBtn=$('scannerFlashBtn');if(flashBtn)flashBtn.addEventListener('click',async()=>{if(!smartQrScanner||!scannerFlashAvailable)return;try{await smartQrScanner.toggleFlash();const on=smartQrScanner.isFlashOn();flashBtn.classList.toggle('active',!!on);flashBtn.textContent=on?'FLASH ON':'FLASH'}catch(e){showToast('Flash is not available on this camera')}});
   async function scannerLoop(ts){if(!scannerLoopActive||!scannerStream||scannerUsingSmartEngine)return;requestAnimationFrame(scannerLoop);if(scannerBusy||!ts||ts-scannerLastTick<70)return;scannerLastTick=ts;const video=$('scannerVideo');if(video.readyState<2)return;scannerHeartbeat=Date.now();scannerBusy=true;try{let result='';if('BarcodeDetector'in window){try{if(!qrDetector)qrDetector=new BarcodeDetector({formats:['qr_code']});const codes=await qrDetector.detect(video);if(codes&&codes[0])result=codes[0].rawValue||''}catch(e){}}if(!result&&window.jsQR){const c=$('scannerCanvas'),region=smartScanRegion(video),max=1280;c.width=Math.min(max,region.downScaledWidth);c.height=Math.min(max,region.downScaledHeight);const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(video,region.x,region.y,region.width,region.height,0,0,c.width,c.height);const img=ctx.getImageData(0,0,c.width,c.height);const qr=window.jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});if(qr&&qr.data)result=qr.data}if(result){await stopCamera();await handleScanValue(result,'camera')}}finally{scannerBusy=false}}
   $('manualScanBtn').addEventListener('click',()=>{const v=$('manualScanInput').value.trim();if(v)handleScanValue(v,'manual')});$('manualScanInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('manualScanBtn').click()}});
-  $('qrImageInput').addEventListener('change',async function(){const file=this.files&&this.files[0];if(!file)return;try{const val=await scanImageFile(file);if(val)handleScanValue(val,'image');else showToast('No QR code found in image')}catch(e){showToast('Could not scan image')}});
+  $('qrImageInput').addEventListener('change',async function(){
+    const file=this.files&&this.files[0];this.value='';if(!file)return;await stopCamera();
+    try{const raw=await scanImageFile(file);if(raw)await handleScanValue(raw,'image');else showToast('No QR code found. Try a clearer image.');}
+    catch(e){showToast('Could not read QR image. Try a clearer photo.');}
+  });
   async function scanImageFile(file){
     if(window.QrScanner){try{const r=await QrScanner.scanImage(file,{returnDetailedScanResult:true,alsoTryWithoutScanRegion:true});const raw=String(r&&r.data!=null?r.data:r||'').trim();if(raw)return raw}catch(e){}}
     return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onerror=reject;fr.onload=async()=>{const img=new Image();img.onerror=reject;img.onload=async()=>{try{if('BarcodeDetector'in window){try{const det=new BarcodeDetector({formats:['qr_code']});const codes=await det.detect(img);if(codes&&codes[0]){resolve(codes[0].rawValue||'');return}}catch(e){}}const c=$('scannerCanvas'),max=2000,scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));c.width=Math.round(img.naturalWidth*scale);c.height=Math.round(img.naturalHeight*scale);const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,c.width,c.height);if(window.jsQR){const d=ctx.getImageData(0,0,c.width,c.height),qr=window.jsQR(d.data,d.width,d.height,{inversionAttempts:'attemptBoth'});resolve(qr&&qr.data?qr.data:'')}else resolve('')}catch(e){reject(e)}};img.src=fr.result};fr.readAsDataURL(file)})
@@ -338,19 +408,23 @@
   function playThunder(){try{primeAudio();const ctx=audioCtx;if(!ctx)return;const now=ctx.currentTime,dur=.72,buffer=ctx.createBuffer(1,Math.floor(ctx.sampleRate*dur),ctx.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++){const t=i/data.length;data[i]=(Math.random()*2-1)*Math.pow(1-t,2.8)}const noise=ctx.createBufferSource();noise.buffer=buffer;const crack=ctx.createBiquadFilter();crack.type='bandpass';crack.frequency.setValueAtTime(1900,now);crack.Q.setValueAtTime(.65,now);const crackGain=ctx.createGain();crackGain.gain.setValueAtTime(.0001,now);crackGain.gain.exponentialRampToValueAtTime(.34,now+.008);crackGain.gain.exponentialRampToValueAtTime(.025,now+.18);const rumble=ctx.createBiquadFilter();rumble.type='lowpass';rumble.frequency.setValueAtTime(180,now);const rumbleGain=ctx.createGain();rumbleGain.gain.setValueAtTime(.0001,now);rumbleGain.gain.exponentialRampToValueAtTime(.18,now+.035);rumbleGain.gain.exponentialRampToValueAtTime(.0001,now+.72);const master=ctx.createGain();master.gain.value=.7;noise.connect(crack);crack.connect(crackGain);crackGain.connect(master);const noise2=ctx.createBufferSource();noise2.buffer=buffer;noise2.playbackRate.value=.7;noise2.connect(rumble);rumble.connect(rumbleGain);rumbleGain.connect(master);const osc=ctx.createOscillator(),og=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(72,now);osc.frequency.exponentialRampToValueAtTime(38,now+.65);og.gain.setValueAtTime(.0001,now);og.gain.exponentialRampToValueAtTime(.1,now+.03);og.gain.exponentialRampToValueAtTime(.0001,now+.68);osc.connect(og);og.connect(master);master.connect(ctx.destination);noise.start(now);noise.stop(now+dur);noise2.start(now+.02);noise2.stop(now+dur);osc.start(now);osc.stop(now+.7)}catch(e){}}
   function setScanMatch(asset){const box=$('scanMatch'),photo=$('scanMatchPhoto');if(!asset){box.classList.add('hidden');photo.innerHTML='<span>IT</span>';return}box.classList.remove('hidden');$('scanMatchType').textContent=value(asset.DEVICE_TYPE).toUpperCase();$('scanMatchTag').textContent=value(asset.ASSET_TAG);$('scanMatchDevice').textContent=[asset.BRAND,asset.MODEL].filter(Boolean).join(' ')||'—';$('scanMatchAssigned').textContent=asset.ASSIGNED_TO?'Assigned to '+asset.ASSIGNED_TO:'Unassigned';$('scanMatchStatus').textContent=value(asset.STATUS);$('scanMatchStatus').className='scan-match-status '+statusClass(asset.STATUS);const urls=imageCandidates(asset,720);photo.innerHTML=urls.length?'<img src="'+esc(urls[0])+'" data-f1="'+esc(urls[1]||'')+'" data-f2="'+esc(urls[2]||'')+'" data-secure-id="'+esc(asset.ASSET_ID||'')+'" alt=""><span class="photo-fallback" style="display:none">'+esc(String(asset.DEVICE_TYPE||'IT').slice(0,10))+'</span>':'<span>'+esc(String(asset.DEVICE_TYPE||'IT').slice(0,10))+'</span>';attachImageFallbacks(photo)}
   async function handleScanValue(raw,source){
-    scannedRaw=String(raw||'').trim();if(source!=='manual')playThunder();
-    $('scanResultValue').textContent=scannedRaw;$('scanResult').classList.remove('hidden');
-    $('scanResultText').textContent='Verifying QR against live inventory…';$('scannerState').textContent='VERIFYING';$('scanOpenBtn').hidden=true;$('scanAddBtn').hidden=true;
+    raw=String(raw||'').trim();if(!raw||scanResolving)return;
+    const job=++scanRequest;scanResolving=true;scannedRaw=raw;scannedAssetId='';
+    await stopCamera();if(source!=='manual')playThunder();
+    setScanMatch(null);$('scanResultValue').textContent=raw;$('scanResult').classList.remove('hidden');
+    $('scanResultText').textContent='Checking live inventory…';$('scannerState').textContent='VERIFYING';$('scanOpenBtn').hidden=true;$('scanAddBtn').hidden=true;
+    openSheet(scanBackdrop);scanClose.focus();
     try{
-      const resolved=await resolveScanAuthoritative(scannedRaw);
-      if(resolved.found&&resolved.asset){const asset=resolved.asset;scannedAssetId=asset.ASSET_ID;setScanMatch(asset);$('scanResultText').textContent='Verified • '+(resolved.mode==='canonical-local'?'Canonical Asset ID':'Live database match');$('scanOpenBtn').hidden=false;$('scanAddBtn').hidden=true;$('scannerState').textContent='VERIFIED MATCH';if(navigator.vibrate)navigator.vibrate([35,25,70]);showToast('QR verified ✓');return}
-      scannedAssetId='';setScanMatch(null);
-      if(resolved.ambiguous){$('scanResultText').textContent='AMBIGUOUS QR — multiple assets share this legacy identifier. Nothing was opened.';$('scannerState').textContent='AMBIGUOUS • BLOCKED';$('scanOpenBtn').hidden=true;$('scanAddBtn').hidden=true;showToast('Ambiguous QR blocked',3400);return}
-      if(resolved.offline){$('scanResultText').textContent='Could not verify against the live database. Reconnect before opening this QR.';$('scannerState').textContent='VERIFY REQUIRED';$('scanOpenBtn').hidden=true;$('scanAddBtn').hidden=true;showToast('Live verification required',3200);return}
-      $('scanResultText').textContent='No existing asset matched this code.';$('scanOpenBtn').hidden=true;$('scanAddBtn').hidden=false;$('scannerState').textContent='NO MATCH';showToast('No asset match')
-    }catch(e){scannedAssetId='';setScanMatch(null);$('scanResultText').textContent='Could not verify QR: '+(e.message||'API error');$('scannerState').textContent='VERIFY FAILED';$('scanOpenBtn').hidden=true;$('scanAddBtn').hidden=true;showToast(e.message||'QR verify failed',3400)}
+      const resolved=await resolveScanAuthoritative(raw);if(job!==scanRequest||currentRoute!=='scan')return;
+      if(resolved.found&&resolved.asset){const a=resolved.asset;scannedAssetId=a.ASSET_ID;setScanMatch(a);$('scanResultText').textContent=resolved.mode==='canonical-local'?'Asset ID found in saved inventory':'Verified against live inventory';$('scanOpenBtn').hidden=false;$('scannerState').textContent='MATCH FOUND';if(navigator.vibrate)navigator.vibrate(50);return;}
+      if(resolved.ambiguous){$('scanResultText').textContent='Multiple devices share this QR. '+(resolved.matches||[]).map(x=>x.assetTag||x.assetId).join(', ')+'. Check QR Issues.';$('scannerState').textContent='MULTIPLE MATCHES';return;}
+      if(resolved.offline){$('scanResultText').textContent='Reconnect to verify this code. No device has been added.';$('scannerState').textContent='CONNECTION REQUIRED';return;}
+      closeSheet(scanBackdrop);pendingScanForAdd=raw;route('add');showToast('New QR — complete device details and save');
+    }catch(e){if(job===scanRequest){$('scanResultText').textContent='Could not verify QR: '+(e.message||'Connection error');$('scannerState').textContent='TRY AGAIN';}}
+    finally{if(job===scanRequest)scanResolving=false;}
   }
-  $('scanOpenBtn').addEventListener('click',()=>{if(scannedAssetId)openDetail(scannedAssetId)});$('scanAddBtn').addEventListener('click',()=>{pendingScanForAdd=scannedRaw;route('add')});
+
+  $('scanOpenBtn').addEventListener('click',()=>{if(scannedAssetId){closeSheet(scanBackdrop);openDetail(scannedAssetId)}});$('scanAddBtn').addEventListener('click',()=>{closeSheet(scanBackdrop);pendingScanForAdd=scannedRaw;route('add')});
 
   function setupVisibilitySync(){document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){if(currentRoute==='scan')stopCamera().catch(()=>{});return}if(document.visibilityState==='visible'){if(currentRoute==='scan')setTimeout(()=>startCamera().catch(()=>{}),220);if(loadConnection()&&Date.now()-lastSyncAt>120000)syncInventory(false).catch(()=>{})}})}
   async function pollRemoteMeta(){if(document.visibilityState!=='visible'||!loadConnection())return;try{const p=await jsonpRequest('meta',{},12000);if(p.version)setBackendVersion(p.version);if(typeof p.totalValue==='number')animateAssetValue(p.totalValue);const stamp=String(p.generatedAt||'');if(stamp&&lastServerGeneration&&stamp!==lastServerGeneration){quietBackgroundSync(80)}else if(stamp&&!lastServerGeneration){lastServerGeneration=stamp}}catch(e){}}
@@ -364,7 +438,7 @@
   $('appThemeBtn').addEventListener('click',toggleTheme);$('moreThemeBtn').addEventListener('click',toggleTheme);
   syncAppHeight();window.addEventListener('resize',syncAppHeight,{passive:true});if(window.visualViewport)window.visualViewport.addEventListener('resize',syncAppHeight,{passive:true});
   let initialTheme='dark';try{initialTheme=localStorage.getItem(THEME_STORAGE_KEY)||'dark'}catch(e){}applyTheme(initialTheme,false);
-  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=754').catch(()=>{}));
+  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=760').catch(()=>{}));
 
   const initial=(location.hash||'#home').slice(1);if(initial.startsWith('detail/')){const id=decodeURIComponent(initial.slice(7));setTimeout(()=>openDetail(id),100)}else route(['home','search','scan','add','more'].includes(initial)?initial:'home',false);
 })();
