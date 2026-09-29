@@ -247,6 +247,7 @@
               <label class="photo-picker">UPLOAD PHOTO<input id="addPhotoLibraryInput" type="file" accept="image/*"></label>
               <label class="photo-picker">TAKE PHOTO<input id="addPhotoCameraInput" type="file" accept="image/*" capture="environment"></label>
             </div>
+            <button class="photo-ai-button" id="addPhotoAiBtn" type="button" disabled>REMOVE BG (AI) — SLOW MODE</button>
             <img id="addPhotoPreview" alt="" hidden>
           </div>
           <button class="save-button" id="addSaveBtn" type="submit">＋ ADD DEVICE</button>
@@ -268,6 +269,7 @@
               <label class="photo-picker">UPLOAD PHOTO<input id="editPhotoLibraryInput" type="file" accept="image/*"></label>
               <label class="photo-picker">TAKE PHOTO<input id="editPhotoCameraInput" type="file" accept="image/*" capture="environment"></label>
             </div>
+            <button class="photo-ai-button" id="editPhotoAiBtn" type="button" disabled>REMOVE BG (AI) — SLOW MODE</button>
             <img id="editPhotoPreview" alt="" hidden>
           </div>
           <div class="immutable-note"><span>⌁</span><div><b>ASSET ID LOCKED</b><p id="editAssetIdText">—</p></div></div>
@@ -352,6 +354,7 @@
         <label class="sheet-primary file-button big">UPLOAD PHOTO<input id="detailPhotoLibraryInput" type="file" accept="image/*"></label>
         <label class="sheet-primary file-button big">TAKE PHOTO<input id="detailPhotoCameraInput" type="file" accept="image/*" capture="environment"></label>
       </div>
+      <button class="photo-ai-button" id="detailPhotoAiBtn" type="button" disabled>REMOVE BG (AI) — SLOW MODE</button>
       <div class="connect-actions"><button class="sheet-secondary" id="closePhotoBtn" type="button">CANCEL</button><button class="sheet-primary" id="savePhotoBtn" type="button" disabled>SAVE PHOTO</button></div>
     </div>
   </div>
@@ -401,7 +404,7 @@
   <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.legacy.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script src="./photo-tools.js?v=760"></script>
-  <script src="./app.js?v=760"></script>
+  <script src="./photo-tools.js?v=763"></script>
+  <script src="./app.js?v=763"></script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 (function(){
   'use strict';
 
-  const CACHE_KEY='RISP_V7_WORLDCLASS_CACHE_760';
+  const CACHE_KEY='RISP_V7_WORLDCLASS_CACHE_763';
   const CONNECTION_STORAGE_KEY='RISP_V7_SECURE_CONNECTION_23';
   const THEME_STORAGE_KEY='RISP_V7_THEME_V1';
   const CREDENTIAL_TOKEN_SESSION_KEY='RISP_V7_CREDENTIAL_TOKEN_V1';
@@ -64,7 +64,10 @@
   let requestSeq=0;
   let addPhotoFile=null;
   let editPhotoFile=null;
+  let addPhotoPrepared=null;
+  let editPhotoPrepared=null;
   let detailPhotoData=null;
+  let detailPhotoFile=null;
   let audioCtx=null;
   let displayedAssetValue=0;
   let appValueCategory='__ALL__';
@@ -89,7 +92,7 @@
   let credentialUnlockedUntil=0;
   const protectedPhotoCache=new Map();
 
-  // V7.6.0: modal results and QR audit, kept inside the app closure.
+  // V7.6.3: fast photo pipeline, optional AI photo mode, modal results and QR audit.
   let scanRequest=0,scanResolving=false,cameraStarting=null,cameraEpoch=0,cameraWanted=false;
   const scanBackdrop=document.createElement('div');
   scanBackdrop.id='scanResultBackdrop';scanBackdrop.className='sheet-backdrop scan-result-backdrop';scanBackdrop.setAttribute('aria-hidden','true');
@@ -143,7 +146,7 @@
     screens.forEach(el=>el.classList.toggle('active',el===target));
     tabs.forEach(el=>el.classList.toggle('active',['detail','edit'].indexOf(name)===-1&&el.dataset.route===name));
     target.scrollTop=0;
-    if(name==='scan'){resetScannerUi(false);if(!scannerStream&&!scannerLoopActive){Promise.resolve().then(()=>startCamera()).catch(()=>{})}}
+    if(name==='scan'){resetScannerUi(false);if(!scannerStream&&!scannerLoopActive&&!cameraStarting){window.setTimeout(()=>{if(currentRoute==='scan'&&!scannerStream&&!scannerLoopActive)startCamera().catch(()=>{})},80)}}
     if(name==='add')prepareAddForm();
     if(name==='more')$('backendVersion').textContent=backendVersion;
     if(push!==false){try{history.replaceState({screen:name,id:currentDetailId},'','#'+(name==='detail'?'detail/'+encodeURIComponent(currentDetailId):name))}catch(e){}}
@@ -213,7 +216,7 @@
 
   function dateToInput(v){const s=String(v||'').trim();if(!s)return'';let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');return''}
   function setDetail(asset){asset=asset||{};$('detailTopTag').textContent=value(asset.ASSET_TAG);$('detailType').textContent=value(asset.DEVICE_TYPE).toUpperCase();$('detailTag').textContent=value(asset.ASSET_TAG);$('detailDevice').textContent=[asset.BRAND,asset.MODEL].filter(Boolean).join(' ')||'—';const brandBadge=$('detailBrandBadge');if(brandBadge)brandBadge.innerHTML=brandLogoMarkup(asset.BRAND,'detail-brand-icon')+'<span><small>MANUFACTURER</small><b>'+esc(value(asset.BRAND))+'</b></span>';$('detailStatus').textContent=value(asset.STATUS);$('detailAssigned').textContent=asset.ASSIGNED_TO||'Unassigned';$('dAssetId').textContent=value(asset.ASSET_ID);$('dSerial').textContent=value(asset.SERIAL);$('dService').textContent=value(asset.SERVICE_TAG);$('dLibib').textContent=value(asset.LIBIB);const qrReady=$('detailQrReady');if(qrReady)qrReady.textContent='QR READY • CANONICAL ASSET ID • '+value(asset.ASSET_ID);$('dDepartment').textContent=value(asset.DEPARTMENT);$('dColor').textContent=value(asset.COLOR);$('dPurchase').textContent=value(asset.PURCHASE_DATE);$('dWarranty').textContent=value(asset.WARRANTY);$('dCost').textContent=String(asset.COST||'').trim()?formatBaht(moneyNumber(asset.COST),true):'—';$('dUpdated').textContent=value(asset.UPDATED);$('dNotes').textContent=value(asset.NOTES);const img=$('detailPhoto'),fb=$('detailPhotoFallback'),urls=imageCandidates(asset,1100);img.hidden=true;fb.style.display='grid';fb.textContent=String(asset.DEVICE_TYPE||'IT').slice(0,11).toUpperCase();if(urls.length){let idx=0,secureTried=false;img.onload=()=>{img.hidden=false;fb.style.display='none'};img.onerror=async()=>{idx++;if(idx<urls.length){img.src=urls[idx];return}if(!secureTried&&asset.ASSET_ID){secureTried=true;const data=await protectedPhotoData(asset.ASSET_ID);if(data){img.src=data;return}}img.hidden=true;fb.style.display='grid'};img.src=urls[0]}}
-  async function openDetail(id){currentDetailId=String(id||'');const lite=assetMap[normalize(currentDetailId)]||{};setDetail(lite);route('detail',false);try{history.replaceState({screen:'detail',id:currentDetailId},'','#detail/'+encodeURIComponent(currentDetailId))}catch(e){};if(loadConnection()){try{const d=await fetchAsset(currentDetailId);mergeDetail(d)}catch(e){showToast(e.message||'Could not load detail')}}}
+  async function openDetail(id){currentDetailId=String(id||'');const lite=assetMap[normalize(currentDetailId)]||{};setDetail(lite);route('detail',false);try{history.replaceState({screen:'detail',id:currentDetailId},'','#detail/'+encodeURIComponent(currentDetailId))}catch(e){};if(loadConnection())fetchAsset(currentDetailId).then(d=>mergeDetail(d)).catch(()=>{});}
   function mergeDetail(detail){if(!detail||!detail.ASSET_ID)return;const k=normalize(detail.ASSET_ID);const merged=Object.assign({},assetMap[k]||{},detail);assetMap[k]=merged;let found=false;ASSETS=ASSETS.map(a=>{if(normalize(a.ASSET_ID)===k){found=true;return merged}return a});if(!found)ASSETS.push(merged);if(normalize(currentDetailId)===k)setDetail(merged);renderHome();renderSearch();saveCache()}
   $('detailBack').addEventListener('click',()=>route(['home','search','scan'].includes(previousRoute)?previousRoute:'home'));
   $('detailMoreBtn').addEventListener('click',openEditCurrent);$('editAssetBtn').addEventListener('click',openEditCurrent);$('refreshAssetBtn').addEventListener('click',async()=>{if(!currentDetailId)return;try{showToast('Refreshing…');mergeDetail(await fetchAsset(currentDetailId));showToast('Device refreshed')}catch(e){showToast(e.message)}});
@@ -270,48 +273,54 @@
   function collectForm(prefix){const out={};FORM_FIELDS.forEach(f=>{const el=$(prefix+'_'+f[0]);if(!el)return;let v=String(el.value||'').trim();if(el.dataset&&el.dataset.customOther==='1'&&v==='__OTHER__'){const other=$(prefix+'_'+f[0]+'_OTHER');v=String(other&&other.value||'').trim()}if(prefix==='edit'&&PRIVATE_FORM_KEYS.has(f[0])&&!v)return;out[f[0]]=v});return out}
   function publicOptimisticPayload(payload){const out={};Object.keys(payload||{}).forEach(k=>{if(!PRIVATE_FORM_KEYS.has(k))out[k]=payload[k]});return out}
   function validateFormPayload(payload){if(!payload.ASSET_TAG)return'Asset Tag is required';if(!payload.DEVICE_TYPE)return'Please specify Category';const typeSelect=$((currentRoute==='edit'?'edit':'add')+'_DEVICE_TYPE');if(typeSelect&&typeSelect.value==='__OTHER__'&&!payload.DEVICE_TYPE)return'Please specify Category';const depSelect=$((currentRoute==='edit'?'edit':'add')+'_DEPARTMENT');if(depSelect&&depSelect.value==='__OTHER__'&&!payload.DEPARTMENT)return'Please specify Department';return''}
-  function resetAddPhoto(){addPhotoFile=null;['addPhotoLibraryInput','addPhotoCameraInput'].forEach(id=>{const e=$(id);if(e)e.value=''});$('addPhotoPreview').hidden=true;$('addPhotoPreview').removeAttribute('src')}
+  function resetAddPhoto(){addPhotoFile=null;addPhotoPrepared=null;['addPhotoLibraryInput','addPhotoCameraInput'].forEach(id=>{const e=$(id);if(e)e.value=''});$('addPhotoPreview').hidden=true;$('addPhotoPreview').removeAttribute('src');if($('addPhotoAiBtn'))$('addPhotoAiBtn').disabled=true}
   function prepareAddForm(){if(!$('addFormFields').children.length){$('addFormFields').innerHTML=renderFormFields('add',{DEVICE_TYPE:'Laptop',STATUS:'Active'});bindCustomFields('add')}if(pendingScanForAdd){$('add_LIBIB').value=pendingScanForAdd;pendingScanForAdd='';showToast('Scanned code added to Libib / QR')}}
   prepareAddForm();
-  async function usePhotoFile(file,mode){
-    if(!file)return;const job=++photoJobs[mode],preview=$(mode==='edit'?'editPhotoPreview':'addPhotoPreview'),button=$(mode==='edit'?'editSaveBtn':'addSaveBtn');
-    if(mode==='edit')editPhotoFile=null;else addPhotoFile=null;preview.hidden=true;button.disabled=true;
-    try{const d=await compressImage(file);if(job!==photoJobs[mode])return;if(mode==='edit')editPhotoFile=file;else addPhotoFile=file;preview.src=d.dataUrl;preview.hidden=false;showToast(d.backgroundRemoved?'Background removed • photo ready':'Original photo ready');}
-    catch(e){showToast(e.message||'Could not prepare photo');}finally{if(job===photoJobs[mode])button.disabled=false;}
+  async function usePhotoFile(file,mode,useAi){
+    if(!file)return;const job=++photoJobs[mode],prefix=mode==='edit'?'edit':'add',preview=$(prefix+'PhotoPreview'),button=$(prefix+'SaveBtn'),aiButton=$(prefix+'PhotoAiBtn');
+    if(mode==='edit'){editPhotoFile=file;editPhotoPrepared=null}else{addPhotoFile=file;addPhotoPrepared=null}
+    preview.hidden=true;button.disabled=true;if(aiButton)aiButton.disabled=true;
+    try{const d=useAi?await window.RISPPhoto.prepareAI(file):await compressImage(file);if(job!==photoJobs[mode])return;if(mode==='edit')editPhotoPrepared=d;else addPhotoPrepared=d;preview.src=d.dataUrl;preview.hidden=false;showToast(d.backgroundRemoved?'AI background removed • photo ready':'White background ready • photo ready');}
+    catch(e){showToast(e.message||'Could not prepare photo');}
+    finally{if(job===photoJobs[mode]){button.disabled=false;if(aiButton)aiButton.disabled=!((mode==='edit'?editPhotoFile:addPhotoFile));}}
   }
-  ['addPhotoLibraryInput','addPhotoCameraInput'].forEach(id=>$(id).addEventListener('change',function(){usePhotoFile(this.files&&this.files[0],'add')}));
+  ['addPhotoLibraryInput','addPhotoCameraInput'].forEach(id=>$(id).addEventListener('change',function(){usePhotoFile(this.files&&this.files[0],'add',false)}));
+  $('addPhotoAiBtn').addEventListener('click',()=>usePhotoFile(addPhotoFile,'add',true));
   $('addScanCodeBtn').addEventListener('click',()=>{stopCamera();resetScannerUi(true);route('scan');showToast('Scan a code for the new device')});
   async function confirmCreatedByTag(tag){for(let i=0;i<5;i++){await syncInventory(false);const a=ASSETS.find(x=>normalize(x.ASSET_TAG)===normalize(tag));if(a)return a;await sleep(220+i*140)}return null}
   let generatedQrAsset=null;
   function renderGeneratedQr(asset){generatedQrAsset=asset||null;if(!asset)return;const host=$('generatedQrCode');if(host)host.innerHTML='';$('generatedQrTag').textContent=value(asset.ASSET_TAG);$('generatedQrMeta').textContent=[asset.DEVICE_TYPE,asset.BRAND].filter(Boolean).join(' • ')||'IT Asset';$('generatedQrSerial').textContent='Serial: '+value(asset.SERIAL||asset.SERVICE_TAG);$('generatedQrId').textContent='Asset ID: '+value(asset.ASSET_ID);$('generatedQrPayload').textContent=canonicalQrPayload(asset);if(typeof QRCode==='function'&&host){new QRCode(host,{text:canonicalQrPayload(asset),width:164,height:164,colorDark:'#07111d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M})}}
   function openGeneratedQrSheet(asset){if(!asset||!asset.ASSET_ID)return;renderGeneratedQr(asset);openSheet($('generatedQrSheet'))}
   function printGeneratedQr(){if(!generatedQrAsset)return;window.print()}
-  $('addAssetForm').addEventListener('submit',async e=>{e.preventDefault();const payload=collectForm('add'),problem=validateFormPayload(payload);if(problem){showToast(problem);return}const existing=ASSETS.find(a=>normalize(a.ASSET_TAG)===normalize(payload.ASSET_TAG));if(existing){showToast('Asset Tag already exists');return}const btn=$('addSaveBtn'),old=btn.textContent,photo=addPhotoFile,tag=payload.ASSET_TAG;btn.disabled=true;btn.textContent='SAVING…';try{await writeRequest('add',{payload:JSON.stringify(payload)});showToast('DEVICE SAVED • QR READY ✓',2400);$('addAssetForm').reset();$('addFormFields').innerHTML=renderFormFields('add',{DEVICE_TYPE:'Laptop',STATUS:'Active'});bindCustomFields('add');resetAddPhoto();route('home');setTimeout(async()=>{try{const created=await confirmCreatedByTag(tag);if(created){openGeneratedQrSheet(created);if(photo){showToast('Uploading device photo…',2300);uploadPhotoForAsset(created.ASSET_ID,photo).then(()=>{showToast('Device + photo ready ✓');quietBackgroundSync(450)}).catch(()=>showToast('Device saved • photo needs retry',3400))}}else showToast('Device saved • QR will appear after sync',3200)}catch(e){showToast('Device saved • sync to open QR',3200)}},350)}catch(err){showToast(err.message||'Could not add device',3400)}finally{btn.disabled=false;btn.textContent=old}});
+  $('addAssetForm').addEventListener('submit',async e=>{e.preventDefault();const payload=collectForm('add'),problem=validateFormPayload(payload);if(problem){showToast(problem);return}const existing=ASSETS.find(a=>normalize(a.ASSET_TAG)===normalize(payload.ASSET_TAG));if(existing){showToast('Asset Tag already exists');return}const btn=$('addSaveBtn'),old=btn.textContent,photo=addPhotoPrepared,tag=payload.ASSET_TAG;btn.disabled=true;btn.textContent='SAVING…';try{await writeRequest('add',{payload:JSON.stringify(payload)});showToast('DEVICE SAVED • QR READY ✓',2400);$('addAssetForm').reset();$('addFormFields').innerHTML=renderFormFields('add',{DEVICE_TYPE:'Laptop',STATUS:'Active'});bindCustomFields('add');resetAddPhoto();route('home');setTimeout(async()=>{try{const created=await confirmCreatedByTag(tag);if(created){openGeneratedQrSheet(created);if(photo){showToast('Uploading device photo…',2300);uploadPreparedPhotoForAsset(created.ASSET_ID,photo).then(()=>{showToast('Device + photo ready ✓');quietBackgroundSync(450)}).catch(()=>showToast('Device saved • photo needs retry',3400))}}else showToast('Device saved • QR will appear after sync',3200)}catch(e){showToast('Device saved • sync to open QR',3200)}},350)}catch(err){showToast(err.message||'Could not add device',3400)}finally{btn.disabled=false;btn.textContent=old}});
 
-  function resetEditPhoto(){editPhotoFile=null;['editPhotoLibraryInput','editPhotoCameraInput'].forEach(id=>{const e=$(id);if(e)e.value=''});$('editPhotoPreview').hidden=true;$('editPhotoPreview').removeAttribute('src')}
+  function resetEditPhoto(){editPhotoFile=null;editPhotoPrepared=null;['editPhotoLibraryInput','editPhotoCameraInput'].forEach(id=>{const e=$(id);if(e)e.value=''});$('editPhotoPreview').hidden=true;$('editPhotoPreview').removeAttribute('src');if($('editPhotoAiBtn'))$('editPhotoAiBtn').disabled=true}
   function openEditCurrent(){const asset=assetMap[normalize(currentDetailId)];if(!asset)return;editReturnRoute=currentRoute==='edit'?'detail':currentRoute;stopCamera();$('editTopTag').textContent=value(asset.ASSET_TAG);$('editAssetIdText').textContent=value(asset.ASSET_ID);$('editFormFields').innerHTML=renderFormFields('edit',asset);bindCustomFields('edit');resetEditPhoto();route('edit')}
-  ['editPhotoLibraryInput','editPhotoCameraInput'].forEach(id=>$(id).addEventListener('change',function(){usePhotoFile(this.files&&this.files[0],'edit')}));
+  ['editPhotoLibraryInput','editPhotoCameraInput'].forEach(id=>$(id).addEventListener('change',function(){usePhotoFile(this.files&&this.files[0],'edit',false)}));
+  $('editPhotoAiBtn').addEventListener('click',()=>usePhotoFile(editPhotoFile,'edit',true));
   $('editBack').addEventListener('click',()=>route('detail'));$('editCancelBtn').addEventListener('click',()=>route('detail'));
   async function confirmEdited(id,payload){for(let i=0;i<5;i++){const a=await fetchAsset(id);let ok=true;['ASSET_TAG','DEVICE_TYPE','BRAND','MODEL','SERIAL','LIBIB','SERVICE_TAG','DEPARTMENT','ASSIGNED_TO','COLOR','STATUS','WARRANTY','COST','NOTES'].forEach(k=>{if(Object.prototype.hasOwnProperty.call(payload,k)&&normalize(k==='COST'?moneyNumber(a[k]):a[k])!==normalize(k==='COST'?moneyNumber(payload[k]):payload[k]))ok=false});if(ok)return a;await sleep(180+i*120)}return fetchAsset(id)}
-  $('editAssetForm').addEventListener('submit',async e=>{e.preventDefault();const payload=collectForm('edit'),problem=validateFormPayload(payload);if(problem){showToast(problem);return}const btn=$('editSaveBtn'),old=btn.textContent,id=currentDetailId,photo=editPhotoFile,returnRoute=editReturnRoute||'detail';btn.disabled=true;btn.textContent='SAVING…';try{await writeRequest('edit',{id,payload:JSON.stringify(payload)});const local=optimisticPatchAsset(id,publicOptimisticPayload(payload));resetEditPhoto();showToast('SAVE SUCCESS ✓',2300);route(returnRoute==='edit'?'detail':returnRoute);if(photo){showToast('Changes saved • uploading photo…',2600);uploadPhotoForAsset(id,photo).then(()=>{showToast('Photo saved ✓');quietBackgroundSync(400)}).catch(()=>{showToast('Changes saved • photo sync needs retry',3400);quietBackgroundSync(1200)})}else quietBackgroundSync(450)}catch(err){showToast(err.message||'Could not save changes',3400)}finally{btn.disabled=false;btn.textContent=old}});
+  $('editAssetForm').addEventListener('submit',async e=>{e.preventDefault();const payload=collectForm('edit'),problem=validateFormPayload(payload);if(problem){showToast(problem);return}const btn=$('editSaveBtn'),old=btn.textContent,id=currentDetailId,photo=editPhotoPrepared,returnRoute=editReturnRoute||'detail';btn.disabled=true;btn.textContent='SAVING…';try{await writeRequest('edit',{id,payload:JSON.stringify(payload)});optimisticPatchAsset(id,publicOptimisticPayload(payload));resetEditPhoto();showToast('SAVE SUCCESS ✓',2300);route(returnRoute==='edit'?'detail':returnRoute);if(photo){showToast('Changes saved • uploading photo…',2600);uploadPreparedPhotoForAsset(id,photo).then(()=>{showToast('Photo saved ✓');quietBackgroundSync(400)}).catch(()=>{showToast('Changes saved • photo sync needs retry',3400);quietBackgroundSync(1200)})}else quietBackgroundSync(450)}catch(err){showToast(err.message||'Could not save changes',3400)}finally{btn.disabled=false;btn.textContent=old}});
 
   function openStatusSheet(){const a=assetMap[normalize(currentDetailId)];if(!a)return;$('statusAssetLabel').textContent=value(a.ASSET_TAG);$('statusOptions').innerHTML=STATUSES.map(s=>'<button type="button" class="status-option '+statusClass(s)+' '+(normalize(s)===normalize(a.STATUS)?'current':'')+'" data-status="'+esc(s)+'"><i></i><b>'+esc(s)+'</b></button>').join('');$('statusOptions').querySelectorAll('[data-status]').forEach(b=>b.addEventListener('click',()=>saveStatus(b.dataset.status)));openSheet(statusSheet)}
   $('detailStatusCard').addEventListener('click',openStatusSheet);$('closeStatusBtn').addEventListener('click',()=>closeSheet(statusSheet));statusSheet.addEventListener('click',e=>{if(e.target===statusSheet)closeSheet(statusSheet)});
   async function saveStatus(status){const id=currentDetailId,a=assetMap[normalize(id)];if(!a)return;closeSheet(statusSheet);const old=a.STATUS;a.STATUS=status;setDetail(a);renderHome();showToast('Saving status…');try{await writeRequest('status',{id,status});optimisticPatchAsset(id,{STATUS:status});showToast('Status saved ✓');quietBackgroundSync(450)}catch(e){a.STATUS=old;mergeDetail(a);showToast(e.message||'Could not change status',3200)}}
 
-  function resetPhotoSheet(){detailPhotoData=null;['detailPhotoLibraryInput','detailPhotoCameraInput'].forEach(id=>{const e=$(id);if(e)e.value=''});$('photoPreview').hidden=true;$('photoPreviewEmpty').style.display='';$('savePhotoBtn').disabled=true}
+  function resetPhotoSheet(){detailPhotoData=null;detailPhotoFile=null;['detailPhotoLibraryInput','detailPhotoCameraInput'].forEach(id=>{const e=$(id);if(e)e.value=''});$('photoPreview').hidden=true;$('photoPreviewEmpty').style.display='';$('savePhotoBtn').disabled=true;if($('detailPhotoAiBtn'))$('detailPhotoAiBtn').disabled=true}
   $('changePhotoBtn').addEventListener('click',()=>{const a=assetMap[normalize(currentDetailId)];$('photoAssetLabel').textContent=a?value(a.ASSET_TAG):'Device photo';resetPhotoSheet();openSheet(photoSheet)});$('closePhotoBtn').addEventListener('click',()=>closeSheet(photoSheet));photoSheet.addEventListener('click',e=>{if(e.target===photoSheet)closeSheet(photoSheet)});
-  async function prepareDetailPhoto(file){
-    if(!file)return;const job=++photoJobs.detail;detailPhotoData=null;$('savePhotoBtn').disabled=true;
-    try{const d=await compressImage(file);if(job!==photoJobs.detail)return;detailPhotoData=d;$('photoPreview').src=d.dataUrl;$('photoPreview').hidden=false;$('photoPreviewEmpty').style.display='none';$('savePhotoBtn').disabled=false;showToast(d.backgroundRemoved?'Background removed • Save photo':'Original photo ready • Save photo');}
+  async function prepareDetailPhoto(file,useAi){
+    if(!file)return;const job=++photoJobs.detail;detailPhotoFile=file;detailPhotoData=null;$('savePhotoBtn').disabled=true;$('detailPhotoAiBtn').disabled=true;
+    try{const d=useAi?await window.RISPPhoto.prepareAI(file):await compressImage(file);if(job!==photoJobs.detail)return;detailPhotoData=d;$('photoPreview').src=d.dataUrl;$('photoPreview').hidden=false;$('photoPreviewEmpty').style.display='none';$('savePhotoBtn').disabled=false;showToast(d.backgroundRemoved?'AI background removed • Save photo':'White background ready • Save photo');}
     catch(e){showToast(e.message||'Could not prepare photo');}
+    finally{if(job===photoJobs.detail)$('detailPhotoAiBtn').disabled=!detailPhotoFile;}
   }
-  ['detailPhotoLibraryInput','detailPhotoCameraInput'].forEach(id=>$(id).addEventListener('change',function(){prepareDetailPhoto(this.files&&this.files[0])}));
+  ['detailPhotoLibraryInput','detailPhotoCameraInput'].forEach(id=>$(id).addEventListener('change',function(){prepareDetailPhoto(this.files&&this.files[0],false)}));
+  $('detailPhotoAiBtn').addEventListener('click',()=>prepareDetailPhoto(detailPhotoFile,true));
   async function waitForPhotoChange(assetId,before){for(let i=0;i<6;i++){const a=await fetchAsset(assetId);if(String(a.PHOTO_FILE_ID||'')&&String(a.PHOTO_FILE_ID||'')!==String(before||''))return a;await sleep(240+i*100)}throw new Error('Photo upload was not confirmed.')}
   $('savePhotoBtn').addEventListener('click',()=>{if(!detailPhotoData||!currentDetailId)return;const id=currentDetailId,photo=detailPhotoData,btn=$('savePhotoBtn');btn.disabled=true;btn.textContent='SAVED • SYNCING…';closeSheet(photoSheet);showToast('Photo saved locally • syncing…',1400);writeRequest('photo',{id,dataUrl:photo.dataUrl,fileName:photo.fileName,mimeType:photo.mimeType}).then(()=>{quietBackgroundSync(180);showToast('Photo synced ✓',1800)}).catch(()=>showToast('Photo saved locally • sync failed',2800)).finally(()=>{btn.disabled=false;btn.textContent='SAVE PHOTO'})});
-  async function uploadPhotoForAsset(assetId,file){const d=await compressImage(file,1200,.76);await writeRequest('photo',{id:assetId,dataUrl:d.dataUrl,fileName:d.fileName,mimeType:d.mimeType});quietBackgroundSync(420);return assetMap[normalize(assetId)]||{ASSET_ID:assetId}}
+  async function uploadPreparedPhotoForAsset(assetId,photo){if(!photo)return;await writeRequest('photo',{id:assetId,dataUrl:photo.dataUrl,fileName:photo.fileName,mimeType:photo.mimeType});quietBackgroundSync(420);return assetMap[normalize(assetId)]||{ASSET_ID:assetId}}
+  async function uploadPhotoForAsset(assetId,file){const d=await compressImage(file);return uploadPreparedPhotoForAsset(assetId,d)}
   function compressImage(file){return window.RISPPhoto.prepare(file)}
-  window.setTimeout(function(){if(window.RISPPhoto&&window.RISPPhoto.preload)window.RISPPhoto.preload();},1200);
 
   $('deleteAssetBtn').addEventListener('click',()=>{const a=assetMap[normalize(currentDetailId)];$('deleteAssetLabel').textContent=a?value(a.ASSET_TAG)+' • '+value(a.ASSET_ID):value(currentDetailId);openSheet(deleteSheet)});$('cancelDeleteBtn').addEventListener('click',()=>closeSheet(deleteSheet));deleteSheet.addEventListener('click',e=>{if(e.target===deleteSheet)closeSheet(deleteSheet)});$('confirmDeleteBtn').addEventListener('click',async()=>{const id=currentDetailId,btn=$('confirmDeleteBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='DELETING…';try{await writeRequest('delete',{id});ASSETS=ASSETS.filter(a=>normalize(a.ASSET_ID)!==normalize(id));delete assetMap[normalize(id)];saveCache();renderHome();renderSearch();closeSheet(deleteSheet);currentDetailId='';showToast('Device deleted ✓');route('home');quietBackgroundSync(450)}catch(e){showToast(e.message||'Could not delete device',3200)}finally{btn.disabled=false;btn.textContent=old}});
 
@@ -439,7 +448,7 @@
   $('appThemeBtn').addEventListener('click',toggleTheme);$('moreThemeBtn').addEventListener('click',toggleTheme);
   syncAppHeight();window.addEventListener('resize',syncAppHeight,{passive:true});if(window.visualViewport)window.visualViewport.addEventListener('resize',syncAppHeight,{passive:true});
   let initialTheme='dark';try{initialTheme=localStorage.getItem(THEME_STORAGE_KEY)||'dark'}catch(e){}applyTheme(initialTheme,false);
-  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=760').catch(()=>{}));
+  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=763').catch(()=>{}));
 
   const initial=(location.hash||'#home').slice(1);if(initial.startsWith('detail/')){const id=decodeURIComponent(initial.slice(7));setTimeout(()=>openDetail(id),100)}else route(['home','search','scan','add','more'].includes(initial)?initial:'home',false);
 })();
