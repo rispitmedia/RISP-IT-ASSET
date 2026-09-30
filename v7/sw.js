@@ -1,6 +1,6 @@
-const CACHE_NAME='risp-it-asset-v7-6-3-fast-white-ai-scan';
+const CACHE_NAME='risp-it-asset-v7-6-4-fast-save-premium';
 const CORE=[
-  './','./index.html','./styles.css?v=763','./app.js?v=763','./photo-tools.js?v=763','./manifest.webmanifest?v=763',
+  './','./index.html','./styles.css?v=764','./app.js?v=764','./photo-tools.js?v=764','./manifest.webmanifest?v=764',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'
 ];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});

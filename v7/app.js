@@ -1,7 +1,7 @@
 (function(){
   'use strict';
 
-  const CACHE_KEY='RISP_V7_WORLDCLASS_CACHE_763';
+  const CACHE_KEY='RISP_V7_WORLDCLASS_CACHE_764';
   const CONNECTION_STORAGE_KEY='RISP_V7_SECURE_CONNECTION_23';
   const THEME_STORAGE_KEY='RISP_V7_THEME_V1';
   const CREDENTIAL_TOKEN_SESSION_KEY='RISP_V7_CREDENTIAL_TOKEN_V1';
@@ -92,7 +92,7 @@
   let credentialUnlockedUntil=0;
   const protectedPhotoCache=new Map();
 
-  // V7.6.3: fast photo pipeline, optional AI photo mode, modal results and QR audit.
+  // V7.6.4: compact JPEG photo saves, optimistic sync, premium Detail surface and QR audit.
   let scanRequest=0,scanResolving=false,cameraStarting=null,cameraEpoch=0,cameraWanted=false;
   const scanBackdrop=document.createElement('div');
   scanBackdrop.id='scanResultBackdrop';scanBackdrop.className='sheet-backdrop scan-result-backdrop';scanBackdrop.setAttribute('aria-hidden','true');
@@ -448,7 +448,7 @@
   $('appThemeBtn').addEventListener('click',toggleTheme);$('moreThemeBtn').addEventListener('click',toggleTheme);
   syncAppHeight();window.addEventListener('resize',syncAppHeight,{passive:true});if(window.visualViewport)window.visualViewport.addEventListener('resize',syncAppHeight,{passive:true});
   let initialTheme='dark';try{initialTheme=localStorage.getItem(THEME_STORAGE_KEY)||'dark'}catch(e){}applyTheme(initialTheme,false);
-  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=763').catch(()=>{}));
+  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=764').catch(()=>{}));
 
   const initial=(location.hash||'#home').slice(1);if(initial.startsWith('detail/')){const id=decodeURIComponent(initial.slice(7));setTimeout(()=>openDetail(id),100)}else route(['home','search','scan','add','more'].includes(initial)?initial:'home',false);
 })();

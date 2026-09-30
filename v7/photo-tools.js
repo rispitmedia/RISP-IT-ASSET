@@ -14,9 +14,11 @@
       r.readAsDataURL(blob);
     });
   }
-  function blobOf(canvas) {
+  function blobOf(canvas, mime, quality) {
+    mime = mime || 'image/jpeg';
+    quality = quality == null ? 0.86 : quality;
     return new Promise((resolve, reject) => {
-      canvas.toBlob(b => b ? resolve(b) : reject(new Error('Cannot prepare image.')), 'image/png');
+      canvas.toBlob(b => b ? resolve(b) : reject(new Error('Cannot prepare image.')), mime, quality);
     });
   }
   async function openCanvas(blob, maxSize) {
@@ -39,11 +41,11 @@
     const source = await openCanvas(blob, 920);
     const out = document.createElement('canvas'); out.width = 920; out.height = 920;
     const ctx = out.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, 920, 920);
-    const scale = Math.min(800 / source.width, 800 / source.height);
+    const scale = Math.min(Math.round(920 * 0.87) / source.width, Math.round(920 * 0.87) / source.height);
     const w = Math.max(1, Math.round(source.width * scale)), h = Math.max(1, Math.round(source.height * scale));
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(source, Math.round((920 - w) / 2), Math.round((920 - h) / 2), w, h);
-    return blobOf(out);
+    return blobOf(out, 'image/jpeg', 0.84);
   }
   async function frameCutout(blob) {
     const c = await openCanvas(blob, 1200), ctx = c.getContext('2d'), d = ctx.getImageData(0, 0, c.width, c.height).data;
@@ -54,10 +56,10 @@
     if (x1 < x0 || y1 < y0) throw new Error('No device was detected. Try another photo.');
     const out = document.createElement('canvas'); out.width = 920; out.height = 920; const draw = out.getContext('2d');
     draw.fillStyle = '#fff'; draw.fillRect(0, 0, 920, 920);
-    const w = x1 - x0 + 1, h = y1 - y0 + 1, scale = Math.min(800 / w, 800 / h);
+    const w = x1 - x0 + 1, h = y1 - y0 + 1, scale = Math.min(Math.round(920 * 0.87) / w, Math.round(920 * 0.87) / h);
     draw.imageSmoothingEnabled = true; draw.imageSmoothingQuality = 'high';
     draw.drawImage(c, x0, y0, w, h, (920 - w * scale) / 2, (920 - h * scale) / 2, w * scale, h * scale);
-    return blobOf(out);
+    return blobOf(out, 'image/jpeg', 0.90);
   }
   function aiPanel() {
     const box = document.createElement('div'); box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true');
@@ -70,12 +72,12 @@
     try {
       ui.status.textContent = 'Loading AI remover… First use may take longer.';
       if (!aiModulePromise) aiModulePromise = import('https://esm.sh/@imgly/background-removal@1.7.0?deps=onnxruntime-web@1.21.0-dev.20250206-d981b153d3').catch(e => { aiModulePromise = null; throw e; });
-      const mod = await aiModulePromise, remove = mod.removeBackground || mod.default, source = await blobOf(await openCanvas(file, 1400));
+      const mod = await aiModulePromise, remove = mod.removeBackground || mod.default, source = await blobOf(await openCanvas(file, 1400), 'image/png', 1);
       const cut = await remove(source, { model: 'isnet_quint8', device: 'cpu', output: { format: 'image/png', quality: 1 }, progress: (key, current, total) => {
         if (ui.box.isConnected) ui.status.textContent = key.indexOf('fetch') === 0 ? 'Loading AI model… ' + Math.round(total ? current / total * 100 : 0) + '%' : 'Removing background…';
       }});
       ui.status.textContent = 'Finishing photo…'; const result = await frameCutout(cut);
-      return { dataUrl: await read(result), fileName: String(file.name || 'device').replace(/\.[^.]+$/, '') + '.png', mimeType: 'image/png', blob: result, backgroundRemoved: true, whiteBackground: true };
+      return { dataUrl: await read(result), fileName: String(file.name || 'device').replace(/\.[^.]+$/, '') + '.jpg', mimeType: 'image/jpeg', blob: result, backgroundRemoved: true, whiteBackground: true };
     } finally { ui.box.remove(); }
   }
   function validate(file) {
@@ -84,7 +86,7 @@
   }
   async function fastProcess(file) {
     validate(file); const result = await whiteBackground(file);
-    return { dataUrl: await read(result), fileName: String(file.name || 'device').replace(/\.[^.]+$/, '') + '.png', mimeType: 'image/png', blob: result, backgroundRemoved: false, whiteBackground: true };
+    return { dataUrl: await read(result), fileName: String(file.name || 'device').replace(/\.[^.]+$/, '') + '.jpg', mimeType: 'image/jpeg', blob: result, backgroundRemoved: false, whiteBackground: true };
   }
   root.RISPPhoto = {
     prepare(file) { validate(file); if (fastCache.has(file)) return fastCache.get(file); const p = fastProcess(file); fastCache.set(file, p); p.catch(() => fastCache.delete(file)); return p; },
