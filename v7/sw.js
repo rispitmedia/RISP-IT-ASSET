@@ -1,6 +1,6 @@
-const CACHE_NAME='risp-it-asset-v7-6-6-print-label-modes';
+const CACHE_NAME='risp-it-asset-v7-6-7-multi-account-labels';
 const CORE=[
-  './','./index.html','./asset/index.html','./styles.css?v=766','./app.js?v=766','./photo-tools.js?v=766','./manifest.webmanifest?v=766',
+  './','./index.html','./asset/index.html','./styles.css?v=767','./app.js?v=767','./photo-tools.js?v=767','./manifest.webmanifest?v=767',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'
 ];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
