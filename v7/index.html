@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="RISP IT ASSET">
   <title>RISP IT ASSET</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=765">
+  <link rel="manifest" href="./manifest.webmanifest?v=766">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=765">
+  <link rel="stylesheet" href="./styles.css?v=766">
 </head>
 <body>
   <div class="splash" id="splash">
@@ -375,14 +375,17 @@
       <div class="grabber"></div>
       <div class="connect-head"><div class="connect-icon">⌗</div><div><small>CANONICAL QR</small><h2>QR label ready</h2></div></div>
       <p class="connect-copy">This QR uses the immutable Asset ID — not Libib, Serial or a reusable text value — so it cannot silently jump to another device.</p>
-      <div class="generated-qr-card">
+      <div class="generated-qr-card" id="generatedQrCard">
         <div class="generated-qr-code" id="generatedQrCode"></div>
         <div class="generated-qr-copy"><small>RISP IT ASSET</small><h3 id="generatedQrTag">—</h3><p id="generatedQrMeta">—</p><p id="generatedQrSerial">—</p><p id="generatedQrId">—</p><p class="generated-qr-payload" id="generatedQrPayload">—</p></div>
       </div>
       <p class="qr-identity-note">Legacy Libib / Asset Tag QR codes remain supported, but ambiguous legacy codes are blocked instead of opening the wrong asset.</p>
-      <div class="connect-actions"><button class="sheet-secondary" id="generatedQrCancelBtn" type="button">CANCEL</button><button class="sheet-primary" id="generatedQrPrintBtn" type="button">PRINT QR</button></div>
+      <div class="qr-print-options"><button class="sheet-primary" id="generatedQrPrintBtn" type="button">QR ONLY</button><button class="sheet-primary" id="generatedQrCredentialsBtn" type="button">QR + USERNAME PASSWORD</button><button class="sheet-primary" id="generatedCredentialsOnlyBtn" type="button">USERNAME PASSWORD ONLY</button></div>
+      <div class="connect-actions"><button class="sheet-secondary" id="generatedQrCancelBtn" type="button">CANCEL</button></div>
     </div>
   </div>
+
+  <div id="credentialPrintPortal" hidden aria-hidden="true"></div>
 
   <div class="sheet-backdrop" id="credentialSheet" aria-hidden="true">
     <div class="sheet credential-sheet">
@@ -404,7 +407,7 @@
   <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.legacy.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script src="./photo-tools.js?v=765"></script>
-  <script src="./app.js?v=765"></script>
+  <script src="./photo-tools.js?v=766"></script>
+  <script src="./app.js?v=766"></script>
 </body>
 </html>

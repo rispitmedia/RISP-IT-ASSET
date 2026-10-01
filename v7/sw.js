@@ -1,6 +1,6 @@
-const CACHE_NAME='risp-it-asset-v7-6-5-scan-audio-close-far';
+const CACHE_NAME='risp-it-asset-v7-6-6-print-label-modes';
 const CORE=[
-  './','./index.html','./asset/index.html','./styles.css?v=765','./app.js?v=765','./photo-tools.js?v=765','./manifest.webmanifest?v=765',
+  './','./index.html','./asset/index.html','./styles.css?v=766','./app.js?v=766','./photo-tools.js?v=766','./manifest.webmanifest?v=766',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'
 ];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
