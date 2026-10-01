@@ -1,4 +1,4 @@
-/* RISP IT ASSET photo pipeline — FAST WHITE BG by default, optional AI on demand. */
+/* RISP IT ASSET V7.6.5 photo pipeline — FAST WHITE BG by default, optional AI on demand. */
 (function (root) {
   'use strict';
   let aiModulePromise = null;
