@@ -208,6 +208,44 @@ html,body{position:fixed!important;inset:0!important;width:100%!important;height
 /* Credentials-only sticker sheet follows the supplied User / Pw sample. */
 .credential-print-page{width:215.9mm;height:279.4mm;background:#fff;box-sizing:border-box;padding:10mm 9.5mm;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-template-rows:repeat(12,20mm);column-gap:3.3mm;row-gap:0;align-content:start;overflow:hidden}.credential-print-sticker{height:20mm;box-sizing:border-box;padding:2.5mm 2mm;display:flex;flex-direction:column;justify-content:center;overflow:hidden;color:#111;font:800 11.3pt/1.34 Arial,Helvetica,sans-serif;white-space:nowrap;letter-spacing:-.01em}.credential-print-sticker div{overflow:hidden;text-overflow:ellipsis}.credential-print-sticker b{font-weight:800}.credential-print-line{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .credential-account-sheet{padding-bottom:calc(18px + var(--safe-bottom))}.credential-account-options{display:grid;gap:8px;margin:10px 0 4px}.credential-account-option{width:100%;min-height:48px;border:1px solid #264866;border-radius:13px;background:#081725;color:#c7dced;display:flex;align-items:center;gap:10px;padding:0 13px;text-align:left}.credential-account-option.selected{border-color:#65b7f5;background:#103252;box-shadow:0 0 0 1px rgba(101,183,245,.2)}.credential-account-option i{width:15px;height:15px;border-radius:50%;border:2px solid #597c9a;display:block;flex:0 0 auto}.credential-account-option.selected i{border-color:#91d5ff;background:#91d5ff;box-shadow:inset 0 0 0 3px #103252}.credential-account-option b{font-size:10px;min-width:0;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.credential-account-option small{display:block;margin-left:auto;max-width:42%;overflow:hidden;text-overflow:ellipsis;color:#7894ad;font-size:8px;white-space:nowrap}.credential-account-option.selected b{color:#fff}.credential-account-option.selected small{color:#a9d9fb}
+
+/* V7.6.8 — pro label studio: clearer identity, larger QR, and user-selected copies. */
+.generated-qr-card{grid-template-columns:194px minmax(0,1fr)!important;gap:16px!important}
+.generated-qr-code{width:194px!important;height:194px!important;padding:6px!important}
+.generated-qr-code canvas,.generated-qr-code img{max-width:182px!important;max-height:182px!important}
+.generated-qr-brand{display:flex;align-items:center;gap:5px;min-width:0;height:19px;color:#173a63}
+.generated-qr-brand img{width:19px;height:19px;object-fit:contain;flex:0 0 auto}
+.generated-qr-brand small{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8px!important;font-weight:900!important;letter-spacing:.06em}
+.generated-qr-identity{font-size:9px!important;font-weight:850!important;color:#173a63!important;line-height:1.2!important}
+.qr-copy-control-app{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin:10px 0 0;color:#8fb0cb;font-size:8px;font-weight:900;letter-spacing:.12em}
+.qr-copy-control-app input{width:64px;height:34px;border:1px solid #2b5273;border-radius:9px;background:#081a2b;color:#f2f8ff;text-align:center;font:800 14px/1 ui-sans-serif,system-ui,sans-serif}
+[data-theme="light"] .qr-copy-control-app{color:#526f87}.qr-copy-control-app input,[data-theme="light"] .qr-copy-control-app input{background:#fff;color:#102334;border-color:#b7c9d8}
+
+/* QR labels printed from the app use the same 3 × 10 Avery geometry as Admin Web. */
+.pwa-qr-sheet-page{width:215.9mm;height:279.4mm;background:#fff;box-sizing:border-box;padding:12.7mm 4.7625mm;display:block;overflow:hidden;break-after:page;page-break-after:always}
+.pwa-qr-sheet-page:last-child{break-after:auto;page-break-after:auto}
+.pwa-qr-sheet-grid{width:206.375mm;height:254mm;display:grid;grid-template-columns:repeat(3,66.675mm);grid-template-rows:repeat(10,25.4mm);column-gap:3.175mm;row-gap:0;align-content:start;justify-content:start}
+.pwa-qr-label-cell{width:66.675mm;height:25.4mm;display:grid;place-items:center;overflow:hidden;box-sizing:border-box}
+.pwa-qr-label-cell .generated-qr-card{width:64.8mm!important;height:23.6mm!important;margin:0!important;padding:.72mm 1.05mm!important;border:.2mm solid #173a63!important;border-left:.75mm solid #173a63!important;border-radius:1.45mm!important;grid-template-columns:21.35mm minmax(0,1fr)!important;gap:1.55mm!important;box-sizing:border-box!important;box-shadow:none!important;align-items:center!important}
+.pwa-qr-label-cell .generated-qr-code{width:21.1mm!important;height:21.1mm!important;padding:.78mm!important;border-radius:.8mm!important}
+.pwa-qr-label-cell .generated-qr-code canvas,.pwa-qr-label-cell .generated-qr-code img{width:19.55mm!important;height:19.55mm!important;max-width:19.55mm!important;max-height:19.55mm!important;image-rendering:crisp-edges}
+.pwa-qr-label-cell .generated-qr-copy{min-width:0;align-self:stretch;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.pwa-qr-label-cell .generated-qr-brand{height:3.45mm;gap:.65mm}
+.pwa-qr-label-cell .generated-qr-brand img{width:4.2mm;height:4.2mm}
+.pwa-qr-label-cell .generated-qr-copy small{font-size:6.8pt!important;color:#0b2f57!important;letter-spacing:.015em!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pwa-qr-label-cell .generated-qr-copy h3{font-size:9.45pt!important;margin:.22mm 0!important;line-height:1.02!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pwa-qr-label-cell .generated-qr-copy p{font-size:5.75pt!important;line-height:1.05!important;margin:.3mm 0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pwa-qr-label-cell .generated-qr-copy .generated-qr-identity{font-size:5.25pt!important;margin-top:.6mm!important;font-weight:820!important;color:#173a63!important}
+.pwa-qr-label-cell .generated-qr-copy .generated-qr-credential-line{font-size:7.35pt!important;line-height:1.06!important;margin:.45mm 0!important;font-weight:820!important;color:#0e2032!important}
+.pwa-qr-label-cell .generated-qr-payload{display:none!important}
+.pwa-qr-label-cell .qr-credential-mode .generated-qr-copy small{font-size:6.5pt!important}
+
+@media print{
+  body.printing-qr-labels>*{visibility:hidden!important}
+  body.printing-qr-labels #qrPrintPortal,body.printing-qr-labels #qrPrintPortal *{visibility:visible!important}
+  body.printing-qr-labels #qrPrintPortal{display:block!important;position:fixed!important;inset:0!important;width:215.9mm!important;background:#fff!important}
+  body.printing-qr-labels #qrPrintPortal .pwa-qr-sheet-page{display:block!important;margin:0!important;box-shadow:none!important}
+}
 @media(max-width:390px){.generated-qr-card{grid-template-columns:1fr}.generated-qr-code{margin:auto}.detail-actions button b{font-size:7px!important}.qr-print-options{grid-template-columns:1fr}.qr-print-options button{min-height:42px}}
 @media print{body.printing-credentials-only>*{visibility:hidden!important}body.printing-credentials-only #credentialPrintPortal,body.printing-credentials-only #credentialPrintPortal *{visibility:visible!important}body.printing-credentials-only #credentialPrintPortal{display:block!important;position:fixed!important;inset:0!important;background:#fff!important}body.printing-credentials-only .credential-print-page{display:grid!important;width:215.9mm!important;height:279.4mm!important;margin:0!important;padding:10mm 9.5mm!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-template-rows:repeat(12,20mm)!important;column-gap:3.3mm!important;row-gap:0!important}.credential-print-sticker{height:20mm!important;box-shadow:none!important}}
 

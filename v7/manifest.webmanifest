@@ -2,7 +2,7 @@
   "id": "./",
   "name": "RISP IT ASSET",
   "short_name": "RISP IT ASSET",
-  "description": "RISP Phuket IT Asset Management — V7.6.7 multi-account print labels + scan audio",
+  "description": "RISP Phuket IT Asset Management — V7.6.8 pro QR label studio + scan audio",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

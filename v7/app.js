@@ -1,7 +1,7 @@
 (function(){
   'use strict';
 
-  const CACHE_KEY='RISP_V7_WORLDCLASS_CACHE_767';
+  const CACHE_KEY='RISP_V7_WORLDCLASS_CACHE_768';
   const CONNECTION_STORAGE_KEY='RISP_V7_SECURE_CONNECTION_23';
   const THEME_STORAGE_KEY='RISP_V7_THEME_V1';
   const CREDENTIAL_TOKEN_SESSION_KEY='RISP_V7_CREDENTIAL_TOKEN_V1';
@@ -51,6 +51,7 @@
   const connectionSheet=$('connectionSheet'),statusSheet=$('statusSheet'),photoSheet=$('photoSheet'),deleteSheet=$('deleteSheet');
   const apiUrlInput=$('apiUrlInput'),apiKeyInput=$('apiKeyInput');
   const credentialSheet=$('credentialSheet'),credentialPinInput=$('credentialPinInput'),credentialAccountSheet=$('credentialAccountSheet'),credentialAccountOptions=$('credentialAccountOptions'),credentialAccountCopy=$('credentialAccountCopy');
+  const qrPrintPortal=$('qrPrintPortal'),generatedQrCopies=$('generatedQrCopies');
 
   let ASSETS=[];
   let assetMap=Object.create(null);
@@ -92,7 +93,7 @@
   let credentialUnlockedUntil=0;
   const protectedPhotoCache=new Map();
 
-  // V7.6.7: scan confirmation sound, close/far QR capture, compact JPEG saves, premium Detail and multi-account print-label modes.
+  // V7.6.8: pro QR labels, larger left-aligned QR, Asset ID + Serial identity, and per-device copy count.
   let scanRequest=0,scanResolving=false,cameraStarting=null,cameraEpoch=0,cameraWanted=false;
   const scanBackdrop=document.createElement('div');
   scanBackdrop.id='scanResultBackdrop';scanBackdrop.className='sheet-backdrop scan-result-backdrop';scanBackdrop.setAttribute('aria-hidden','true');
@@ -311,8 +312,42 @@
   function renderCredentialAccountPicker(asset,pairs){pendingCredentialPairs=pairs;selectedCredentialIndex=0;credentialAccountCopy.textContent=(asset&&asset.ASSET_TAG?value(asset.ASSET_TAG)+' • ':'')+'Choose one of '+pairs.length+' Local Username / Local Password pairs to print.';credentialAccountOptions.innerHTML=pairs.map((pair,index)=>'<button type="button" class="credential-account-option '+(index===0?'selected':'')+'" data-credential-account-index="'+index+'"><i></i><b>User: '+esc(pair.username)+'</b><small>Pw: '+esc(pair.password)+'</small></button>').join('');openSheet(credentialAccountSheet)}
   function handleCredentialPrintData(mode,asset,data){const pairs=credentialPairsFromData(data);if(!pairs.length){cancelPendingCredentialPrint();closeSheet(credentialSheet);showToast('No Local Username / Local Password saved for this laptop',3400);return}pendingCredentialPrintData=data;if(pairs.length===1){finishCredentialPrint(mode,asset,data,pairs[0]);return}closeSheet(credentialSheet);renderCredentialAccountPicker(asset,pairs)}
   function finishCredentialPrint(mode,asset,creds,pair){const chosen=pair||firstCredentialPair(creds);if(!chosen){cancelPendingCredentialPrint();closeSheet(credentialSheet);showToast('No matching Local Username / Local Password pair',3400);return}generatedQrAsset=asset;generatedQrCredentials=chosen;cancelPendingCredentialPrint();closeSheet($('credentialSheet'));if(mode==='credentials-only'){const portal=$('credentialPrintPortal');portal.innerHTML='';portal.appendChild(buildCredentialPrintPage(asset,chosen));portal.hidden=false;closeSheet($('generatedQrSheet'));document.body.classList.add('printing-credentials-only');setTimeout(()=>{fitCredentialPrintText(portal);window.print();setTimeout(()=>{document.body.classList.remove('printing-credentials-only');portal.hidden=true},350)},80);return}setGeneratedQrMode('qr-credentials');openSheet($('generatedQrSheet'));setTimeout(()=>{fitGeneratedCredentialText();window.print()},120)}
+  function qrCopyCountApp(){let n=Number.parseInt(generatedQrCopies&&generatedQrCopies.value,10);if(!Number.isFinite(n))n=1;n=Math.max(1,Math.min(99,n));if(generatedQrCopies)generatedQrCopies.value=String(n);return n}
+  function fitGeneratedCredentialText(root){if(!root)return;root.querySelectorAll('.generated-qr-credential-line').forEach(el=>{let size=7.35;const min=5.25;el.style.fontSize=size+'pt';while(el.scrollWidth>el.clientWidth&&size>min){size=Math.max(min,size-.2);el.style.fontSize=size.toFixed(2)+'pt'}})}
+  function setGeneratedQrMode(mode){
+    generatedQrPrintMode=mode||'qr-only';
+    const credentialMode=generatedQrPrintMode==='qr-credentials'||generatedQrPrintMode==='credentials-only';
+    const card=$('generatedQrCard'),code=$('generatedQrCode'),identity=$('generatedQrIdentity'),serial=$('generatedQrSerial'),id=$('generatedQrId'),payload=$('generatedQrPayload'),asset=generatedQrAsset||{},creds=generatedQrCredentials||{};
+    if(card)card.classList.toggle('qr-credential-mode',credentialMode);
+    if(code)code.hidden=generatedQrPrintMode==='credentials-only';
+    $('generatedQrTag').textContent=value(asset.ASSET_TAG);
+    $('generatedQrMeta').textContent=generatedQrPrintMode==='credentials-only'?'Laptop credentials':([asset.DEVICE_TYPE,asset.BRAND].filter(Boolean).join(' • ')||'IT Asset');
+    if(identity){identity.textContent='Asset ID: '+value(asset.ASSET_ID)+' • Serial: '+value(asset.SERIAL||asset.SERVICE_TAG);identity.hidden=generatedQrPrintMode==='credentials-only'}
+    if(serial){serial.textContent=credentialMode?'User: '+value(creds.username):'';serial.hidden=!credentialMode;serial.classList.toggle('generated-qr-credential-line',credentialMode)}
+    if(id){id.textContent=credentialMode?'Pw: '+value(creds.password):'';id.hidden=!credentialMode;id.classList.toggle('generated-qr-credential-line',credentialMode)}
+    if(payload){payload.textContent=generatedQrPrintMode==='credentials-only'?'':'QR: '+canonicalQrPayload(asset);payload.hidden=generatedQrPrintMode==='credentials-only'}
+    fitGeneratedCredentialText(card);
+  }
+  function renderGeneratedQr(asset){
+    generatedQrAsset=asset||null;generatedQrCredentials=null;generatedQrPrintMode='qr-only';
+    if(generatedQrCopies)generatedQrCopies.value='1';
+    if(!asset)return;
+    const host=$('generatedQrCode');if(host){host.hidden=false;host.innerHTML=''}
+    $('generatedQrCard').classList.remove('qr-credential-mode');
+    ['generatedQrSerial','generatedQrId'].forEach(id=>{const el=$(id);if(el){el.hidden=true;el.textContent='';el.classList.remove('generated-qr-credential-line');el.style.removeProperty('font-size')}});
+    const identity=$('generatedQrIdentity');if(identity){identity.hidden=false;identity.textContent='Asset ID: '+value(asset.ASSET_ID)+' • Serial: '+value(asset.SERIAL||asset.SERVICE_TAG)}
+    $('generatedQrTag').textContent=value(asset.ASSET_TAG);$('generatedQrMeta').textContent=[asset.DEVICE_TYPE,asset.BRAND].filter(Boolean).join(' • ')||'IT Asset';$('generatedQrPayload').textContent=canonicalQrPayload(asset);$('generatedQrPayload').hidden=false;
+    if(typeof QRCode==='function'&&host){new QRCode(host,{text:canonicalQrPayload(asset),width:220,height:220,colorDark:'#07111d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M})}
+    const laptop=isLaptopAsset(asset);['generatedQrCredentialsBtn','generatedCredentialsOnlyBtn'].forEach(id=>{const b=$(id);if(b){b.disabled=!laptop;b.title=laptop?'':'Username / password printing is for Laptop assets only.'}})
+  }
+  function buildCredentialPrintPage(asset,pair,rows){const page=document.createElement('section');page.className='credential-print-page';const list=Array.isArray(rows)?rows:[pair];list.forEach(chosen=>{const sticker=document.createElement('div');sticker.className='credential-print-sticker';sticker.innerHTML='<div class="credential-print-line"><b>User: </b>'+esc(chosen&&chosen.username||'-')+'</div><div class="credential-print-line"><b>Pw: </b>'+esc(chosen&&chosen.password||'-')+'</div>';page.appendChild(sticker)});for(let i=list.length;i<60;i++)page.appendChild(document.createElement('div'));return page}
+  function cloneGeneratedQrCardForPrint(){const source=$('generatedQrCard');if(!source)return null;const clone=source.cloneNode(true);clone.removeAttribute('id');clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));const host=clone.querySelector('.generated-qr-code');const canvas=source.querySelector('.generated-qr-code canvas');if(host&&canvas){try{const img=document.createElement('img');img.src=canvas.toDataURL('image/png');img.alt='QR Code';host.replaceChildren(img)}catch(e){}}return clone}
+  function buildQrPrintPortal(copies){if(!qrPrintPortal)return;qrPrintPortal.innerHTML='';const pageCount=Math.ceil(copies/30);for(let pageIndex=0;pageIndex<pageCount;pageIndex++){const page=document.createElement('section');page.className='pwa-qr-sheet-page';const grid=document.createElement('div');grid.className='pwa-qr-sheet-grid';const count=Math.min(30,copies-pageIndex*30);for(let i=0;i<count;i++){const cell=document.createElement('div');cell.className='pwa-qr-label-cell';const card=cloneGeneratedQrCardForPrint();if(card)cell.appendChild(card);grid.appendChild(cell)}for(let i=count;i<30;i++)grid.appendChild(document.createElement('div'));page.appendChild(grid);qrPrintPortal.appendChild(page)}qrPrintPortal.hidden=false;qrPrintPortal.setAttribute('aria-hidden','false')}
+  function printGeneratedQrCopies(){if(!generatedQrAsset||!qrPrintPortal)return;const copies=qrCopyCountApp();buildQrPrintPortal(copies);document.body.classList.add('printing-qr-labels');setTimeout(()=>{window.print();setTimeout(()=>{document.body.classList.remove('printing-qr-labels');qrPrintPortal.hidden=true;qrPrintPortal.setAttribute('aria-hidden','true')},350)},80)}
+  function finishCredentialPrint(mode,asset,creds,pair){const chosen=pair||firstCredentialPair(creds);if(!chosen){cancelPendingCredentialPrint();closeSheet(credentialSheet);showToast('No matching Local Username / Local Password pair',3400);return}generatedQrAsset=asset;generatedQrCredentials=chosen;cancelPendingCredentialPrint();closeSheet($('credentialSheet'));if(mode==='credentials-only'){const portal=$('credentialPrintPortal'),copies=qrCopyCountApp(),rows=Array.from({length:copies},()=>chosen),pageCount=Math.ceil(rows.length/60);portal.innerHTML='';for(let i=0;i<pageCount;i++)portal.appendChild(buildCredentialPrintPage(asset,null,rows.slice(i*60,i*60+60)));portal.hidden=false;closeSheet($('generatedQrSheet'));document.body.classList.add('printing-credentials-only');setTimeout(()=>{fitCredentialPrintText(portal);window.print();setTimeout(()=>{document.body.classList.remove('printing-credentials-only');portal.hidden=true},350)},80);return}setGeneratedQrMode('qr-credentials');openSheet($('generatedQrSheet'));setTimeout(()=>{fitGeneratedCredentialText($('generatedQrCard'));printGeneratedQrCopies()},120)}
+  function printGeneratedQr(){if(!generatedQrAsset)return;setGeneratedQrMode('qr-only');setTimeout(printGeneratedQrCopies,80)}
   async function requestCredentialPrint(mode){const asset=generatedQrAsset;if(!asset||!isLaptopAsset(asset)){showToast('Username / password stickers are for Laptop assets only');return}currentDetailId=String(asset.ASSET_ID||currentDetailId||'');pendingCredentialPrintMode=mode;pendingCredentialPrintAsset=asset;if(loadCredentialToken()){try{handleCredentialPrintData(mode,asset,await fetchPrivateCredentials(''));return}catch(e){clearCredentialToken()}}openPrivateCredentialSheet()}
-  function printGeneratedQr(){if(!generatedQrAsset)return;setGeneratedQrMode('qr-only');window.print()}
+  function legacyPrintGeneratedQr(){if(!generatedQrAsset)return;setGeneratedQrMode('qr-only');window.print()}
   $('addAssetForm').addEventListener('submit',async e=>{e.preventDefault();const payload=collectForm('add'),problem=validateFormPayload(payload);if(problem){showToast(problem);return}const existing=ASSETS.find(a=>normalize(a.ASSET_TAG)===normalize(payload.ASSET_TAG));if(existing){showToast('Asset Tag already exists');return}const btn=$('addSaveBtn'),old=btn.textContent,photo=addPhotoPrepared,tag=payload.ASSET_TAG;btn.disabled=true;btn.textContent='SAVING…';try{await writeRequest('add',{payload:JSON.stringify(payload)});showToast('DEVICE SAVED • QR READY ✓',2400);$('addAssetForm').reset();$('addFormFields').innerHTML=renderFormFields('add',{DEVICE_TYPE:'Laptop',STATUS:'Active'});bindCustomFields('add');resetAddPhoto();route('home');setTimeout(async()=>{try{const created=await confirmCreatedByTag(tag);if(created){openGeneratedQrSheet(created);if(photo){showToast('Uploading device photo…',2300);uploadPreparedPhotoForAsset(created.ASSET_ID,photo).then(()=>{showToast('Device + photo ready ✓');quietBackgroundSync(450)}).catch(()=>showToast('Device saved • photo needs retry',3400))}}else showToast('Device saved • QR will appear after sync',3200)}catch(e){showToast('Device saved • sync to open QR',3200)}},350)}catch(err){showToast(err.message||'Could not add device',3400)}finally{btn.disabled=false;btn.textContent=old}});
 
   function resetEditPhoto(){editPhotoFile=null;editPhotoPrepared=null;['editPhotoLibraryInput','editPhotoCameraInput'].forEach(id=>{const e=$(id);if(e)e.value=''});$('editPhotoPreview').hidden=true;$('editPhotoPreview').removeAttribute('src');if($('editPhotoAiBtn'))$('editPhotoAiBtn').disabled=true}
@@ -475,7 +510,7 @@
   $('appThemeBtn').addEventListener('click',toggleTheme);$('moreThemeBtn').addEventListener('click',toggleTheme);
   syncAppHeight();window.addEventListener('resize',syncAppHeight,{passive:true});if(window.visualViewport)window.visualViewport.addEventListener('resize',syncAppHeight,{passive:true});
   let initialTheme='dark';try{initialTheme=localStorage.getItem(THEME_STORAGE_KEY)||'dark'}catch(e){}applyTheme(initialTheme,false);
-  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=767').catch(()=>{}));
+  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=768').catch(()=>{}));
 
   const initial=(location.hash||'#home').slice(1);if(initial.startsWith('detail/')){const id=decodeURIComponent(initial.slice(7));setTimeout(()=>openDetail(id),100)}else route(['home','search','scan','add','more'].includes(initial)?initial:'home',false);
 })();
