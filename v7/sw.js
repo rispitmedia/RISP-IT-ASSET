@@ -1,6 +1,6 @@
-const CACHE_NAME='risp-it-asset-v7-6-10-performance-repair-crud';
+const CACHE_NAME='risp-it-asset-v7-6-11-iphone-maintenance-close';
 const CORE=[
-  './','./index.html','./asset/index.html','./styles.css?v=7610','./app.js?v=7610','./photo-tools.js?v=7610','./manifest.webmanifest?v=7610',
+  './','./index.html','./asset/index.html','./styles.css?v=7611','./app.js?v=7611','./photo-tools.js?v=7611','./manifest.webmanifest?v=769',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'
 ];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});

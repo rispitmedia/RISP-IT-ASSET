@@ -457,3 +457,21 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
 .back-button:before{content:"←";display:block;font-size:23px!important;line-height:1!important;font-weight:700!important;color:#f2f8ff!important;-webkit-text-fill-color:#f2f8ff!important}
 [data-theme="light"] .back-button:before{color:#142c40!important;-webkit-text-fill-color:#142c40!important}
 @media print{.credential-print-page .credential-print-sticker{overflow:visible!important}.credential-print-page .credential-print-line{height:8mm!important;max-height:8mm!important;overflow:visible!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;text-overflow:clip!important;font-size:8.5pt!important;line-height:1.02!important}}
+
+
+/* V7.6.11 — iPhone viewport geometry: remove dead area below bottom navigation. */
+@media(max-width:719px){
+  html,body{position:fixed!important;inset:0!important;width:100%!important;height:var(--app-height,100dvh)!important;min-height:0!important;max-height:none!important;overflow:hidden!important;margin:0!important;padding:0!important}
+  .app{position:fixed!important;left:0!important;right:0!important;top:var(--app-top,0px)!important;bottom:auto!important;width:100%!important;height:var(--app-height,100dvh)!important;min-height:0!important;max-height:none!important;overflow:hidden!important;transform:none!important}
+  .app-header{flex:none!important}
+  .viewport{position:absolute!important;left:0!important;right:0!important;top:calc(var(--header-h) + var(--safe-top))!important;bottom:calc(54px + var(--safe-bottom))!important;height:auto!important;min-height:0!important;overflow:hidden!important}
+  .tabbar{position:fixed!important;left:0!important;right:0!important;bottom:0!important;width:100%!important;height:calc(54px + var(--safe-bottom))!important;min-height:0!important;padding:0 7px var(--safe-bottom)!important;margin:0!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;align-items:center!important;z-index:9000!important;transform:none!important;background:rgba(3,8,15,.985)!important}
+  .tab{height:54px!important;min-height:54px!important;align-self:stretch!important;padding:3px 0!important;justify-content:center!important}
+  .screen{padding-bottom:10px!important}
+  .bottom-spacer{height:0!important;min-height:0!important}
+  .toast{bottom:calc(62px + var(--safe-bottom))!important}
+  .sheet-backdrop{z-index:10000!important}
+  .maintenance-sheet{max-height:calc(var(--app-height,100dvh) - 12px)!important;padding-bottom:calc(14px + var(--safe-bottom))!important}
+}
+.sheet-close-btn{margin-left:auto;flex:0 0 38px;width:38px;height:38px;border:1px solid #31516d;border-radius:50%;background:rgba(9,25,40,.72);color:#dceeff;font-size:22px;line-height:1;display:grid;place-items:center}
+[data-theme="light"] .sheet-close-btn{background:#fff;color:#173a63;border-color:#bfd1df}

@@ -1,7 +1,7 @@
 (function(){
   'use strict';
 
-  const CACHE_KEY='RISP_V7_WORLDCLASS_CACHE_7610';
+  const CACHE_KEY='RISP_V7_WORLDCLASS_CACHE_7611';
   const CONNECTION_STORAGE_KEY='RISP_V7_SECURE_CONNECTION_23';
   const THEME_STORAGE_KEY='RISP_V7_THEME_V1';
   const CREDENTIAL_TOKEN_SESSION_KEY='RISP_V7_CREDENTIAL_TOKEN_V1';
@@ -93,7 +93,7 @@
   let credentialUnlockedUntil=0;
   const protectedPhotoCache=new Map();
 
-  // V7.6.10: fast repair CRUD + full-text QR labels + iPhone navigation, larger left-aligned QR, Asset ID + Serial identity, and per-device copy count.
+  // V7.6.11: iPhone visualViewport sizing, fixed bottom navigation, and explicit maintenance sheet close controls.
   let scanRequest=0,scanResolving=false,cameraStarting=null,cameraEpoch=0,cameraWanted=false;
   const scanBackdrop=document.createElement('div');
   scanBackdrop.id='scanResultBackdrop';scanBackdrop.className='sheet-backdrop scan-result-backdrop';scanBackdrop.setAttribute('aria-hidden','true');
@@ -123,7 +123,7 @@
   };
 
   function standalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}
-  function syncAppHeight(){const h=Math.max(320,Math.round(window.innerHeight||document.documentElement.clientHeight||screen.height||800));document.documentElement.style.setProperty('--app-height',h+'px')}
+  function syncAppHeight(){const vv=window.visualViewport;const h=Math.max(320,Math.round(vv&&vv.height?vv.height:window.innerHeight||document.documentElement.clientHeight||screen.height||800));const top=Math.max(0,Math.round(vv&&Number.isFinite(vv.offsetTop)?vv.offsetTop:0));document.documentElement.style.setProperty('--app-height',h+'px');document.documentElement.style.setProperty('--app-top',top+'px')}
   function applyTheme(theme,persist){const next=theme==='light'?'light':'dark';document.documentElement.setAttribute('data-theme',next);const btn=$('appThemeBtn'),lbl=$('themeModeLabel');if(btn)btn.textContent=next==='dark'?'☀':'☾';if(lbl)lbl.textContent=next==='dark'?'Dark theme • tap for Light':'Light theme • tap for Dark';const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute('content',next==='dark'?'#06101c':'#f3f2ed');if(persist!==false){try{localStorage.setItem(THEME_STORAGE_KEY,next)}catch(e){}}}
   function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'dark':'light',true)}
 
@@ -263,6 +263,8 @@
     if(del){const rid=del.dataset.mntDelete;if(!confirm('Delete this service record? Drive attachments will be retained.'))return;del.disabled=true;del.textContent='…';try{await writeRequest('maintenance_delete',{id:currentDetailId,recordId:rid});maintenanceRecords=maintenanceRecords.filter(r=>String(r.RECORD_ID)!==rid);renderMaintenance(maintenanceRecords);showToast('Service record deleted')}catch(err){del.disabled=false;del.textContent='Delete';showToast(err.message||'Could not delete record',3500)}}
   });
   $('cancelMaintenanceBtn').addEventListener('click',()=>{maintenanceEditingId='';closeSheet($('maintenanceSheet'))});
+  $('closeMaintenanceBtn').addEventListener('click',()=>{maintenanceEditingId='';closeSheet($('maintenanceSheet'))});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('maintenanceSheet').classList.contains('open')){maintenanceEditingId='';closeSheet($('maintenanceSheet'))}});
   $('maintenanceSheet').addEventListener('click',e=>{if(e.target===$('maintenanceSheet')){maintenanceEditingId='';closeSheet($('maintenanceSheet'))}});
   $('maintenanceForm').addEventListener('submit',async e=>{
     e.preventDefault();if(!currentDetailId)return;
@@ -601,7 +603,7 @@
   $('appThemeBtn').addEventListener('click',toggleTheme);$('moreThemeBtn').addEventListener('click',toggleTheme);
   syncAppHeight();window.addEventListener('resize',syncAppHeight,{passive:true});if(window.visualViewport)window.visualViewport.addEventListener('resize',syncAppHeight,{passive:true});
   let initialTheme='dark';try{initialTheme=localStorage.getItem(THEME_STORAGE_KEY)||'dark'}catch(e){}applyTheme(initialTheme,false);
-  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=768').catch(()=>{}));
+  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=769').catch(()=>{}));
 
   const initial=(location.hash||'#home').slice(1);if(initial.startsWith('detail/')){const id=decodeURIComponent(initial.slice(7));setTimeout(()=>openDetail(id),100)}else route(['home','search','scan','add','more'].includes(initial)?initial:'home',false);
 })();
