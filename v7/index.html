@@ -12,7 +12,7 @@
   <link rel="manifest" href="./manifest.webmanifest?v=768">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=768">
+  <link rel="stylesheet" href="./styles.css?v=769">
 </head>
 <body>
   <div class="splash" id="splash">
@@ -178,6 +178,12 @@
             <div class="info-row"><span>Cost</span><b id="dCost">—</b></div>
             <div class="info-row"><span>Updated</span><b id="dUpdated">—</b></div>
           </div>
+        </div>
+
+        <div class="detail-section maintenance-section" id="maintenanceSection">
+          <div class="section-head compact"><div><small>SERVICE LIFECYCLE</small><h2>Maintenance & Repair History</h2></div><button class="maintenance-add-btn" id="addMaintenanceBtn" type="button">＋ ADD RECORD</button></div>
+          <div class="maintenance-summary" id="maintenanceSummary"><b>Loading service history…</b></div>
+          <div class="maintenance-list" id="maintenanceList"><div class="maintenance-empty">No maintenance records loaded.</div></div>
         </div>
 
         <div class="detail-section" id="notesSection">
@@ -382,12 +388,23 @@
       <p class="qr-identity-note">Legacy Libib / Asset Tag QR codes remain supported, but ambiguous legacy codes are blocked instead of opening the wrong asset.</p>
       <label class="qr-copy-control-app" for="generatedQrCopies"><span>COPIES</span><input id="generatedQrCopies" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" aria-label="Number of QR label copies"></label>
       <div class="qr-print-options"><button class="sheet-primary" id="generatedQrPrintBtn" type="button">QR ONLY</button><button class="sheet-primary" id="generatedQrCredentialsBtn" type="button">QR + USERNAME PASSWORD</button><button class="sheet-primary" id="generatedCredentialsOnlyBtn" type="button">USERNAME PASSWORD ONLY</button></div>
-      <div class="connect-actions"><button class="sheet-secondary" id="generatedQrCancelBtn" type="button">CANCEL</button></div>
+      <div class="connect-actions"><button class="sheet-secondary" id="generatedQrCancelBtn" type="button">← BACK TO DEVICE</button></div>
     </div>
   </div>
 
   <div id="qrPrintPortal" hidden aria-hidden="true"></div>
   <div id="credentialPrintPortal" hidden aria-hidden="true"></div>
+
+  <div class="sheet-backdrop" id="credentialOnlyPreviewSheet" aria-hidden="true">
+    <div class="sheet credential-only-preview-sheet">
+      <div class="grabber"></div>
+      <div class="connect-head"><div class="connect-icon">☷</div><div><small>USERNAME / PASSWORD LABEL</small><h2>Sticker ready</h2></div></div>
+      <p class="connect-copy">Review the complete username and password before printing.</p>
+      <div class="credential-only-sticker" id="credentialOnlySticker"></div>
+      <label class="qr-copy-control-app" for="credentialOnlyCopies"><span>COPIES</span><input id="credentialOnlyCopies" type="number" min="1" max="99" value="1" inputmode="numeric"></label>
+      <div class="connect-actions"><button class="sheet-secondary" id="credentialOnlyBackBtn" type="button">← BACK</button><button class="sheet-primary" id="credentialOnlyPrintBtn" type="button">PRINT USER / PASSWORD</button></div>
+    </div>
+  </div>
 
   <div class="sheet-backdrop" id="credentialSheet" aria-hidden="true">
     <div class="sheet credential-sheet">
@@ -415,11 +432,42 @@
     </div>
   </div>
 
+  <div class="sheet-backdrop" id="maintenanceSheet" aria-hidden="true">
+    <div class="sheet maintenance-sheet">
+      <div class="grabber"></div>
+      <div class="connect-head"><div class="connect-icon">🔧</div><div><small>ASSET SERVICE LOG</small><h2 id="maintenanceFormTitle">Add repair record</h2></div></div>
+      <p class="connect-copy">This record is saved to the shared RISP IT ASSET history and appears on Admin Web and Mobile App.</p>
+      <form id="maintenanceForm" class="maintenance-form">
+        <label class="connect-field"><span>TYPE</span><select id="mntType"><option>Repair</option><option>Maintenance</option><option>Inspection</option><option>Warranty Claim</option><option>Replacement</option></select></label>
+        <div class="maintenance-form-grid">
+          <label class="connect-field"><span>REPORTED DATE</span><input id="mntReported" type="date" required></label>
+          <label class="connect-field"><span>SENT DATE</span><input id="mntSent" type="date"></label>
+          <label class="connect-field"><span>RETURN DATE</span><input id="mntReturn" type="date"></label>
+          <label class="connect-field"><span>STATUS</span><select id="mntStatus"><option>Completed</option><option>In Progress</option><option>Waiting for Parts</option><option>Sent to Service Center</option><option>Unresolved</option></select></label>
+        </div>
+        <label class="connect-field"><span>SHOP / SERVICE CENTER</span><input id="mntVendor" maxlength="200" placeholder="e.g. Dell Service Center"></label>
+        <label class="connect-field"><span>CONTACT / TECHNICIAN</span><input id="mntContact" maxlength="200" placeholder="Technician or contact person"></label>
+        <label class="connect-field"><span>PROBLEM / REASON</span><textarea id="mntProblem" required rows="2" placeholder="Describe the fault or reason for inspection"></textarea></label>
+        <label class="connect-field"><span>DIAGNOSIS</span><textarea id="mntDiagnosis" rows="2" placeholder="What did the shop / technician find?"></textarea></label>
+        <label class="connect-field"><span>REPAIR / ACTION TAKEN</span><textarea id="mntAction" rows="2" placeholder="What was repaired, replaced or checked?"></textarea></label>
+        <label class="connect-field"><span>PARTS REPLACED</span><input id="mntParts" placeholder="Part name / model"></label>
+        <div class="maintenance-form-grid">
+          <label class="connect-field"><span>PARTS COST (THB)</span><input id="mntPartsCost" type="number" min="0" step="0.01" value="0" inputmode="decimal"></label>
+          <label class="connect-field"><span>LABOR COST (THB)</span><input id="mntLaborCost" type="number" min="0" step="0.01" value="0" inputmode="decimal"></label>
+        </div>
+        <label class="connect-field"><span>PHOTOS (BEFORE / AFTER)</span><input id="mntPhotos" type="file" accept="image/*" multiple></label>
+        <label class="connect-field"><span>INVOICE / QUOTATION / DOCUMENTS</span><input id="mntDocuments" type="file" accept="image/*,.pdf,application/pdf" multiple></label>
+        <label class="connect-field"><span>NOTES</span><textarea id="mntNotes" rows="2" placeholder="Additional notes"></textarea></label>
+        <div class="connect-actions"><button class="sheet-secondary" id="cancelMaintenanceBtn" type="button">CANCEL</button><button class="sheet-primary" id="saveMaintenanceBtn" type="submit">SAVE RECORD</button></div>
+      </form>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
   <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.legacy.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script src="./photo-tools.js?v=768"></script>
-  <script src="./app.js?v=768"></script>
+  <script src="./photo-tools.js?v=769"></script>
+  <script src="./app.js?v=769"></script>
 </body>
 </html>

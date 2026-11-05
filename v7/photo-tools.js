@@ -71,11 +71,11 @@
     validate(file); const ui = aiPanel();
     try {
       ui.status.textContent = 'Loading AI remover… First use may take longer.';
-      if (!aiModulePromise) aiModulePromise = import('https://esm.sh/@imgly/background-removal@1.7.0?deps=onnxruntime-web@1.21.0-dev.20250206-d981b153d3').catch(e => { aiModulePromise = null; throw e; });
-      const mod = await aiModulePromise, remove = mod.removeBackground || mod.default, source = await blobOf(await openCanvas(file, 1400), 'image/png', 1);
-      const cut = await remove(source, { model: 'isnet_quint8', device: 'cpu', output: { format: 'image/png', quality: 1 }, progress: (key, current, total) => {
+      if (!aiModulePromise) aiModulePromise = import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm').catch(firstError => import('https://esm.sh/@imgly/background-removal@1.7.0?deps=onnxruntime-web@1.21.0-dev.20250206-d981b153d3').catch(secondError => { aiModulePromise = null; throw new Error('AI module could not load from either CDN: ' + (secondError && secondError.message || firstError && firstError.message || 'network error')); }));
+      const mod = await Promise.race([aiModulePromise,new Promise((_,reject)=>setTimeout(()=>reject(new Error('AI model loading timed out. Check your connection and try again.')),60000))]), remove = mod.removeBackground || mod.default, source = await blobOf(await openCanvas(file, 1400), 'image/png', 1);
+      const cut = await Promise.race([remove(source, { model: 'isnet_quint8', device: 'cpu', output: { format: 'image/png', quality: 1 }, progress: (key, current, total) => {
         if (ui.box.isConnected) ui.status.textContent = key.indexOf('fetch') === 0 ? 'Loading AI model… ' + Math.round(total ? current / total * 100 : 0) + '%' : 'Removing background…';
-      }});
+      }}),new Promise((_,reject)=>setTimeout(()=>reject(new Error('AI background removal timed out. Please try a smaller image.')),180000))]);
       ui.status.textContent = 'Finishing photo…'; const result = await frameCutout(cut);
       return { dataUrl: await read(result), fileName: String(file.name || 'device').replace(/\.[^.]+$/, '') + '.jpg', mimeType: 'image/jpeg', blob: result, backgroundRemoved: true, whiteBackground: true };
     } finally { ui.box.remove(); }

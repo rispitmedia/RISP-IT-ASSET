@@ -1,7 +1,7 @@
 (function(){
   'use strict';
 
-  const CACHE_KEY='RISP_V7_WORLDCLASS_CACHE_768';
+  const CACHE_KEY='RISP_V7_WORLDCLASS_CACHE_769';
   const CONNECTION_STORAGE_KEY='RISP_V7_SECURE_CONNECTION_23';
   const THEME_STORAGE_KEY='RISP_V7_THEME_V1';
   const CREDENTIAL_TOKEN_SESSION_KEY='RISP_V7_CREDENTIAL_TOKEN_V1';
@@ -93,7 +93,7 @@
   let credentialUnlockedUntil=0;
   const protectedPhotoCache=new Map();
 
-  // V7.6.8: pro QR labels, larger left-aligned QR, Asset ID + Serial identity, and per-device copy count.
+  // V7.6.9: repair history + responsive QR labels, larger left-aligned QR, Asset ID + Serial identity, and per-device copy count.
   let scanRequest=0,scanResolving=false,cameraStarting=null,cameraEpoch=0,cameraWanted=false;
   const scanBackdrop=document.createElement('div');
   scanBackdrop.id='scanResultBackdrop';scanBackdrop.className='sheet-backdrop scan-result-backdrop';scanBackdrop.setAttribute('aria-hidden','true');
@@ -217,10 +217,61 @@
 
   function dateToInput(v){const s=String(v||'').trim();if(!s)return'';let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');return''}
   function setDetail(asset){asset=asset||{};$('detailTopTag').textContent=value(asset.ASSET_TAG);$('detailType').textContent=value(asset.DEVICE_TYPE).toUpperCase();$('detailTag').textContent=value(asset.ASSET_TAG);$('detailDevice').textContent=[asset.BRAND,asset.MODEL].filter(Boolean).join(' ')||'—';const brandBadge=$('detailBrandBadge');if(brandBadge)brandBadge.innerHTML=brandLogoMarkup(asset.BRAND,'detail-brand-icon')+'<span><small>MANUFACTURER</small><b>'+esc(value(asset.BRAND))+'</b></span>';$('detailStatus').textContent=value(asset.STATUS);$('detailAssigned').textContent=asset.ASSIGNED_TO||'Unassigned';$('dAssetId').textContent=value(asset.ASSET_ID);$('dSerial').textContent=value(asset.SERIAL);$('dService').textContent=value(asset.SERVICE_TAG);$('dLibib').textContent=value(asset.LIBIB);const qrReady=$('detailQrReady');if(qrReady)qrReady.textContent='QR READY • CANONICAL ASSET ID • '+value(asset.ASSET_ID);$('dDepartment').textContent=value(asset.DEPARTMENT);$('dColor').textContent=value(asset.COLOR);$('dPurchase').textContent=value(asset.PURCHASE_DATE);$('dWarranty').textContent=value(asset.WARRANTY);$('dCost').textContent=String(asset.COST||'').trim()?formatBaht(moneyNumber(asset.COST),true):'—';$('dUpdated').textContent=value(asset.UPDATED);$('dNotes').textContent=value(asset.NOTES);const img=$('detailPhoto'),fb=$('detailPhotoFallback'),urls=imageCandidates(asset,1100);img.hidden=true;fb.style.display='grid';fb.textContent=String(asset.DEVICE_TYPE||'IT').slice(0,11).toUpperCase();if(urls.length){let idx=0,secureTried=false;img.onload=()=>{img.hidden=false;fb.style.display='none'};img.onerror=async()=>{idx++;if(idx<urls.length){img.src=urls[idx];return}if(!secureTried&&asset.ASSET_ID){secureTried=true;const data=await protectedPhotoData(asset.ASSET_ID);if(data){img.src=data;return}}img.hidden=true;fb.style.display='grid'};img.src=urls[0]}}
-  async function openDetail(id){currentDetailId=String(id||'');const lite=assetMap[normalize(currentDetailId)]||{};setDetail(lite);route('detail',false);try{history.replaceState({screen:'detail',id:currentDetailId},'','#detail/'+encodeURIComponent(currentDetailId))}catch(e){};if(loadConnection())fetchAsset(currentDetailId).then(d=>mergeDetail(d)).catch(()=>{});}
+
+  let maintenanceRecords=[];
+  function moneyTHB(v){return '฿'+(Number(v)||0).toLocaleString('en-US',{maximumFractionDigits:2})}
+  function renderMaintenance(records){
+    maintenanceRecords=Array.isArray(records)?records:[];
+    const host=$('maintenanceList'),summary=$('maintenanceSummary');
+    if(!host||!summary)return;
+    const total=maintenanceRecords.reduce((s,r)=>s+(Number(r.TOTAL_COST)||0),0);
+    summary.innerHTML='<div><small>RECORDS</small><b>'+maintenanceRecords.length+'</b></div><div><small>LIFETIME COST</small><b>'+esc(moneyTHB(total))+'</b></div>';
+    if(!maintenanceRecords.length){host.innerHTML='<div class="maintenance-empty">No repair or maintenance history yet. Add the first service record.</div>';return}
+    host.innerHTML=maintenanceRecords.map(r=>{
+      const files=[...(Array.isArray(r.PHOTOS)?r.PHOTOS:[]),...(Array.isArray(r.DOCUMENTS)?r.DOCUMENTS:[])];
+      const links=files.map(f=>'<a href="'+esc(f.url||('https://drive.google.com/open?id='+encodeURIComponent(f.id||'')))+'" target="_blank" rel="noopener">'+(String(f.mimeType||'').indexOf('pdf')>=0?'▤ ':'▧ ')+esc(f.name||'Attachment')+'</a>').join('');
+      return '<article class="maintenance-record"><div class="maintenance-record-top"><div><small>'+esc(r.TYPE||'Service')+' • '+esc(r.REPORTED_DATE||'Date not set')+'</small><h3>'+esc(r.VENDOR||'IT Department')+'</h3></div><span class="maintenance-status">'+esc(r.STATUS||'Logged')+'</span></div><p><b>Problem:</b> '+esc(r.PROBLEM||'—')+'</p>'+(r.DIAGNOSIS?'<p><b>Diagnosis:</b> '+esc(r.DIAGNOSIS)+'</p>':'')+(r.ACTION_TAKEN?'<p><b>Action:</b> '+esc(r.ACTION_TAKEN)+'</p>':'')+(r.PARTS?'<p><b>Parts:</b> '+esc(r.PARTS)+'</p>':'')+'<div class="maintenance-cost"><span>Parts '+esc(moneyTHB(r.PARTS_COST))+' · Labor '+esc(moneyTHB(r.LABOR_COST))+'</span><b>'+esc(moneyTHB(r.TOTAL_COST))+'</b></div>'+(links?'<div class="maintenance-files">'+links+'</div>':'')+(r.NOTES?'<small class="maintenance-notes">'+esc(r.NOTES)+'</small>':'')+'</article>'
+    }).join('');
+  }
+  async function loadMaintenance(id){
+    const host=$('maintenanceList');if(host)host.innerHTML='<div class="maintenance-empty">Loading repair history…</div>';
+    try{const p=await jsonpRequest('maintenance',{id:id||currentDetailId},22000);renderMaintenance(p.records||[])}
+    catch(e){if(host)host.innerHTML='<div class="maintenance-empty maintenance-error">Could not load maintenance history. '+esc(e.message||'')+'</div>'}
+  }
+  function openMaintenanceForm(){
+    if(!currentDetailId){showToast('Open an asset first');return}
+    $('maintenanceForm').reset();
+    $('mntReported').value=new Date().toISOString().slice(0,10);
+    $('mntPartsCost').value='0';$('mntLaborCost').value='0';
+    openSheet($('maintenanceSheet'));
+  }
+  function readFileData(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve({name:file.name,mimeType:file.type||'application/octet-stream',dataUrl:String(r.result||'')});r.onerror=()=>reject(new Error('Could not read '+file.name));r.readAsDataURL(file)})}
+  async function collectMaintenanceFiles(inputId){
+    const files=Array.from($(inputId).files||[]);
+    if(files.length>4)throw new Error('Maximum 4 files per attachment group.');
+    for(const f of files)if(f.size>3*1024*1024)throw new Error(f.name+' is over 3 MB.');
+    return Promise.all(files.map(readFileData));
+  }
+  $('addMaintenanceBtn').addEventListener('click',openMaintenanceForm);
+  $('cancelMaintenanceBtn').addEventListener('click',()=>closeSheet($('maintenanceSheet')));
+  $('maintenanceSheet').addEventListener('click',e=>{if(e.target===$('maintenanceSheet'))closeSheet($('maintenanceSheet'))});
+  $('maintenanceForm').addEventListener('submit',async e=>{
+    e.preventDefault();if(!currentDetailId)return;
+    const btn=$('saveMaintenanceBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='UPLOADING…';
+    try{
+      const photos=await collectMaintenanceFiles('mntPhotos'),documents=await collectMaintenanceFiles('mntDocuments');
+      const payload={type:$('mntType').value,reportedDate:$('mntReported').value,sentDate:$('mntSent').value,returnDate:$('mntReturn').value,status:$('mntStatus').value,vendor:$('mntVendor').value,contact:$('mntContact').value,problem:$('mntProblem').value,diagnosis:$('mntDiagnosis').value,actionTaken:$('mntAction').value,parts:$('mntParts').value,partsCost:$('mntPartsCost').value,laborCost:$('mntLaborCost').value,notes:$('mntNotes').value,photos:photos,documents:documents};
+      await writeRequest('maintenance_add',{id:currentDetailId,payload:JSON.stringify(payload)});
+      closeSheet($('maintenanceSheet'));showToast('Repair record saved • syncing…',2600);
+      await sleep(900);await loadMaintenance(currentDetailId);
+    }catch(err){showToast(err.message||'Could not save maintenance record',4000)}
+    finally{btn.disabled=false;btn.textContent=old}
+  });
+
+  async function openDetail(id){currentDetailId=String(id||'');const lite=assetMap[normalize(currentDetailId)]||{};setDetail(lite);route('detail',false);try{history.replaceState({screen:'detail',id:currentDetailId},'','#detail/'+encodeURIComponent(currentDetailId))}catch(e){};if(loadConnection()){fetchAsset(currentDetailId).then(d=>mergeDetail(d)).catch(()=>{});loadMaintenance(currentDetailId)}}
   function mergeDetail(detail){if(!detail||!detail.ASSET_ID)return;const k=normalize(detail.ASSET_ID);const merged=Object.assign({},assetMap[k]||{},detail);assetMap[k]=merged;let found=false;ASSETS=ASSETS.map(a=>{if(normalize(a.ASSET_ID)===k){found=true;return merged}return a});if(!found)ASSETS.push(merged);if(normalize(currentDetailId)===k)setDetail(merged);renderHome();renderSearch();saveCache()}
   $('detailBack').addEventListener('click',()=>route(['home','search','scan'].includes(previousRoute)?previousRoute:'home'));
-  $('detailMoreBtn').addEventListener('click',openEditCurrent);$('editAssetBtn').addEventListener('click',openEditCurrent);$('refreshAssetBtn').addEventListener('click',async()=>{if(!currentDetailId)return;try{showToast('Refreshing…');mergeDetail(await fetchAsset(currentDetailId));showToast('Device refreshed')}catch(e){showToast(e.message)}});
+  $('detailMoreBtn').addEventListener('click',openEditCurrent);$('editAssetBtn').addEventListener('click',openEditCurrent);$('refreshAssetBtn').addEventListener('click',async()=>{if(!currentDetailId)return;try{showToast('Refreshing…');mergeDetail(await fetchAsset(currentDetailId));await loadMaintenance(currentDetailId);showToast('Device refreshed')}catch(e){showToast(e.message)}});
   $('copyAssetBtn').addEventListener('click',()=>copyText($('dAssetId').textContent));document.querySelectorAll('.copy-row').forEach(b=>b.addEventListener('click',()=>copyText($(b.dataset.copyId).textContent)));
   function copyText(t){const s=String(t||'').trim();if(!s||s==='—')return;const p=navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(s):Promise.reject();p.then(()=>showToast('Copied')).catch(()=>{const ta=document.createElement('textarea');ta.value=s;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showToast('Copied')}catch(e){}ta.remove()})}
 
@@ -343,8 +394,19 @@
   function buildCredentialPrintPage(asset,pair,rows){const page=document.createElement('section');page.className='credential-print-page';const list=Array.isArray(rows)?rows:[pair];list.forEach(chosen=>{const sticker=document.createElement('div');sticker.className='credential-print-sticker';sticker.innerHTML='<div class="credential-print-line"><b>User: </b>'+esc(chosen&&chosen.username||'-')+'</div><div class="credential-print-line"><b>Pw: </b>'+esc(chosen&&chosen.password||'-')+'</div>';page.appendChild(sticker)});for(let i=list.length;i<60;i++)page.appendChild(document.createElement('div'));return page}
   function cloneGeneratedQrCardForPrint(){const source=$('generatedQrCard');if(!source)return null;const clone=source.cloneNode(true);clone.removeAttribute('id');clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));const host=clone.querySelector('.generated-qr-code');const canvas=source.querySelector('.generated-qr-code canvas');if(host&&canvas){try{const img=document.createElement('img');img.src=canvas.toDataURL('image/png');img.alt='QR Code';host.replaceChildren(img)}catch(e){}}return clone}
   function buildQrPrintPortal(copies){if(!qrPrintPortal)return;qrPrintPortal.innerHTML='';const pageCount=Math.ceil(copies/30);for(let pageIndex=0;pageIndex<pageCount;pageIndex++){const page=document.createElement('section');page.className='pwa-qr-sheet-page';const grid=document.createElement('div');grid.className='pwa-qr-sheet-grid';const count=Math.min(30,copies-pageIndex*30);for(let i=0;i<count;i++){const cell=document.createElement('div');cell.className='pwa-qr-label-cell';const card=cloneGeneratedQrCardForPrint();if(card)cell.appendChild(card);grid.appendChild(cell)}for(let i=count;i<30;i++)grid.appendChild(document.createElement('div'));page.appendChild(grid);qrPrintPortal.appendChild(page)}qrPrintPortal.hidden=false;qrPrintPortal.setAttribute('aria-hidden','false')}
-  function printGeneratedQrCopies(){if(!generatedQrAsset||!qrPrintPortal)return;const copies=qrCopyCountApp();buildQrPrintPortal(copies);document.body.classList.add('printing-qr-labels');setTimeout(()=>{window.print();setTimeout(()=>{document.body.classList.remove('printing-qr-labels');qrPrintPortal.hidden=true;qrPrintPortal.setAttribute('aria-hidden','true')},350)},80)}
-  function finishCredentialPrint(mode,asset,creds,pair){const chosen=pair||firstCredentialPair(creds);if(!chosen){cancelPendingCredentialPrint();closeSheet(credentialSheet);showToast('No matching Local Username / Local Password pair',3400);return}generatedQrAsset=asset;generatedQrCredentials=chosen;cancelPendingCredentialPrint();closeSheet($('credentialSheet'));if(mode==='credentials-only'){const portal=$('credentialPrintPortal'),copies=qrCopyCountApp(),rows=Array.from({length:copies},()=>chosen),pageCount=Math.ceil(rows.length/60);portal.innerHTML='';for(let i=0;i<pageCount;i++)portal.appendChild(buildCredentialPrintPage(asset,null,rows.slice(i*60,i*60+60)));portal.hidden=false;closeSheet($('generatedQrSheet'));document.body.classList.add('printing-credentials-only');setTimeout(()=>{fitCredentialPrintText(portal);window.print();setTimeout(()=>{document.body.classList.remove('printing-credentials-only');portal.hidden=true},350)},80);return}setGeneratedQrMode('qr-credentials');openSheet($('generatedQrSheet'));setTimeout(()=>{fitGeneratedCredentialText($('generatedQrCard'));printGeneratedQrCopies()},120)}
+  function printGeneratedQrCopies(){if(!generatedQrAsset||!qrPrintPortal)return;const copies=qrCopyCountApp();buildQrPrintPortal(copies);document.body.classList.add('printing-qr-labels');requestAnimationFrame(()=>requestAnimationFrame(()=>{window.print();setTimeout(()=>{document.body.classList.remove('printing-qr-labels');qrPrintPortal.hidden=true;qrPrintPortal.setAttribute('aria-hidden','true')},900)}))}
+  function finishCredentialPrint(mode,asset,creds,pair){
+    const chosen=pair||firstCredentialPair(creds);
+    if(!chosen){cancelPendingCredentialPrint();closeSheet(credentialSheet);showToast('No matching Local Username / Local Password pair',3400);return}
+    generatedQrAsset=asset;generatedQrCredentials=chosen;cancelPendingCredentialPrint();closeSheet($('credentialSheet'));
+    if(mode==='credentials-only'){
+      $('credentialOnlySticker').innerHTML='<div><b>User:</b> '+esc(chosen.username||'-')+'</div><div><b>Pw:</b> '+esc(chosen.password||'-')+'</div>';
+      $('credentialOnlyCopies').value=String(qrCopyCountApp());
+      openSheet($('credentialOnlyPreviewSheet'));return;
+    }
+    setGeneratedQrMode('qr-credentials');openSheet($('generatedQrSheet'));
+    setTimeout(()=>{fitGeneratedCredentialText($('generatedQrCard'));printGeneratedQrCopies()},120)
+  }
   function printGeneratedQr(){if(!generatedQrAsset)return;setGeneratedQrMode('qr-only');setTimeout(printGeneratedQrCopies,80)}
   async function requestCredentialPrint(mode){const asset=generatedQrAsset;if(!asset||!isLaptopAsset(asset)){showToast('Username / password stickers are for Laptop assets only');return}currentDetailId=String(asset.ASSET_ID||currentDetailId||'');pendingCredentialPrintMode=mode;pendingCredentialPrintAsset=asset;if(loadCredentialToken()){try{handleCredentialPrintData(mode,asset,await fetchPrivateCredentials(''));return}catch(e){clearCredentialToken()}}openPrivateCredentialSheet()}
   function legacyPrintGeneratedQr(){if(!generatedQrAsset)return;setGeneratedQrMode('qr-only');window.print()}
@@ -382,6 +444,23 @@
 
 
   document.querySelectorAll('[data-private-help]').forEach(btn=>btn.addEventListener('click',()=>showToast('Open the saved device → Private Credentials → unlock with Super Admin PIN.')));
+  function printCredentialOnlySticker(){
+    const copies=Math.max(1,Math.min(99,Number.parseInt($('credentialOnlyCopies').value,10)||1));
+    const portal=$('credentialPrintPortal');portal.innerHTML='';
+    const pageCount=Math.ceil(copies/60);
+    for(let pageIndex=0;pageIndex<pageCount;pageIndex++){
+      const page=document.createElement('section');page.className='credential-print-page';
+      const count=Math.min(60,copies-pageIndex*60);
+      for(let i=0;i<count;i++){const sticker=document.createElement('div');sticker.className='credential-print-sticker';sticker.innerHTML='<div class="credential-print-line"><b>User: </b>'+esc(generatedQrCredentials.username||'-')+'</div><div class="credential-print-line"><b>Pw: </b>'+esc(generatedQrCredentials.password||'-')+'</div>';page.appendChild(sticker)}
+      for(let i=count;i<60;i++)page.appendChild(document.createElement('div'));
+      portal.appendChild(page);
+    }
+    portal.hidden=false;document.body.classList.add('printing-credentials-only');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{fitCredentialPrintText(portal);window.print();setTimeout(()=>{document.body.classList.remove('printing-credentials-only');portal.hidden=true;portal.innerHTML=''},900)}));
+  }
+  $('credentialOnlyBackBtn').addEventListener('click',()=>{closeSheet($('credentialOnlyPreviewSheet'));openSheet($('generatedQrSheet'))});
+  $('credentialOnlyPrintBtn').addEventListener('click',printCredentialOnlySticker);
+  $('credentialOnlyPreviewSheet').addEventListener('click',e=>{if(e.target===$('credentialOnlyPreviewSheet'))closeSheet($('credentialOnlyPreviewSheet'))});
   $('generatedQrCancelBtn').addEventListener('click',()=>{cancelPendingCredentialPrint();closeSheet($('generatedQrSheet'))});
   $('generatedQrPrintBtn').addEventListener('click',printGeneratedQr);
   $('generatedQrCredentialsBtn').addEventListener('click',()=>requestCredentialPrint('qr-credentials'));
