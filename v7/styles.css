@@ -404,3 +404,56 @@ html,body{width:100%;height:100%;max-width:100%;overflow:hidden!important;oversc
 @media print{body.printing-credentials-only .credential-print-page{display:grid!important;width:215.9mm!important;height:279.4mm!important;margin:0!important;padding:10mm 9.5mm!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-template-rows:repeat(12,20mm)!important;column-gap:3.3mm!important;row-gap:0!important;break-after:page!important;page-break-after:always!important}body.printing-credentials-only .credential-print-page:last-child{break-after:auto!important;page-break-after:auto!important}}
 
 .generated-qr-brand img{width:15px!important;height:15px!important}.detail-brand-icon img{object-fit:contain!important}.back-button{font-weight:800!important}
+
+
+/* V7.6.10 — compact service log, readable brands/back controls, iPhone nav geometry */
+.maintenance-section{margin-top:17px!important}
+.maintenance-record{padding:12px!important;border-radius:15px!important;box-shadow:0 8px 22px rgba(0,0,0,.10)}
+.maintenance-record-top small{font-size:8px!important;letter-spacing:.08em!important}
+.maintenance-record h3{font-size:13px!important}
+.maintenance-record p{margin-top:7px!important;font-size:10.5px!important;line-height:1.42!important}
+.maintenance-cost{margin-top:9px!important;padding-top:8px!important}
+.maintenance-record-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:10px;padding-top:9px;border-top:1px solid var(--line,#294861)}
+.maintenance-record-actions button{border:1px solid #315a78;border-radius:9px;background:#102b42;color:#cce8ff;padding:7px 11px;font-size:9px;font-weight:900}
+.maintenance-record-actions button:last-child{color:#ffb5b5;border-color:#78444a;background:#321b23}
+[data-theme="light"] .maintenance-record-actions{border-top-color:#e1eaf0}
+[data-theme="light"] .maintenance-record-actions button{background:#eff6fb;color:#174d79;border-color:#bfd3e1}
+[data-theme="light"] .maintenance-record-actions button:last-child{background:#fff4f4;color:#b42332;border-color:#f0c9ce}
+.maintenance-empty{display:grid;justify-items:center;gap:5px;padding:20px!important}
+.mnt-empty-tool{display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:linear-gradient(145deg,#153b5a,#0a2034);color:#8ed2ff;font-size:20px}
+.maintenance-empty b{color:var(--text,#eaf4ff);font-size:12px}
+.maintenance-empty small{font-size:10px;color:var(--muted,#8ba4bb)}
+.maintenance-tool-icon{display:grid!important;place-items:center;background:linear-gradient(145deg,#143d5e,#0a2035)!important;border:1px solid #397cac!important;color:#a9dcff!important}
+.maintenance-tool-icon svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+[data-theme="light"] .maintenance-tool-icon{background:linear-gradient(145deg,#e7f4ff,#cfe5f7)!important;color:#174d79!important;border-color:#b6d2e4!important}
+.back-button{display:grid!important;place-items:center!important;background:#0b1b2b!important;color:#f2f8ff!important;-webkit-text-fill-color:#f2f8ff!important;border:1px solid #4b83ad!important;box-shadow:0 3px 10px rgba(0,0,0,.08)!important}
+[data-theme="light"] .back-button{background:#fff!important;color:#142c40!important;-webkit-text-fill-color:#142c40!important;border-color:#a9c3d5!important;box-shadow:0 3px 10px rgba(23,58,99,.10)!important}
+.detail-brand-icon,.brand-form-icon,.brand-logo-chip,.brand-choice-logo{background:#fff!important;border:1px solid #d4e0e8!important;box-shadow:0 2px 9px rgba(0,0,0,.10)!important}
+.detail-brand-icon img,.brand-form-icon img,.brand-logo-chip img,.brand-choice-logo img{filter:none!important;-webkit-filter:none!important;mix-blend-mode:normal!important;opacity:1!important;object-fit:contain!important}
+[data-theme="dark"] .detail-brand-icon,[data-theme="dark"] .brand-form-icon,[data-theme="dark"] .brand-logo-chip,[data-theme="dark"] .brand-choice-logo{background:#fff!important}
+[data-theme="light"] .detail-brand-icon,[data-theme="light"] .brand-form-icon,[data-theme="light"] .brand-logo-chip,[data-theme="light"] .brand-choice-logo{background:#fff!important}
+/* One flex layout owns the viewport: no competing fixed/absolute nav offsets. */
+:root{--header-h:70px;--nav-h:62px}
+html,body{width:100%!important;height:100%!important;min-height:0!important;max-height:100%!important;overflow:hidden!important;margin:0!important;padding:0!important}
+.app{position:fixed!important;inset:0!important;width:100%!important;height:100dvh!important;min-height:0!important;max-height:100dvh!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;transform:none!important}
+.app-header{position:relative!important;inset:auto!important;flex:0 0 calc(var(--header-h) + var(--safe-top))!important;height:calc(var(--header-h) + var(--safe-top))!important;min-height:calc(var(--header-h) + var(--safe-top))!important;padding-top:calc(7px + var(--safe-top))!important}
+.viewport{position:relative!important;inset:auto!important;top:auto!important;right:auto!important;bottom:auto!important;left:auto!important;flex:1 1 auto!important;width:100%!important;height:auto!important;min-height:0!important;overflow:hidden!important}
+.tabbar{position:relative!important;inset:auto!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;transform:none!important;flex:0 0 calc(var(--nav-h) + var(--safe-bottom))!important;width:100%!important;height:calc(var(--nav-h) + var(--safe-bottom))!important;min-height:calc(var(--nav-h) + var(--safe-bottom))!important;max-height:calc(var(--nav-h) + var(--safe-bottom))!important;padding:3px 6px var(--safe-bottom)!important;margin:0!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;align-items:start!important;z-index:500!important;visibility:visible}
+.tab{height:var(--nav-h)!important;min-height:var(--nav-h)!important;max-height:var(--nav-h)!important;padding:5px 0 2px!important;gap:3px!important;align-self:start!important;justify-content:center!important}
+.tab svg{width:22px!important;height:22px!important}
+.tab small{font-size:9px!important;line-height:11px!important;letter-spacing:.04em!important}
+.screen{padding-bottom:10px!important;overscroll-behavior:contain!important}
+.bottom-spacer{height:2px!important;min-height:2px!important}
+@media(max-width:520px){:root{--nav-h:60px}.app-header{gap:6px}.brand{grid-template-columns:44px minmax(0,1fr) auto;gap:7px}.brand-mark{width:44px!important;height:44px!important}.tab small{font-size:8px!important}}
+@supports(height:100svh){.app{height:100svh!important}}
+@supports(height:100dvh){.app{height:100dvh!important}}
+
+/* V7.6.10 — no ellipsis on credential-only labels */
+.credential-print-sticker{align-items:stretch!important;justify-content:center!important;gap:1.2mm!important;padding:1.6mm 1.4mm!important;overflow:visible!important;white-space:normal!important}
+.credential-print-line{display:block!important;width:100%!important;height:8mm!important;max-height:8mm!important;overflow:visible!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;text-overflow:clip!important;line-height:1.02!important;letter-spacing:-.015em!important;font-size:9pt!important}
+.credential-print-line span{white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important}
+.credential-only-sticker>div{height:auto!important;max-height:none!important;overflow:visible!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;line-height:1.12!important}
+.back-button{font-size:0!important;position:relative!important}
+.back-button:before{content:"←";display:block;font-size:23px!important;line-height:1!important;font-weight:700!important;color:#f2f8ff!important;-webkit-text-fill-color:#f2f8ff!important}
+[data-theme="light"] .back-button:before{color:#142c40!important;-webkit-text-fill-color:#142c40!important}
+@media print{.credential-print-page .credential-print-sticker{overflow:visible!important}.credential-print-page .credential-print-line{height:8mm!important;max-height:8mm!important;overflow:visible!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important;text-overflow:clip!important;font-size:8.5pt!important;line-height:1.02!important}}

@@ -1,6 +1,6 @@
-const CACHE_NAME='risp-it-asset-v7-6-9-maintenance-qr-labels';
+const CACHE_NAME='risp-it-asset-v7-6-10-performance-repair-crud';
 const CORE=[
-  './','./index.html','./asset/index.html','./styles.css?v=769','./app.js?v=769','./photo-tools.js?v=769','./manifest.webmanifest?v=769',
+  './','./index.html','./asset/index.html','./styles.css?v=7610','./app.js?v=7610','./photo-tools.js?v=7610','./manifest.webmanifest?v=7610',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'
 ];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});

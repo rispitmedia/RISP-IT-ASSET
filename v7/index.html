@@ -12,7 +12,7 @@
   <link rel="manifest" href="./manifest.webmanifest?v=768">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=769">
+  <link rel="stylesheet" href="./styles.css?v=7610">
 </head>
 <body>
   <div class="splash" id="splash">
@@ -181,7 +181,7 @@
         </div>
 
         <div class="detail-section maintenance-section" id="maintenanceSection">
-          <div class="section-head compact"><div><small>SERVICE LIFECYCLE</small><h2>Maintenance & Repair History</h2></div><button class="maintenance-add-btn" id="addMaintenanceBtn" type="button">＋ ADD RECORD</button></div>
+          <div class="section-head compact"><div><small>SERVICE LOG</small><h2>Repair history</h2></div><button class="maintenance-add-btn" id="addMaintenanceBtn" type="button">＋ ADD RECORD</button></div>
           <div class="maintenance-summary" id="maintenanceSummary"><b>Loading service history…</b></div>
           <div class="maintenance-list" id="maintenanceList"><div class="maintenance-empty">No maintenance records loaded.</div></div>
         </div>
@@ -435,8 +435,8 @@
   <div class="sheet-backdrop" id="maintenanceSheet" aria-hidden="true">
     <div class="sheet maintenance-sheet">
       <div class="grabber"></div>
-      <div class="connect-head"><div class="connect-icon">🔧</div><div><small>ASSET SERVICE LOG</small><h2 id="maintenanceFormTitle">Add repair record</h2></div></div>
-      <p class="connect-copy">This record is saved to the shared RISP IT ASSET history and appears on Admin Web and Mobile App.</p>
+      <div class="connect-head"><div class="connect-icon maintenance-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14.2 6.2a5 5 0 0 0-6.6 6.6L3 17.4 6.6 21l4.6-4.6a5 5 0 0 0 6.6-6.6l-3 3-3.2-3.2 2.6-3.4Z"/><path d="m14.5 5.5 4-2 2 2-2 4"/></svg></div><div><small>SERVICE LOG</small><h2 id="maintenanceFormTitle">Add repair record</h2></div></div>
+      <p class="connect-copy">Saved to the shared asset history.</p>
       <form id="maintenanceForm" class="maintenance-form">
         <label class="connect-field"><span>TYPE</span><select id="mntType"><option>Repair</option><option>Maintenance</option><option>Inspection</option><option>Warranty Claim</option><option>Replacement</option></select></label>
         <div class="maintenance-form-grid">
@@ -467,7 +467,7 @@
   <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.legacy.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script src="./photo-tools.js?v=769"></script>
-  <script src="./app.js?v=769"></script>
+  <script src="./photo-tools.js?v=7610"></script>
+  <script src="./app.js?v=7610"></script>
 </body>
 </html>
