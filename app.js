@@ -91,9 +91,11 @@
   let metaPollTimer=null;
   let credentialToken='';
   let credentialUnlockedUntil=0;
+  let appUnlocked=false;
+  const credentialDetailLoads=new Map();
   const protectedPhotoCache=new Map();
 
-  // V7.6.12: iPhone visualViewport sizing, fixed bottom navigation, and explicit maintenance sheet close controls.
+  // V7.6.13: app-wide PIN gate, protected credentials panel, EN/TH UI, and maintenance API compatibility.
   let scanRequest=0,scanResolving=false,cameraStarting=null,cameraEpoch=0,cameraWanted=false;
   const scanBackdrop=document.createElement('div');
   scanBackdrop.id='scanResultBackdrop';scanBackdrop.className='sheet-backdrop scan-result-backdrop';scanBackdrop.setAttribute('aria-hidden','true');
@@ -216,7 +218,7 @@
   function applyAssets(assets,fromServer){ASSETS=Array.isArray(assets)?assets.map(a=>Object.assign({},a)):[];rebuildMap();renderHome();renderSearch();if(fromServer){serverConnected=true;lastSyncAt=Date.now();setSync('connected','LIVE');syncBanner.classList.add('hidden');saveCache()}if(currentDetailId&&assetMap[normalize(currentDetailId)])setDetail(assetMap[normalize(currentDetailId)])}
 
   function dateToInput(v){const s=String(v||'').trim();if(!s)return'';let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');return''}
-  function setDetail(asset){asset=asset||{};$('detailTopTag').textContent=value(asset.ASSET_TAG);$('detailType').textContent=value(asset.DEVICE_TYPE).toUpperCase();$('detailTag').textContent=value(asset.ASSET_TAG);$('detailDevice').textContent=[asset.BRAND,asset.MODEL].filter(Boolean).join(' ')||'—';const brandBadge=$('detailBrandBadge');if(brandBadge)brandBadge.innerHTML=brandLogoMarkup(asset.BRAND,'detail-brand-icon')+'<span><small>MANUFACTURER</small><b>'+esc(value(asset.BRAND))+'</b></span>';$('detailStatus').textContent=value(asset.STATUS);$('detailAssigned').textContent=asset.ASSIGNED_TO||'Unassigned';$('dAssetId').textContent=value(asset.ASSET_ID);$('dSerial').textContent=value(asset.SERIAL);$('dService').textContent=value(asset.SERVICE_TAG);$('dLibib').textContent=value(asset.LIBIB);const qrReady=$('detailQrReady');if(qrReady)qrReady.textContent='QR READY • CANONICAL ASSET ID • '+value(asset.ASSET_ID);$('dDepartment').textContent=value(asset.DEPARTMENT);$('dColor').textContent=value(asset.COLOR);$('dPurchase').textContent=value(asset.PURCHASE_DATE);$('dWarranty').textContent=value(asset.WARRANTY);$('dCost').textContent=String(asset.COST||'').trim()?formatBaht(moneyNumber(asset.COST),true):'—';$('dUpdated').textContent=value(asset.UPDATED);$('dNotes').textContent=value(asset.NOTES);const img=$('detailPhoto'),fb=$('detailPhotoFallback'),urls=imageCandidates(asset,1100);img.hidden=true;fb.style.display='grid';fb.textContent=String(asset.DEVICE_TYPE||'IT').slice(0,11).toUpperCase();if(urls.length){let idx=0,secureTried=false;img.onload=()=>{img.hidden=false;fb.style.display='none'};img.onerror=async()=>{idx++;if(idx<urls.length){img.src=urls[idx];return}if(!secureTried&&asset.ASSET_ID){secureTried=true;const data=await protectedPhotoData(asset.ASSET_ID);if(data){img.src=data;return}}img.hidden=true;fb.style.display='grid'};img.src=urls[0]}}
+  function setDetail(asset){asset=asset||{};$('detailTopTag').textContent=value(asset.ASSET_TAG);$('detailType').textContent=value(asset.DEVICE_TYPE).toUpperCase();$('detailTag').textContent=value(asset.ASSET_TAG);$('detailDevice').textContent=[asset.BRAND,asset.MODEL].filter(Boolean).join(' ')||'—';const brandBadge=$('detailBrandBadge');if(brandBadge)brandBadge.innerHTML=brandLogoMarkup(asset.BRAND,'detail-brand-icon')+'<span><small>MANUFACTURER</small><b>'+esc(value(asset.BRAND))+'</b></span>';$('detailStatus').textContent=value(asset.STATUS);$('detailAssigned').textContent=asset.ASSIGNED_TO||'Unassigned';$('dAssetId').textContent=value(asset.ASSET_ID);$('dSerial').textContent=value(asset.SERIAL);$('dService').textContent=value(asset.SERVICE_TAG);$('dLibib').textContent=value(asset.LIBIB);const qrReady=$('detailQrReady');if(qrReady)qrReady.textContent='QR READY • CANONICAL ASSET ID • '+value(asset.ASSET_ID);$('dDepartment').textContent=value(asset.DEPARTMENT);$('dColor').textContent=value(asset.COLOR);$('dPurchase').textContent=value(asset.PURCHASE_DATE);$('dWarranty').textContent=value(asset.WARRANTY);$('dCost').textContent=String(asset.COST||'').trim()?formatBaht(moneyNumber(asset.COST),true):'—';$('dUpdated').textContent=value(asset.UPDATED);$('dNotes').textContent=value(asset.NOTES);const img=$('detailPhoto'),fb=$('detailPhotoFallback'),urls=imageCandidates(asset,1100);img.hidden=true;fb.style.display='grid';fb.textContent=String(asset.DEVICE_TYPE||'IT').slice(0,11).toUpperCase();if(urls.length){let idx=0,secureTried=false;img.onload=()=>{img.hidden=false;fb.style.display='none'};img.onerror=async()=>{idx++;if(idx<urls.length){img.src=urls[idx];return}if(!secureTried&&asset.ASSET_ID){secureTried=true;const data=await protectedPhotoData(asset.ASSET_ID);if(data){img.src=data;return}}img.hidden=true;fb.style.display='grid'};img.src=urls[0]}if(appUnlocked&&asset.ASSET_ID)loadDetailCredentials(asset.ASSET_ID);else{const sec=$('assetCredentialsSection');if(sec)sec.hidden=true}}
 
   let maintenanceRecords=[],maintenanceEditingId='';
   function moneyTHB(v){return '฿'+(Number(v)||0).toLocaleString('en-US',{maximumFractionDigits:2})}
@@ -226,7 +228,7 @@
     if(!host||!summary)return;
     const total=maintenanceRecords.reduce((s,r)=>s+(Number(r.TOTAL_COST)||0),0);
     summary.innerHTML='<div><small>RECORDS</small><b>'+maintenanceRecords.length+'</b></div><div><small>TOTAL SPENT</small><b>'+esc(moneyTHB(total))+'</b></div>';
-    if(!maintenanceRecords.length){host.innerHTML='<div class="maintenance-empty"><span class="mnt-empty-tool" aria-hidden="true">🔧</span><b>No service history yet</b><small>Repairs, checks and warranty visits appear here.</small></div>';return}
+    if(!maintenanceRecords.length){host.innerHTML='<div class="maintenance-empty maintenance-no-records"><span class="mnt-empty-tool" aria-hidden="true">🔧</span><b>No repair records yet</b><small>No service or repair activity has been recorded for this device.</small></div>';return}
     host.innerHTML=maintenanceRecords.map(r=>{
       const files=[...(Array.isArray(r.PHOTOS)?r.PHOTOS:[]),...(Array.isArray(r.DOCUMENTS)?r.DOCUMENTS:[])];
       const links=files.map(f=>'<a href="'+esc(f.url||('https://drive.google.com/open?id='+encodeURIComponent(f.id||'')))+'" target="_blank" rel="noopener">'+(String(f.mimeType||'').indexOf('pdf')>=0?'▤ ':'▧ ')+esc(f.name||'Attachment')+'</a>').join('');
@@ -235,8 +237,8 @@
   }
   async function loadMaintenance(id){
     const host=$('maintenanceList');if(host)host.innerHTML='<div class="maintenance-empty"><span class="mnt-loading"></span> Loading history…</div>';
-    try{const p=await jsonpRequest('maintenance',{id:id||currentDetailId},22000);renderMaintenance(p.records||[])}
-    catch(e){if(host)host.innerHTML='<div class="maintenance-empty maintenance-error">Could not load history. '+esc(e.message||'')+'</div>'}
+    try{const p=await jsonpRequest('maintenance_history',{id:id||currentDetailId},22000);renderMaintenance(p.records||[])}
+    catch(e){if(host)host.innerHTML='<div class="maintenance-empty maintenance-error"><span class="mnt-empty-tool" aria-hidden="true">ⓘ</span><b>Repair history is temporarily unavailable</b><small>'+esc(e.message||'Please check the server connection and try again.')+'</small></div>'}
   }
   function openMaintenanceForm(record){
     if(!currentDetailId){showToast('Open an asset first');return}
@@ -301,6 +303,104 @@
   function loadCredentialToken(){if(credentialToken&&Date.now()<credentialUnlockedUntil)return credentialToken;try{const raw=sessionStorage.getItem(CREDENTIAL_TOKEN_SESSION_KEY);if(!raw)return'';const p=JSON.parse(raw);if(p&&p.token&&Number(p.expiresAt)>Date.now()){credentialToken=String(p.token);credentialUnlockedUntil=Number(p.expiresAt);return credentialToken}}catch(e){}credentialToken='';credentialUnlockedUntil=0;return''}
   function saveCredentialToken(token,expiresIn){credentialToken=String(token||'');credentialUnlockedUntil=Date.now()+Math.max(60,Number(expiresIn||900)-15)*1000;try{sessionStorage.setItem(CREDENTIAL_TOKEN_SESSION_KEY,JSON.stringify({token:credentialToken,expiresAt:credentialUnlockedUntil}))}catch(e){}}
   function clearCredentialToken(){credentialToken='';credentialUnlockedUntil=0;try{sessionStorage.removeItem(CREDENTIAL_TOKEN_SESSION_KEY)}catch(e){}}
+
+  // V7.6.13: phrase-based EN/TH UI translation. Asset names and user-entered values are never translated.
+  const UI_TH={
+    'LIVE INVENTORY':'รายการอุปกรณ์ล่าสุด','Browse inventory':'เรียกดูอุปกรณ์','All Devices':'อุปกรณ์ทั้งหมด',
+    'Repair history':'ประวัติการซ่อม','SERVICE LOG':'ประวัติการซ่อม','Add repair record':'เพิ่มประวัติการซ่อม',
+    'Add service record':'เพิ่มประวัติการซ่อม','Edit service record':'แก้ไขประวัติการซ่อม','No service history yet':'ยังไม่มีประวัติการซ่อม','No repair records yet':'ยังไม่มีประวัติการซ่อม',
+    'No service or repair activity has been recorded for this device.':'ยังไม่มีการบันทึกการซ่อมหรือการตรวจเช็กอุปกรณ์เครื่องนี้',
+    'Repair history is temporarily unavailable':'ไม่สามารถแสดงประวัติการซ่อมได้ในขณะนี้','Please check the server connection and try again.':'กรุณาตรวจสอบการเชื่อมต่อเซิร์ฟเวอร์แล้วลองอีกครั้ง',
+    'Repairs, checks and warranty visits appear here.':'ประวัติการซ่อม การตรวจเช็ก และการใช้ประกันจะแสดงที่นี่',
+    'Loading history…':'กำลังโหลดประวัติ…','Loading service history…':'กำลังโหลดประวัติการซ่อม…',
+    'Could not load history.':'ไม่สามารถโหลดประวัติได้','Unknown v7 API action.':'ระบบประวัติการซ่อมยังไม่พร้อม กรุณาอัปเดตระบบหลังบ้าน',
+    'Asset notes':'หมายเหตุอุปกรณ์','Device information':'ข้อมูลอุปกรณ์','Identification':'ข้อมูลระบุตัวตน',
+    'Assigned to':'ผู้รับผิดชอบ','Unassigned':'ยังไม่มีผู้รับผิดชอบ','Status':'สถานะ','Active':'พร้อมใช้งาน',
+    'Edit':'แก้ไข','Delete':'ลบ','Cancel':'ยกเลิก','Save changes':'บันทึกการเปลี่ยนแปลง',
+    'Save record':'บันทึกประวัติ','Add record':'เพิ่มประวัติ','Refresh':'รีเฟรช','Print QR':'พิมพ์ QR',
+    'Photos (Before / After)':'ภาพก่อนและหลังซ่อม','Invoice / Quotation / Documents':'ใบเสร็จ / ใบเสนอราคา / เอกสาร',
+    'Problem / Reason':'อาการเสีย / สาเหตุ','Diagnosis':'ผลการตรวจสอบ','Repair / Action Taken':'รายละเอียดการซ่อม',
+    'Parts Replaced':'อะไหล่ที่เปลี่ยน','Shop / Service Center':'ร้านซ่อม / ศูนย์บริการ',
+    'Contact / Technician':'ผู้ติดต่อ / ช่างผู้รับผิดชอบ','Reported Date':'วันที่แจ้งปัญหา',
+    'Sent Date':'วันที่ส่งซ่อม','Return Date':'วันที่รับคืน','Parts Cost (THB)':'ค่าอะไหล่ (บาท)',
+    'Labor Cost (THB)':'ค่าแรง (บาท)','Notes':'หมายเหตุ','Total Spent':'ค่าใช้จ่ายรวม',
+    'PRIVATE INFORMATION':'ข้อมูลส่วนตัว','Account credentials':'บัญชีและรหัสผ่าน','UNLOCKED':'ปลดล็อกแล้ว',
+    'HOME':'หน้าหลัก','SEARCH':'ค้นหา','SCAN':'สแกน','ADD':'เพิ่ม','MORE':'เพิ่มเติม',
+    'RESET':'ล้างตัวกรอง','ALL':'ทั้งหมด','START CAMERA':'เปิดกล้อง','UPLOAD QR':'อัปโหลด QR',
+    'FIND':'ค้นหา','LOCK':'ล็อก','UNLOCK APP':'ปลดล็อกแอป','ACCESS PIN':'รหัสเข้าใช้งาน',
+    'Unlock IT Asset':'ปลดล็อกระบบ IT Asset','Enter the IT access PIN once to open the app and view protected device credentials.':'กรอกรหัสเข้าใช้งานเพื่อเปิดแอปและดูบัญชีของอุปกรณ์',
+    'Enter access PIN':'กรอกรหัสเข้าใช้งาน','Access expires automatically. Do not share this PIN.':'ระบบจะล็อกอัตโนมัติเมื่อหมดเวลา โปรดเก็บรหัสนี้เป็นความลับ',
+    'Include assigned student on label':'แสดงชื่อผู้รับผิดชอบบนป้าย','Include assigned person on label':'แสดงชื่อผู้รับผิดชอบบนป้าย',
+    'QR ONLY':'QR เท่านั้น','QR + USERNAME PASSWORD':'QR พร้อมชื่อผู้ใช้และรหัสผ่าน',
+    'USERNAME PASSWORD ONLY':'ชื่อผู้ใช้และรหัสผ่านเท่านั้น','PRINT LABEL':'พิมพ์ป้าย','PRINT USER / PASSWORD':'พิมพ์ชื่อผู้ใช้ / รหัสผ่าน',
+    'Choose account to print':'เลือกบัญชีสำหรับพิมพ์','Sticker ready':'ป้ายพร้อมพิมพ์','COPIES':'จำนวนชุด',
+    'CANCEL':'ยกเลิก','SAVE':'บันทึก','SAVING…':'กำลังบันทึก…','SYNC':'ซิงก์ข้อมูล'
+  };
+  const UI_EN=Object.fromEntries(Object.keys(UI_TH).map(k=>[UI_TH[k],k]));
+  let appLanguage='en';
+  try{appLanguage=localStorage.getItem('RISP_IT_ASSET_LANG')||'en'}catch(e){}
+  function translateAppTree(root,lang){
+    if(!root)return;const map=lang==='th'?UI_TH:UI_EN;
+    const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;
+    while((n=walker.nextNode())){const raw=n.nodeValue||'',t=raw.trim();if(t&&map[t])n.nodeValue=raw.replace(t,map[t])}
+    if(root.querySelectorAll)root.querySelectorAll('[placeholder],[aria-label],[title]').forEach(el=>['placeholder','aria-label','title'].forEach(a=>{const v=el.getAttribute(a);if(v&&map[v])el.setAttribute(a,map[v])}));
+  }
+  function applyAppLanguage(lang){
+    appLanguage=lang==='th'?'th':'en';try{localStorage.setItem('RISP_IT_ASSET_LANG',appLanguage)}catch(e){}
+    document.documentElement.lang=appLanguage;translateAppTree(document.body,appLanguage);
+    const b=$('appLanguageBtn');if(b){b.textContent=appLanguage==='th'?'EN':'TH';b.title=appLanguage==='th'?'Switch to English':'เปลี่ยนเป็นภาษาไทย'}const lb=$('appLockLanguageBtn');if(lb)lb.textContent=appLanguage==='th'?'EN':'TH';
+  }
+  const appLanguageObserver=new MutationObserver(records=>records.forEach(r=>(r.addedNodes||[]).forEach(n=>{if(n.nodeType===1)translateAppTree(n,appLanguage);else if(n.nodeType===3&&n.parentElement)translateAppTree(n.parentElement,appLanguage)})));
+  appLanguageObserver.observe(document.body,{childList:true,subtree:true});
+  function showAppLock(message){
+    appUnlocked=false;clearCredentialToken();credentialDetailLoads.clear();
+    const section=$('assetCredentialsSection'),rows=$('assetCredentialRows');
+    if(section)section.hidden=true;if(rows)rows.innerHTML='';
+    const overlay=$('appLockOverlay');if(overlay)overlay.classList.remove('hidden');
+    document.body.classList.add('app-is-locked');
+    if(message)$('appLockError').textContent=message;
+    const pin=$('appLockPin');if(pin){pin.value='';setTimeout(()=>pin.focus(),80)}
+  }
+  function hideAppLock(){
+    appUnlocked=true;const overlay=$('appLockOverlay');if(overlay)overlay.classList.add('hidden');
+    document.body.classList.remove('app-is-locked');$('appLockError').textContent='';
+    if(currentDetailId)loadDetailCredentials(currentDetailId);
+  }
+  async function unlockWholeApp(pin){
+    const challenge=await jsonpRequest('cred_challenge',{},14000);
+    const proof=await sha256Hex(String(pin||'')+':'+String(challenge.challenge||''));
+    const result=await jsonpRequest('app_unlock',{challengeId:challenge.challengeId,proof:proof},18000);
+    if(!result.credentialToken)throw new Error('ไม่สามารถยืนยันสิทธิ์ได้ กรุณาลองใหม่');
+    saveCredentialToken(result.credentialToken,result.expiresIn||900);
+    hideAppLock();
+  }
+  function renderAssetCredentials(data){
+    const section=$('assetCredentialsSection'),host=$('assetCredentialRows');if(!section||!host)return;
+    const fields=[['LOCAL_USERNAME','ชื่อผู้ใช้เครื่อง','Local username'],['LOCAL_PASSWORD','รหัสผ่านเครื่อง','Local password'],
+      ['ADMIN_USERNAME','ชื่อผู้ดูแลระบบ','Admin username'],['ADMIN_PASSWORD','รหัสผ่านผู้ดูแลระบบ','Admin password'],
+      ['MICROSOFT_USERNAME','บัญชี Microsoft','Microsoft account'],['MICROSOFT_PASSWORD','รหัสผ่าน Microsoft','Microsoft password'],
+      ['EMAIL','อีเมล / บัญชี','Email / account'],['EMAIL_PASSWORD','รหัสผ่านอีเมล','Email password'],
+      ['ICLOUD','Apple ID','Apple ID'],['ICLOUD_PASSWORD','รหัสผ่าน Apple ID','Apple ID password'],
+      ['PRODUCT_KEY','รหัสผลิตภัณฑ์','Product key'],['PASSWORD_HINT','คำใบ้รหัสผ่าน','Password hint']];
+    const rows=fields.filter(f=>String(data&&data[f[0]]||'').trim()).map(f=>{
+      const val=String(data[f[0]]||'');
+      return '<div class="asset-credential-row"><span>'+esc(appLanguage==='th'?f[1]:f[2])+'</span><b>'+esc(val)+'</b><button type="button" data-asset-cred-copy="'+esc(val)+'">'+(appLanguage==='th'?'คัดลอก':'COPY')+'</button></div>';
+    }).join('');
+    host.innerHTML=rows||'<div class="credential-empty">'+(appLanguage==='th'?'ยังไม่มีข้อมูลบัญชีสำหรับอุปกรณ์นี้':'No credentials recorded for this device.')+'</div>';
+    host.querySelectorAll('[data-asset-cred-copy]').forEach(b=>b.addEventListener('click',()=>copyText(b.dataset.assetCredCopy)));
+    section.hidden=false;
+  }
+  async function loadDetailCredentials(id){
+    const token=loadCredentialToken();if(!appUnlocked||!token||!id)return;
+    const key=normalize(id);if(credentialDetailLoads.has(key))return credentialDetailLoads.get(key);
+    const job=jsonpRequest('credentials',{id:id,credToken:token},18000).then(p=>{
+      if(appUnlocked&&normalize(currentDetailId)===key)renderAssetCredentials(p.credentials||{});
+    }).catch(err=>{
+      if(/expired|invalid|token/i.test(String(err&&err.message||'')))showAppLock('เซสชันหมดอายุ กรุณาปลดล็อกอีกครั้ง');
+    }).finally(()=>credentialDetailLoads.delete(key));
+    credentialDetailLoads.set(key,job);return job;
+  }
+
   function renderCredentialGrid(data){const fields=[['PRODUCT_KEY','Product Key'],['LOCAL_USERNAME','Local Username'],['LOCAL_PASSWORD','Local Password'],['ADMIN_USERNAME','Admin Username'],['ADMIN_PASSWORD','Admin Password'],['MICROSOFT_USERNAME','Microsoft Username'],['MICROSOFT_PASSWORD','Microsoft Password'],['EMAIL','Email / Account Email'],['EMAIL_PASSWORD','Email Password'],['ICLOUD','iCloud / Apple ID'],['ICLOUD_PASSWORD','iCloud Password'],['PASSWORD_HINT','Password Hint']];const rows=fields.filter(x=>String(data&&data[x[0]]||'').trim()).map(x=>'<div class="credential-row"><span>'+esc(x[1])+'</span><b>'+esc(String(data[x[0]]||''))+'</b><button class="credential-copy" type="button" data-cred-copy="'+esc(String(data[x[0]]||''))+'">COPY</button></div>').join('');$('credentialGrid').innerHTML=rows||'<div class="credential-empty">No private credentials have been entered for this asset.</div>';$('credentialGrid').querySelectorAll('[data-cred-copy]').forEach(btn=>btn.addEventListener('click',()=>copyText(btn.dataset.credCopy)))}
   async function fetchPrivateCredentials(pin){
     if(!currentDetailId)throw new Error('Open a device first.');
@@ -324,7 +424,7 @@
   function quietBackgroundSync(delay){setTimeout(async()=>{try{const p=await jsonpRequest('bootstrap',{},25000);if(p.version)setBackendVersion(p.version);if(p.generatedAt)lastServerGeneration=String(p.generatedAt);if(Array.isArray(p.assets))applyAssets(p.assets,true)}catch(e){}},Math.max(250,Number(delay)||650))}
 
   syncButton.addEventListener('click',()=>loadConnection()?syncInventory(true).catch(showApiError):openConnectionSheet());$('openBackendBtn').addEventListener('click',openConnectionSheet);$('moreSyncBtn').addEventListener('click',()=>syncInventory(true).catch(showApiError));$('moreConnectionBtn').addEventListener('click',openConnectionSheet);
-  $('closeConnectionBtn').addEventListener('click',()=>closeSheet(connectionSheet));connectionSheet.addEventListener('click',e=>{if(e.target===connectionSheet)closeSheet(connectionSheet)});$('toggleKeyBtn').addEventListener('click',()=>{const show=apiKeyInput.type==='password';apiKeyInput.type=show?'text':'password';$('toggleKeyBtn').textContent=show?'HIDE':'SHOW'});$('saveConnectionBtn').addEventListener('click',()=>{const url=normalizeApiUrl(apiUrlInput.value),key=String(apiKeyInput.value||'').trim();if(!url){showToast('Paste a valid Apps Script /exec URL');return}if(key.length<24){showToast('Connection key looks too short');return}saveConnection(url,key);closeSheet(connectionSheet);showToast('API paired — connecting…');connectApi()});$('disconnectBtn').addEventListener('click',()=>{forgetConnection();closeSheet(connectionSheet);showToast('Connection forgotten')});$('openAdminWebBtn').addEventListener('click',()=>window.open(LEGACY_ADMIN_URL,'_blank','noopener'));function openPrivateAdmin(){const u=LEGACY_ADMIN_URL+(currentDetailId?'?id='+encodeURIComponent(currentDetailId):'');window.open(u,'_blank','noopener')}$('openPrivateCredentialsBtn').addEventListener('click',openPrivateCredentialSheet);
+  $('closeConnectionBtn').addEventListener('click',()=>closeSheet(connectionSheet));connectionSheet.addEventListener('click',e=>{if(e.target===connectionSheet)closeSheet(connectionSheet)});$('toggleKeyBtn').addEventListener('click',()=>{const show=apiKeyInput.type==='password';apiKeyInput.type=show?'text':'password';$('toggleKeyBtn').textContent=show?'HIDE':'SHOW'});$('saveConnectionBtn').addEventListener('click',()=>{const url=normalizeApiUrl(apiUrlInput.value),key=String(apiKeyInput.value||'').trim();if(!url){showToast('Paste a valid Apps Script /exec URL');return}if(key.length<24){showToast('Connection key looks too short');return}saveConnection(url,key);closeSheet(connectionSheet);showToast('API paired — connecting…');connectApi()});$('disconnectBtn').addEventListener('click',()=>{forgetConnection();closeSheet(connectionSheet);showToast('Connection forgotten')});$('openAdminWebBtn').addEventListener('click',()=>window.open(LEGACY_ADMIN_URL,'_blank','noopener'));function openPrivateAdmin(){const u=LEGACY_ADMIN_URL+(currentDetailId?'?id='+encodeURIComponent(currentDetailId):'');window.open(u,'_blank','noopener')}if($('openPrivateCredentialsBtn'))$('openPrivateCredentialsBtn').addEventListener('click',openPrivateCredentialSheet);
 
   function isKnownOption(list,val){return list.some(x=>normalize(x)===normalize(val))}
   function selectWithOtherHtml(id,list,val,emptyLabel){val=String(val||'').trim();const base=list.filter(x=>normalize(x)!=='OTHER');const custom=!!val&&!isKnownOption(base,val)&&normalize(val)!=='OTHER';const chooseOther=custom||normalize(val)==='OTHER';let options=emptyLabel?'<option value="">'+esc(emptyLabel)+'</option>':'';options+=base.map(x=>'<option value="'+esc(x)+'" '+(normalize(x)===normalize(val)?'selected':'')+'>'+esc(x)+'</option>').join('');options+='<option value="__OTHER__" '+(chooseOther?'selected':'')+'>Other (specify)</option>';return'<div class="select-custom-wrap"><select id="'+id+'" data-custom-other="1">'+options+'</select><input id="'+id+'_OTHER" class="custom-other-input" type="text" value="'+esc(custom?val:'')+'" placeholder="Please specify" '+(chooseOther?'':'hidden')+'></div>'}
@@ -499,7 +599,24 @@
   credentialAccountSheet.addEventListener('click',e=>{if(e.target===credentialAccountSheet){cancelPendingCredentialPrint();closeSheet(credentialAccountSheet)}});
   $('toggleCredentialPinBtn').addEventListener('click',()=>{const show=credentialPinInput.type==='password';credentialPinInput.type=show?'text':'password';$('toggleCredentialPinBtn').textContent=show?'HIDE':'SHOW'});
   $('unlockCredentialBtn').addEventListener('click',async()=>{const pin=String(credentialPinInput.value||'').trim();if(pin.length<6){showToast('Enter the Super Admin PIN');return}const btn=$('unlockCredentialBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='UNLOCKING…';try{const data=await fetchPrivateCredentials(pin);if(pendingCredentialPrintMode&&pendingCredentialPrintAsset){credentialPinInput.value='';handleCredentialPrintData(pendingCredentialPrintMode,pendingCredentialPrintAsset,data);return}renderCredentialGrid(data);$('credentialUnlockPane').hidden=true;$('credentialDataPane').hidden=false;$('credentialSheetCopy').textContent='Private credentials • unlocked for this app session.';credentialPinInput.value='';showToast('Private credentials unlocked ✓')}catch(e){clearCredentialToken();showToast(e.message||'Unlock failed',3200)}finally{btn.disabled=false;btn.textContent=old}});
-  $('lockCredentialBtn').addEventListener('click',()=>{clearCredentialToken();$('credentialDataPane').hidden=true;$('credentialUnlockPane').hidden=false;$('credentialSheetCopy').textContent='Enter your Super Admin PIN once. The unlocked session expires automatically and is not written to local storage.';showToast('Private credentials locked')});
+  $('lockCredentialBtn').addEventListener('click',()=>{clearCredentialToken();$('credentialDataPane').hidden=true;$('credentialUnlockPane').hidden=false;showAppLock('แอปถูกล็อกแล้ว')});
+
+
+  // App-wide access gate. Token is session-scoped and expires server-side.
+  $('appLockForm').addEventListener('submit',async e=>{
+    e.preventDefault();const pin=String($('appLockPin').value||'').trim();
+    if(pin.length<6){$('appLockError').textContent='กรุณากรอกรหัสเข้าใช้งานให้ครบ';return}
+    const btn=$('appUnlockButton'),old=btn.textContent;btn.disabled=true;btn.textContent='VERIFYING…';$('appLockError').textContent='';
+    try{await unlockWholeApp(pin);$('appLockPin').value='';showToast(appLanguage==='th'?'ปลดล็อกแอปแล้ว':'App unlocked')}
+    catch(err){$('appLockError').textContent=err.message||'รหัสไม่ถูกต้อง หรือไม่สามารถเชื่อมต่อได้';$('appLockPin').select()}
+    finally{btn.disabled=false;btn.textContent=old}
+  });
+  $('lockAppBtn').addEventListener('click',()=>showAppLock('แอปถูกล็อกแล้ว'));
+  $('appLanguageBtn').addEventListener('click',()=>applyAppLanguage(appLanguage==='th'?'en':'th'));$('appLockLanguageBtn').addEventListener('click',()=>applyAppLanguage(appLanguage==='th'?'en':'th'));
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible'&&appUnlocked&&credentialUnlockedUntil&&Date.now()>=credentialUnlockedUntil)showAppLock('เซสชันหมดอายุ กรุณาปลดล็อกอีกครั้ง');
+  });
+  setInterval(()=>{if(appUnlocked&&credentialUnlockedUntil&&Date.now()>=credentialUnlockedUntil)showAppLock('เซสชันหมดอายุ กรุณาปลดล็อกอีกครั้ง')},15000);
 
   /* QR scanner — V7.5.4 SMART ENGINE
      Primary: qr-scanner worker/native BarcodeDetector engine at high resolution.
@@ -607,6 +724,9 @@
   function startMetaPolling(){if(metaPollTimer)clearInterval(metaPollTimer);metaPollTimer=setInterval(pollRemoteMeta,12000);window.addEventListener('focus',pollRemoteMeta);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollRemoteMeta()})}
 
   const cache=loadCache();if(cache&&cache.assets&&cache.assets.length){applyAssets(cache.assets,false);setSync('','CACHE')}else $('visibleCount').textContent='—';
+  applyAppLanguage(appLanguage);
+  appUnlocked=!!loadCredentialToken();
+  if(appUnlocked)hideAppLock();else showAppLock('');
   setTimeout(()=>splash.classList.add('hidden'),standalone()?480:620);
   if(loadConnection())connectApi();else{setSync('','SETUP');syncBanner.classList.remove('hidden')}
   setupVisibilitySync();
@@ -614,7 +734,7 @@
   $('appThemeBtn').addEventListener('click',toggleTheme);$('moreThemeBtn').addEventListener('click',toggleTheme);
   syncAppHeight();window.addEventListener('resize',syncAppHeight,{passive:true});if(window.visualViewport)window.visualViewport.addEventListener('resize',syncAppHeight,{passive:true});
   let initialTheme='dark';try{initialTheme=localStorage.getItem(THEME_STORAGE_KEY)||'dark'}catch(e){}applyTheme(initialTheme,false);
-  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=769').catch(()=>{}));
+  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=7613').catch(()=>{}));
 
   const initial=(location.hash||'#home').slice(1);if(initial.startsWith('detail/')){const id=decodeURIComponent(initial.slice(7));setTimeout(()=>openDetail(id),100)}else route(['home','search','scan','add','more'].includes(initial)?initial:'home',false);
 })();

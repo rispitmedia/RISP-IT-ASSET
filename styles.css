@@ -476,3 +476,48 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
 }
 .sheet-close-btn{margin-left:auto;flex:0 0 38px;width:38px;height:38px;border:1px solid #31516d;border-radius:50%;background:rgba(9,25,40,.72);color:#dceeff;font-size:22px;line-height:1;display:grid;place-items:center}
 [data-theme="light"] .sheet-close-btn{background:#fff;color:#173a63;border-color:#bfd1df}
+
+
+/* V7.6.13 premium app lock + credential visibility + bilingual controls */
+.language-chip{font-size:11px;font-weight:900;letter-spacing:.04em;min-width:42px}
+#lockAppBtn{font-size:9px;font-weight:850;letter-spacing:.08em}
+.app-lock-overlay{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;padding:max(24px,env(safe-area-inset-top)) 20px max(24px,env(safe-area-inset-bottom));background:radial-gradient(circle at 50% 10%,rgba(39,117,178,.22),transparent 42%),rgba(3,9,16,.97);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.app-lock-overlay.hidden{display:none!important}
+.app-lock-card{width:min(420px,100%);padding:30px 26px 26px;border:1px solid rgba(91,157,208,.38);border-radius:26px;background:linear-gradient(155deg,#101f31,#07111d 70%);box-shadow:0 28px 90px rgba(0,0,0,.48);color:#eaf4ff;text-align:center}
+.app-lock-logo{width:66px;height:66px;object-fit:contain;margin:0 auto 18px;border-radius:17px;background:#f5f7fa;padding:5px;box-shadow:0 0 0 1px rgba(94,165,224,.4)}
+.app-lock-eyebrow{font-size:9px;font-weight:900;letter-spacing:.2em;color:#75b9ed}
+.app-lock-card h1{margin:10px 0 8px;font-size:27px;letter-spacing:-.04em}
+.app-lock-card p{margin:0 auto 22px;max-width:330px;color:#9fb3c8;font-size:13px;line-height:1.6}
+.app-lock-card form{text-align:left;display:grid;gap:9px}
+.app-lock-card label{font-size:10px;font-weight:850;letter-spacing:.12em;color:#8faac4}
+.app-lock-card input{height:52px;border:1px solid #31516e;border-radius:13px;background:#06101c;color:#f2f8ff;padding:0 15px;font:700 18px/1 Inter,system-ui,sans-serif;letter-spacing:.14em;outline:none}
+.app-lock-card input:focus{border-color:#55aef3;box-shadow:0 0 0 3px rgba(85,174,243,.14)}
+.app-lock-card form button{height:50px;border:0;border-radius:13px;background:linear-gradient(135deg,#48a8f3,#287fc2);color:white;font-size:12px;font-weight:900;letter-spacing:.1em}
+.app-lock-card form button:disabled{opacity:.55}
+.app-lock-card>small{display:block;margin-top:18px;color:#71869b;font-size:10px}
+.app-lock-error{min-height:18px;margin-top:10px;color:#ff9da6;font-size:12px;line-height:1.4}
+.asset-credentials-section{border:1px solid rgba(65,169,125,.32);border-radius:20px;padding:16px;background:linear-gradient(145deg,rgba(22,74,57,.18),rgba(10,24,34,.4))}
+.credential-live-state{font-size:9px;font-weight:900;letter-spacing:.12em;color:#55d69a;border:1px solid rgba(85,214,154,.35);border-radius:99px;padding:6px 9px}
+.asset-credentials-grid{display:grid;gap:8px;margin-top:12px}
+.asset-credential-row{display:grid;grid-template-columns:minmax(105px,.75fr) minmax(0,1.5fr) auto;gap:10px;align-items:center;padding:10px 11px;border:1px solid var(--line,#29445e);border-radius:12px;background:rgba(7,18,29,.65);min-width:0}
+.asset-credential-row>span{font-size:10px;color:var(--muted,#8da5bd);font-weight:700}
+.asset-credential-row>b{font-size:12px;color:var(--text,#e9f4ff);font-weight:750;overflow-wrap:anywhere;min-width:0}
+.asset-credential-row button{border:1px solid #3a6589;border-radius:8px;background:rgba(39,110,166,.18);color:#83c7ff;padding:6px 8px;font-size:9px;font-weight:850}
+.credential-privacy-note{margin:11px 2px 0;color:var(--muted,#8da5bd);font-size:10px;line-height:1.5}
+.maintenance-no-records{border:1px dashed rgba(91,143,180,.4);background:rgba(28,54,76,.16);border-radius:16px;padding:22px}
+.maintenance-no-records b{color:var(--text,#eaf4ff)}
+.maintenance-no-records small{color:var(--muted,#91a7bd)}
+[data-theme="light"] .asset-credentials-section{background:linear-gradient(145deg,#effaf5,#f7fbff);border-color:#b7dfcb}
+[data-theme="light"] .asset-credential-row{background:#fff;border-color:#d7e2ec}
+[data-theme="light"] .asset-credential-row>b{color:#13283d}
+[data-theme="light"] .app-lock-card{background:linear-gradient(155deg,#f8fbff,#e8f1f8);color:#10263b}
+[data-theme="light"] .app-lock-card p,[data-theme="light"] .app-lock-card>small{color:#5c7185}
+[data-theme="light"] .app-lock-card input{background:#fff;color:#10263b}
+@media(max-width:520px){
+ .app-lock-card{padding:26px 20px 22px;border-radius:22px}
+ .asset-credential-row{grid-template-columns:minmax(0,1fr) auto;gap:6px}
+ .asset-credential-row>span{grid-column:1/-1}
+ .asset-credential-row>b{font-size:11px}
+}
+
+.app-lock-topline{display:flex;align-items:center;justify-content:space-between;gap:12px}.app-lock-topline button{border:1px solid #426b8d;border-radius:9px;background:rgba(46,115,169,.18);color:#b9dcf8;padding:7px 10px;font-size:10px;font-weight:900;letter-spacing:.08em}
