@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="RISP IT ASSET">
   <title>RISP IT ASSET</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=771">
+  <link rel="manifest" href="./manifest.webmanifest?v=772">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=7614">
+  <link rel="stylesheet" href="./styles.css?v=7615">
 </head>
 <body>
   <div class="splash" id="splash">
@@ -321,6 +321,7 @@
           <button id="moreSyncBtn" type="button"><span class="more-icon">↻</span><div><b>Sync inventory</b><small>Pull fresh data from ASSET_DATABASE</small></div><i>›</i></button>
           <button id="moreConnectionBtn" type="button"><span class="more-icon">⚡</span><div><b>V7 API connection</b><small>Deployment URL and connection key</small></div><i>›</i></button>
           <button id="moreThemeBtn" type="button"><span class="more-icon">◐</span><div><b>Appearance</b><small id="themeModeLabel">Dark theme</small></div><i>›</i></button>
+          <button id="changeAppPinBtn" type="button"><span class="more-icon">⌑</span><div><b>Change app passcode</b><small>Update the PIN used to unlock this app</small></div><i>›</i></button>
           <button id="openAdminWebBtn" type="button"><span class="more-icon">⌘</span><div><b>Open Admin Web</b><small>Private Admin + QR Label Studio</small></div><i>↗</i></button>
         </div>
         <div class="system-card">
@@ -335,6 +336,22 @@
         <div class="bottom-spacer"></div>
       </section>
     </main>
+
+
+
+  <div class="pin-change-overlay hidden" id="pinChangeOverlay" role="dialog" aria-modal="true" aria-labelledby="pinChangeTitle">
+    <form class="pin-change-card" id="pinChangeForm">
+      <div class="pin-change-head"><div><small>SECURITY SETTINGS</small><h2 id="pinChangeTitle">Change app passcode</h2><p>Enter your current PIN, then choose a new 6–12 digit PIN.</p></div><button type="button" id="pinChangeClose" aria-label="Close">×</button></div>
+      <label for="pinCurrent">CURRENT PIN</label>
+      <input id="pinCurrent" type="password" inputmode="numeric" autocomplete="current-password" maxlength="12" required>
+      <label for="pinNew">NEW PIN</label>
+      <input id="pinNew" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" maxlength="12" required>
+      <label for="pinConfirm">CONFIRM NEW PIN</label>
+      <input id="pinConfirm" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" maxlength="12" required>
+      <div class="pin-change-error" id="pinChangeError" role="status"></div>
+      <div class="pin-change-actions"><button type="button" class="secondary-wide" id="pinChangeCancel">CANCEL</button><button type="submit" class="save-button" id="pinChangeSave">SAVE NEW PIN</button></div>
+    </form>
+  </div>
 
     <nav class="tabbar" aria-label="Main navigation">
       <button class="tab active" data-route="home" aria-label="Home">
@@ -493,7 +510,7 @@
   <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.legacy.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script src="./photo-tools.js?v=7614"></script>
-  <script src="./app.js?v=7614"></script>
+  <script src="./photo-tools.js?v=7615"></script>
+  <script src="./app.js?v=7615"></script>
 </body>
 </html>

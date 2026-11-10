@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap');
 :root{
   --bg:#050b14;--bg2:#07111d;--panel:#091522;--panel2:#0b1827;--line:#1b344d;--line2:#254b70;
   --text:#edf6ff;--muted:#7890a8;--muted2:#5f7892;--blue:#5aaeff;--blue2:#1e5fa3;--green:#54ee87;
@@ -561,3 +562,30 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
 
 .qr-label:not(.qr-with-credentials){grid-template-columns:18.8mm minmax(0,1fr)!important}
 @media print{.qr-label:not(.qr-with-credentials){grid-template-columns:18.8mm minmax(0,1fr)!important}}
+
+/* V7.6.15: readable Thai typography and polished app PIN settings. */
+html[lang="th"] body,html[lang="th"] button,html[lang="th"] input,html[lang="th"] select,html[lang="th"] textarea{
+  font-family:"TH Sarabun New","TH SarabunPSK","Sarabun",Tahoma,sans-serif!important;
+}
+html[lang="th"] .eyebrow,html[lang="th"] .page-head p,html[lang="th"] .more-card small,
+html[lang="th"] .info-label,html[lang="th"] .system-card small{font-size:15px;line-height:1.35}
+html[lang="th"] .info-value,html[lang="th"] .more-card b{font-size:17px;line-height:1.4}
+html[lang="th"] h1,html[lang="th"] h2{letter-spacing:0}
+.pin-change-overlay{position:fixed;inset:0;z-index:30000;display:grid;place-items:center;padding:20px;background:rgba(1,6,12,.78);backdrop-filter:blur(12px)}
+.pin-change-overlay.hidden{display:none!important}
+.pin-change-card{width:min(470px,100%);max-height:calc(100dvh - 40px);overflow:auto;padding:22px;border:1px solid rgba(86,158,220,.45);border-radius:22px;background:linear-gradient(150deg,#101d2d,#07111e);box-shadow:0 28px 90px rgba(0,0,0,.55);color:#eaf4ff}
+.pin-change-head{display:flex;align-items:flex-start;justify-content:space-between;gap:15px;margin-bottom:20px}
+.pin-change-head small{color:#77bfff;font-size:10px;font-weight:850;letter-spacing:.16em}
+.pin-change-head h2{margin:6px 0;font-size:24px;line-height:1.15}
+.pin-change-head p{margin:0;color:#91a8bf;font-size:13px;line-height:1.5}
+.pin-change-head>button{width:38px;height:38px;flex:0 0 38px;border:1px solid #315779;border-radius:50%;background:#0a1929;color:#eaf4ff;font-size:23px}
+.pin-change-card>label{display:block;margin:13px 0 6px;color:#88a9c8;font-size:10px;font-weight:850;letter-spacing:.12em}
+.pin-change-card>input{display:block;width:100%;height:48px;padding:0 14px;border:1px solid #294967;border-radius:12px;background:#06111d;color:#f2f8ff;font-size:17px;outline:none}
+.pin-change-card>input:focus{border-color:#5aaeff;box-shadow:0 0 0 3px rgba(90,174,255,.14)}
+.pin-change-error{min-height:22px;margin-top:10px;color:#ff9298;font-size:13px}
+.pin-change-actions{display:flex;gap:10px;margin-top:12px}
+.pin-change-actions>*{flex:1;min-width:0}
+[data-theme="light"] .pin-change-card{background:#f8fbff;color:#10263b}
+[data-theme="light"] .pin-change-head p{color:#58728b}
+[data-theme="light"] .pin-change-head>button{background:#fff;color:#10263b;border-color:#c7d8e6}
+[data-theme="light"] .pin-change-card>input{background:#fff;color:#10263b;border-color:#c6d7e5}
