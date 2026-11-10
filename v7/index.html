@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="RISP IT ASSET">
   <title>RISP IT ASSET</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=770">
+  <link rel="manifest" href="./manifest.webmanifest?v=771">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=7613">
+  <link rel="stylesheet" href="./styles.css?v=7614">
 </head>
 <body>
   <div class="splash" id="splash">
@@ -29,7 +29,7 @@
   <div class="app-lock-overlay" id="appLockOverlay" role="dialog" aria-modal="true" aria-labelledby="appLockTitle">
     <div class="app-lock-card">
       <img src="./icon-192.png" alt="RISP" class="app-lock-logo">
-      <div class="app-lock-topline"><div class="app-lock-eyebrow">RISP IT ASSET · PRIVATE ACCESS</div><button type="button" id="appLockLanguageBtn">TH</button></div>
+      <div class="app-lock-topline"><div class="app-lock-eyebrow">RISP IT ASSET · PRIVATE ACCESS</div><div class="language-picker lock-language-picker"><button type="button" id="appLockLanguageBtn" aria-haspopup="true" aria-expanded="false">🇬🇧 ⌄</button><div class="language-menu" id="appLockLanguageMenu" hidden><button type="button" data-app-lang="en">🇬🇧 English</button><button type="button" data-app-lang="th">🇹🇭 ไทย</button></div></div></div>
       <h1 id="appLockTitle">Unlock IT Asset</h1>
       <p id="appLockDescription">Enter the IT access PIN once to open the app and view protected device credentials.</p>
       <form id="appLockForm">
@@ -57,7 +57,13 @@
       </button>
 
       <div class="header-controls">
-        <button class="theme-chip language-chip" id="appLanguageBtn" type="button" aria-label="Switch language">TH</button>
+        <div class="language-picker" id="appLanguagePicker">
+          <button class="theme-chip language-chip" id="appLanguageBtn" type="button" aria-haspopup="true" aria-expanded="false"><span id="appLanguageFlag">🇬🇧</span><span class="language-caret">⌄</span></button>
+          <div class="language-menu" id="appLanguageMenu" hidden>
+            <button type="button" data-app-lang="en"><span>🇬🇧</span> English</button>
+            <button type="button" data-app-lang="th"><span>🇹🇭</span> ไทย</button>
+          </div>
+        </div>
         <button class="theme-chip" id="lockAppBtn" type="button" aria-label="Lock app">LOCK</button>
         <button class="theme-chip" id="appThemeBtn" type="button" aria-label="Toggle theme">☀</button>
         <button class="sync-chip" id="syncButton" type="button">
@@ -487,7 +493,7 @@
   <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.legacy.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script src="./photo-tools.js?v=7613"></script>
-  <script src="./app.js?v=7613"></script>
+  <script src="./photo-tools.js?v=7614"></script>
+  <script src="./app.js?v=7614"></script>
 </body>
 </html>

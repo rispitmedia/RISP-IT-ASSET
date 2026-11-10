@@ -521,3 +521,43 @@ html,body{width:100%!important;height:100%!important;min-height:0!important;max-
 }
 
 .app-lock-topline{display:flex;align-items:center;justify-content:space-between;gap:12px}.app-lock-topline button{border:1px solid #426b8d;border-radius:9px;background:rgba(46,115,169,.18);color:#b9dcf8;padding:7px 10px;font-size:10px;font-weight:900;letter-spacing:.08em}
+
+/* V7.6.14 — native-style language selector */
+.language-picker{position:relative;display:inline-flex;flex:0 0 auto;z-index:10020}
+.language-chip{width:43px!important;height:38px!important;display:flex!important;align-items:center;justify-content:center;gap:2px!important;border-radius:999px!important;font-size:17px!important}
+.language-caret{font-size:12px;line-height:1;color:var(--muted,#9db4ca)}
+.language-menu{position:absolute;top:calc(100% + 9px);right:0;min-width:154px;padding:6px;border:1px solid rgba(83,145,195,.45);border-radius:14px;background:#0c1b2b;box-shadow:0 18px 48px rgba(0,0,0,.38);display:grid;gap:4px;z-index:20000}
+.language-menu[hidden]{display:none!important}
+.language-menu button{display:flex;align-items:center;gap:10px;width:100%;padding:10px 12px;border:0;border-radius:9px;background:transparent;color:#eaf4ff;text-align:left;font-size:12px;font-weight:750}
+.language-menu button.selected{background:rgba(64,148,216,.2);color:#8ed0ff}
+.lock-language-picker .language-menu{right:0;top:calc(100% + 8px)}
+.app-lock-topline{position:relative}
+.app-lock-topline .language-picker{margin-left:auto}
+.app-lock-topline .language-menu{color:#fff}
+[data-theme="light"] .language-menu{background:#fff;border-color:#cad9e5;box-shadow:0 18px 42px rgba(22,48,72,.18)}
+[data-theme="light"] .language-menu button{color:#17334c}
+[data-theme="light"] .language-menu button.selected{background:#eaf5ff;color:#145c91}
+/* V7.6.14 — iPhone 15 Pro installed-app geometry: fill screen and reserve only real safe area. */
+@media(max-width:719px){
+ html,body{height:100%!important;height:var(--app-height,100dvh)!important;min-height:0!important;max-height:none!important;overflow:hidden!important}
+ .app{position:fixed!important;inset:0!important;top:0!important;bottom:0!important;height:var(--app-height,100dvh)!important;min-height:var(--app-height,100dvh)!important;max-height:none!important;width:100%!important;overflow:hidden!important}
+ .app-header{top:0!important;height:calc(var(--header-h) + env(safe-area-inset-top,0px))!important;padding-top:calc(8px + env(safe-area-inset-top,0px))!important}
+ .viewport{top:calc(var(--header-h) + env(safe-area-inset-top,0px))!important;bottom:calc(58px + env(safe-area-inset-bottom,0px))!important;height:auto!important}
+ .tabbar{position:fixed!important;left:0!important;right:0!important;bottom:0!important;height:calc(58px + env(safe-area-inset-bottom,0px))!important;min-height:calc(58px + env(safe-area-inset-bottom,0px))!important;padding:0 5px env(safe-area-inset-bottom,0px)!important;margin:0!important;display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;align-items:center!important;z-index:9000!important;transform:translate3d(0,0,0)!important;will-change:transform}
+ .tab{height:54px!important;min-height:54px!important;align-self:center!important}
+ .bottom-spacer{display:none!important;height:0!important;min-height:0!important}
+ .screen{padding-bottom:8px!important}
+ .header-controls{gap:5px!important}
+ .brand{grid-template-columns:42px minmax(0,1fr) auto!important;gap:6px!important}
+ .brand-mark{width:42px!important;height:42px!important}
+ .brand-copy strong{font-size:10.5px!important;letter-spacing:.07em!important}
+ .brand-copy small{font-size:5.2px!important}
+ .brand-credit{font-size:4.8px!important}
+ .theme-chip{width:34px!important;height:34px!important}
+ .language-chip{width:38px!important;height:34px!important;font-size:15px!important}
+ .sync-chip{min-width:42px!important;padding:0 6px!important;font-size:7px!important}
+}
+@supports(height:100dvh){@media(max-width:719px){.app{height:max(100dvh,var(--app-height,100dvh))!important}}}
+
+.qr-label:not(.qr-with-credentials){grid-template-columns:18.8mm minmax(0,1fr)!important}
+@media print{.qr-label:not(.qr-with-credentials){grid-template-columns:18.8mm minmax(0,1fr)!important}}

@@ -1,8 +1,8 @@
 {
   "id": "./",
-  "name": "RISP IT ASSET V7.6.13",
+  "name": "RISP IT ASSET V7.6.14",
   "short_name": "RISP IT ASSET",
-  "description": "RISP Phuket IT Asset Management — bilingual UI, app-wide secure access, repair history and refined QR labels",
+  "description": "RISP Phuket IT Asset Management — bilingual language selector, refined QR credentials labels, and iPhone full-screen layout",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -23,5 +23,5 @@
       "purpose": "any"
     }
   ],
-  "version": "7.6.13"
+  "version": "7.6.14"
 }

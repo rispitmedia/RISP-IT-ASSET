@@ -1,6 +1,6 @@
-const CACHE_NAME='risp-it-asset-v7-6-13-bilingual-app-lock';
+const CACHE_NAME='risp-it-asset-v7-6-14-language-qr-iphone';
 const CORE=[
-  './','./index.html','./asset/index.html','./styles.css?v=7613','./app.js?v=7613','./photo-tools.js?v=7613','./manifest.webmanifest?v=770',
+  './','./index.html','./asset/index.html','./styles.css?v=7614','./app.js?v=7614','./photo-tools.js?v=7614','./manifest.webmanifest?v=771',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'
 ];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
