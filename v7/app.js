@@ -95,7 +95,7 @@
   const credentialDetailLoads=new Map();
   const protectedPhotoCache=new Map();
 
-  // V7.6.17: reliable EN/TH language menu, full-screen iPhone safe-area layout, balanced credential QR label, and faster live sync.
+  // V7.6.18: fixed six-digit PIN validation, visible submit fallback, and guarded auto-submit, full-screen iPhone safe-area layout, balanced credential QR label, and faster live sync.
   let scanRequest=0,scanResolving=false,cameraStarting=null,cameraEpoch=0,cameraWanted=false;
   const scanBackdrop=document.createElement('div');
   scanBackdrop.id='scanResultBackdrop';scanBackdrop.className='sheet-backdrop scan-result-backdrop';scanBackdrop.setAttribute('aria-hidden','true');
@@ -651,26 +651,53 @@
   // On-screen numeric PIN keypad; readonly input prevents the iOS keyboard from opening.
   const appPinField=$('appLockPin');
   const appPinPad=$('appLockKeypad');
+  let appPinVerifying=false;
   if(appPinPad&&appPinField){
     appPinPad.addEventListener('click',e=>{
-      const key=e.target.closest('[data-pin-key]');if(!key)return;
+      const key=e.target.closest('[data-pin-key]');if(!key||appPinVerifying)return;
       const action=key.dataset.pinKey;let value=String(appPinField.value||'');
       if(action==='clear')value='';
       else if(action==='back')value=value.slice(0,-1);
       else if(/^\d$/.test(action)&&value.length<6)value+=action;
-      appPinField.value=value;$('appLockError').textContent='';
+      appPinField.value=value;
+      $('appLockError').textContent='';
       appPinField.dispatchEvent(new Event('input',{bubbles:true}));
-      if(value.length===6){const form=$('appLockForm');if(form)form.requestSubmit();}
+      // Auto-submit on the sixth digit; the visible Unlock button remains as a fallback.
+      if(value.length===6){
+        const form=$('appLockForm');
+        if(form){
+          if(typeof form.requestSubmit==='function')form.requestSubmit($('appUnlockButton'));
+          else form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
+        }
+      }
     });
   }
   // App-wide access gate. Token is session-scoped and expires server-side.
   $('appLockForm').addEventListener('submit',async e=>{
-    e.preventDefault();const pin=String($('appLockPin').value||'').trim();
-    if(!/^\\d{6}$/.test(pin)){$('appLockError').textContent=appLanguage==='th'?'กรุณากดรหัสตัวเลข 6 หลัก':'Please enter all 6 digits';return}
-    const btn=$('appUnlockButton'),old=btn.textContent;btn.disabled=true;btn.textContent='VERIFYING…';$('appLockError').textContent='';
-    try{await unlockWholeApp(pin);$('appLockPin').value='';showToast(appLanguage==='th'?'ปลดล็อกแอปแล้ว':'App unlocked')}
-    catch(err){$('appLockError').textContent=err.message||'รหัสไม่ถูกต้อง หรือไม่สามารถเชื่อมต่อได้';$('appLockPin').value='';}
-    finally{btn.disabled=false;btn.textContent=old}
+    e.preventDefault();
+    if(appPinVerifying)return;
+    const pin=String(appPinField&&appPinField.value||'').trim();
+    if(!/^\d{6}$/.test(pin)){
+      $('appLockError').textContent=appLanguage==='th'?'กรุณากรอกรหัส PIN ให้ครบ 6 หลัก':'Please enter all 6 digits';
+      return;
+    }
+    appPinVerifying=true;
+    const btn=$('appUnlockButton'),old=btn.textContent;
+    btn.disabled=true;btn.textContent=appLanguage==='th'?'กำลังตรวจสอบ…':'VERIFYING…';
+    if(appPinPad)appPinPad.querySelectorAll('button').forEach(k=>k.disabled=true);
+    $('appLockError').textContent='';
+    try{
+      await unlockWholeApp(pin);
+      appPinField.value='';
+      showToast(appLanguage==='th'?'ปลดล็อกแอปแล้ว':'App unlocked');
+    }catch(err){
+      $('appLockError').textContent=err.message|| (appLanguage==='th'?'รหัสไม่ถูกต้อง หรือไม่สามารถเชื่อมต่อได้':'Incorrect PIN or connection error');
+      appPinField.value='';
+    }finally{
+      appPinVerifying=false;
+      btn.disabled=false;btn.textContent=old;
+      if(appPinPad)appPinPad.querySelectorAll('button').forEach(k=>k.disabled=false);
+    }
   });
   $('lockAppBtn').addEventListener('click',()=>showAppLock('แอปถูกล็อกแล้ว'));
 
@@ -826,7 +853,7 @@
   $('appThemeBtn').addEventListener('click',toggleTheme);$('moreThemeBtn').addEventListener('click',toggleTheme);
   syncAppHeight();window.addEventListener('resize',syncAppHeight,{passive:true});if(window.visualViewport)window.visualViewport.addEventListener('resize',syncAppHeight,{passive:true});
   let initialTheme='dark';try{initialTheme=localStorage.getItem(THEME_STORAGE_KEY)||'dark'}catch(e){}applyTheme(initialTheme,false);
-  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=7617').catch(()=>{}));
+  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=7618').catch(()=>{}));
 
   const initial=(location.hash||'#home').slice(1);if(initial.startsWith('detail/')){const id=decodeURIComponent(initial.slice(7));setTimeout(()=>openDetail(id),100)}else route(['home','search','scan','add','more'].includes(initial)?initial:'home',false);
 })();

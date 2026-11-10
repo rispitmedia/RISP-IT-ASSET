@@ -1,6 +1,6 @@
-const CACHE_NAME='risp-it-asset-v7-6-17-lock-qr-photo-fix';
+const CACHE_NAME='risp-it-asset-v7-6-18-pin-submit-fix';
 const CORE=[
-  './','./index.html','./asset/index.html','./styles.css?v=7617','./app.js?v=7617','./photo-tools.js?v=7617','./manifest.webmanifest?v=772',
+  './','./index.html','./asset/index.html','./styles.css?v=7618','./app.js?v=7618','./photo-tools.js?v=7618','./manifest.webmanifest?v=773',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'
 ];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});

@@ -1,6 +1,6 @@
 {
   "id": "./",
-  "name": "RISP IT ASSET V7.6.15",
+  "name": "RISP IT ASSET V7.6.18",
   "short_name": "RISP IT ASSET",
   "description": "RISP Phuket IT Asset Management — complete Thai UI translations, Sarabun typography, and in-app passcode management",
   "start_url": "./",
@@ -23,5 +23,5 @@
       "purpose": "any"
     }
   ],
-  "version": "7.6.15"
+  "version": "7.6.18"
 }

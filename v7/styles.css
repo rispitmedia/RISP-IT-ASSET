@@ -700,3 +700,15 @@ button,input,select,textarea{font-family:var(--risp-font)!important}
 .language-menu{min-width:156px!important;width:max-content!important;max-width:calc(100vw - 32px)!important}
 .language-menu button{white-space:nowrap!important;justify-content:flex-start!important;padding:10px 13px!important;font-size:13px!important}
 .language-picker>button{white-space:nowrap!important;min-width:62px!important}
+
+/* V7.6.18 — visible PIN submit fallback; keypad still auto-submits at six digits. */
+#appUnlockButton{
+  display:flex!important;width:100%!important;min-height:54px!important;margin:2px 0 0!important;
+  padding:0 18px!important;align-items:center!important;justify-content:center!important;
+  border:1px solid rgba(132,202,255,.48)!important;border-radius:14px!important;
+  background:linear-gradient(135deg,#43a9f4 0%,#176db5 100%)!important;color:#fff!important;
+  font-size:14px!important;font-weight:900!important;letter-spacing:.12em!important;
+  box-shadow:0 8px 22px rgba(22,119,195,.25),inset 0 1px rgba(255,255,255,.2)!important;
+}
+#appUnlockButton:active{transform:translateY(1px)!important;filter:brightness(1.08)!important}
+#appUnlockButton:disabled,.app-pin-keypad button:disabled{opacity:.58!important;cursor:wait!important}
