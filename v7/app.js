@@ -1,7 +1,7 @@
 (function(){
   'use strict';
 
-  const CACHE_KEY='RISP_V7_WORLDCLASS_CACHE_7611';
+  const CACHE_KEY='RISP_V7_WORLDCLASS_CACHE_7616';
   const CONNECTION_STORAGE_KEY='RISP_V7_SECURE_CONNECTION_23';
   const THEME_STORAGE_KEY='RISP_V7_THEME_V1';
   const CREDENTIAL_TOKEN_SESSION_KEY='RISP_V7_CREDENTIAL_TOKEN_V1';
@@ -95,7 +95,7 @@
   const credentialDetailLoads=new Map();
   const protectedPhotoCache=new Map();
 
-  // V7.6.14: reliable EN/TH language menu, full-screen iPhone safe-area layout, balanced credential QR label, and faster live sync.
+  // V7.6.17: reliable EN/TH language menu, full-screen iPhone safe-area layout, balanced credential QR label, and faster live sync.
   let scanRequest=0,scanResolving=false,cameraStarting=null,cameraEpoch=0,cameraWanted=false;
   const scanBackdrop=document.createElement('div');
   scanBackdrop.id='scanResultBackdrop';scanBackdrop.className='sheet-backdrop scan-result-backdrop';scanBackdrop.setAttribute('aria-hidden','true');
@@ -304,7 +304,11 @@
   function copyText(t){const s=String(t||'').trim();if(!s||s==='—')return;const p=navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(s):Promise.reject();p.then(()=>showToast('Copied')).catch(()=>{const ta=document.createElement('textarea');ta.value=s;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showToast('Copied')}catch(e){}ta.remove()})}
 
   function nextRequestId(prefix){requestSeq++;return prefix+'_'+requestSeq+'_'+Date.now().toString(36)}
-  function jsonpRequest(action,extra,timeoutMs){const saved=loadConnection();if(!saved)return Promise.reject(new Error('V7 API is not paired.'));extra=extra||{};timeoutMs=Math.max(3000,Number(timeoutMs)||22000);return new Promise((resolve,reject)=>{const cb='RISPv7_'+nextRequestId('r').replace(/[^A-Za-z0-9_$]/g,'_');const script=document.createElement('script');let done=false;const cleanup=()=>{if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}try{script.remove()}catch(e){}};window[cb]=payload=>{cleanup();if(!payload||payload.success===false){reject(new Error(payload&&payload.error?payload.error:'V7 API returned an invalid response.'));return}resolve(payload)};const p=new URLSearchParams();p.set('v7api',String(action||'bootstrap'));p.set('key',saved.key);p.set('callback',cb);p.set('t',Date.now());Object.keys(extra).forEach(k=>{if(extra[k]!=null&&String(extra[k])!=='')p.set(k,String(extra[k]))});script.async=true;script.src=saved.url+'?'+p.toString();script.onerror=()=>{cleanup();reject(new Error('Could not reach the V7 API deployment.'))};const timer=setTimeout(()=>{cleanup();reject(new Error('V7 API timed out.'))},timeoutMs);document.head.appendChild(script)})}
+  function jsonpRequest(action,extra,timeoutMs){const saved=loadConnection();if(!saved)return Promise.reject(new Error('V7 API is not paired.'));extra=extra||{};timeoutMs=Math.max(3000,Number(timeoutMs)||22000);return new Promise((resolve,reject)=>{const cb='RISPv7_'+nextRequestId('r').replace(/[^A-Za-z0-9_$]/g,'_');const script=document.createElement('script');let done=false;const cleanup=()=>{if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}try{script.remove()}catch(e){}};window[cb]=payload=>{cleanup();if(!payload||payload.success===false){
+      let message=payload&&payload.error?payload.error:'V7 API returned an invalid response.';
+      if(/Unknown v7 API action/i.test(message))message='This app is connected to an older Apps Script backend. Update and deploy backend V6.11.8 as a New version, then check the V7 API URL in Setup. The PIN itself has not been verified.';
+      reject(new Error(message));return
+    }resolve(payload)};const p=new URLSearchParams();p.set('v7api',String(action||'bootstrap'));p.set('key',saved.key);p.set('callback',cb);p.set('t',Date.now());Object.keys(extra).forEach(k=>{if(extra[k]!=null&&String(extra[k])!=='')p.set(k,String(extra[k]))});script.async=true;script.src=saved.url+'?'+p.toString();script.onerror=()=>{cleanup();reject(new Error('Could not reach the V7 API deployment.'))};const timer=setTimeout(()=>{cleanup();reject(new Error('V7 API timed out.'))},timeoutMs);document.head.appendChild(script)})}
   async function fetchAsset(id){const p=await jsonpRequest('asset',{id},22000);if(!p.asset)throw new Error('Device not found.');if(p.version)setBackendVersion(p.version);return p.asset}
   async function syncInventory(showMsg){if(!loadConnection())throw new Error('V7 API is not paired.');setSync('syncing','SYNC');const p=await jsonpRequest('bootstrap',{},25000);if(p.version)setBackendVersion(p.version);if(p.generatedAt)lastServerGeneration=String(p.generatedAt);if(!Array.isArray(p.assets))throw new Error('Inventory payload is missing assets.');applyAssets(p.assets,true);if(showMsg!==false)showToast('Inventory synced');return p.assets}
   function showApiError(err){serverConnected=false;setSync('error','RETRY');syncBanner.classList.remove('hidden');$('syncBannerTitle').textContent='V7 API connection failed';$('syncBannerText').textContent=err&&err.message?err.message:String(err||'Unknown API error')}
@@ -380,9 +384,16 @@
   function applyAppLanguage(lang){
     appLanguage=lang==='th'?'th':'en';try{localStorage.setItem('RISP_IT_ASSET_LANG',appLanguage)}catch(e){}
     document.documentElement.lang=appLanguage;translateAppTree(document.body,appLanguage);
-    const flag=appLanguage==='th'?'🇹🇭':'🇬🇧',b=$('appLanguageBtn'),f=$('appLanguageFlag'),lb=$('appLockLanguageBtn');
-    if(f)f.textContent=flag;if(b){b.title=appLanguage==='th'?'เลือกภาษา':'Choose language';b.setAttribute('aria-label',b.title)}
-    if(lb)lb.innerHTML=flag+' ⌄';
+    const b=$('appLanguageBtn'),f=$('appLanguageFlag'),lb=$('appLockLanguageBtn');
+    if(f){f.classList.toggle('flag-th',appLanguage==='th');f.classList.toggle('flag-gb',appLanguage!=='th')}
+    if(b){b.title=appLanguage==='th'?'เลือกภาษา':'Choose language';b.setAttribute('aria-label',b.title)}
+    if(lb){const flagClass=appLanguage==='th'?'flag-th':'flag-gb';lb.innerHTML='<span class="flag-icon '+flagClass+'" aria-hidden="true"></span><span>⌄</span>'}
+    const pinLabel=$('appLockPinLabel');if(pinLabel)pinLabel.textContent=appLanguage==='th'?'กรอกรหัส PIN':'ENTER YOUR PIN';
+    const lockTitle=$('appLockTitle');if(lockTitle)lockTitle.textContent=appLanguage==='th'?'ปลดล็อก RISP IT ASSET':'Unlock RISP IT ASSET';
+    const lockDesc=$('appLockDescription');if(lockDesc)lockDesc.textContent=appLanguage==='th'?'กรอกรหัส PIN 6 หลักเพื่อเข้าใช้งานแอป':'Enter your 6-digit PIN to access the app.';
+    const lockButton=$('appUnlockButton');if(lockButton)lockButton.textContent=appLanguage==='th'?'ปลดล็อกแอป':'UNLOCK APP';
+    const pinInput=$('appLockPin');if(pinInput)pinInput.setAttribute('aria-label',appLanguage==='th'?'รหัส PIN 6 หลัก':'Six digit access PIN');
+
     document.querySelectorAll('[data-app-lang]').forEach(x=>x.classList.toggle('selected',x.dataset.appLang===appLanguage));
   }
   const appLanguageObserver=new MutationObserver(records=>records.forEach(r=>(r.addedNodes||[]).forEach(n=>{if(n.nodeType===1)translateAppTree(n,appLanguage);else if(n.nodeType===3&&n.parentElement)translateAppTree(n.parentElement,appLanguage)})));
@@ -394,7 +405,7 @@
     const overlay=$('appLockOverlay');if(overlay)overlay.classList.remove('hidden');
     document.body.classList.add('app-is-locked');
     if(message)$('appLockError').textContent=message;
-    const pin=$('appLockPin');if(pin){pin.value='';setTimeout(()=>pin.focus(),80)}
+    const pin=$('appLockPin');if(pin){pin.value='';pin.blur()}
   }
   function hideAppLock(){
     appUnlocked=true;const overlay=$('appLockOverlay');if(overlay)overlay.classList.add('hidden');
@@ -481,7 +492,7 @@
     if(!file)return;const job=++photoJobs[mode],prefix=mode==='edit'?'edit':'add',preview=$(prefix+'PhotoPreview'),button=$(prefix+'SaveBtn'),aiButton=$(prefix+'PhotoAiBtn');
     if(mode==='edit'){editPhotoFile=file;editPhotoPrepared=null}else{addPhotoFile=file;addPhotoPrepared=null}
     preview.hidden=true;button.disabled=true;if(aiButton)aiButton.disabled=true;
-    try{const d=useAi?await window.RISPPhoto.prepareAI(file):await compressImage(file);if(job!==photoJobs[mode])return;if(mode==='edit')editPhotoPrepared=d;else addPhotoPrepared=d;preview.src=d.dataUrl;preview.hidden=false;showToast(d.backgroundRemoved?'AI background removed • photo ready':'White background ready • photo ready');}
+    try{const d=useAi?await window.RISPPhoto.prepareAI(file):await compressImage(file);if(job!==photoJobs[mode])return;if(mode==='edit')editPhotoPrepared=d;else addPhotoPrepared=d;preview.src=d.dataUrl;preview.hidden=false;showToast(d.backgroundRemoved?'Background removed • transparent PNG ready':'White background ready • photo ready');}
     catch(e){showToast(e.message||'Could not prepare photo');}
     finally{if(job===photoJobs[mode]){button.disabled=false;if(aiButton)aiButton.disabled=!((mode==='edit'?editPhotoFile:addPhotoFile));}}
   }
@@ -587,7 +598,7 @@
   $('changePhotoBtn').addEventListener('click',()=>{const a=assetMap[normalize(currentDetailId)];$('photoAssetLabel').textContent=a?value(a.ASSET_TAG):'Device photo';resetPhotoSheet();openSheet(photoSheet)});$('closePhotoBtn').addEventListener('click',()=>closeSheet(photoSheet));photoSheet.addEventListener('click',e=>{if(e.target===photoSheet)closeSheet(photoSheet)});
   async function prepareDetailPhoto(file,useAi){
     if(!file)return;const job=++photoJobs.detail;detailPhotoFile=file;detailPhotoData=null;$('savePhotoBtn').disabled=true;$('detailPhotoAiBtn').disabled=true;
-    try{const d=useAi?await window.RISPPhoto.prepareAI(file):await compressImage(file);if(job!==photoJobs.detail)return;detailPhotoData=d;$('photoPreview').src=d.dataUrl;$('photoPreview').hidden=false;$('photoPreviewEmpty').style.display='none';$('savePhotoBtn').disabled=false;showToast(d.backgroundRemoved?'AI background removed • Save photo':'White background ready • Save photo');}
+    try{const d=useAi?await window.RISPPhoto.prepareAI(file):await compressImage(file);if(job!==photoJobs.detail)return;detailPhotoData=d;$('photoPreview').src=d.dataUrl;$('photoPreview').hidden=false;$('photoPreviewEmpty').style.display='none';$('savePhotoBtn').disabled=false;showToast(d.backgroundRemoved?'Background removed • transparent PNG ready':'White background ready • Save photo');}
     catch(e){showToast(e.message||'Could not prepare photo');}
     finally{if(job===photoJobs.detail)$('detailPhotoAiBtn').disabled=!detailPhotoFile;}
   }
@@ -637,13 +648,28 @@
   $('lockCredentialBtn').addEventListener('click',()=>{clearCredentialToken();$('credentialDataPane').hidden=true;$('credentialUnlockPane').hidden=false;showAppLock('แอปถูกล็อกแล้ว')});
 
 
+  // On-screen numeric PIN keypad; readonly input prevents the iOS keyboard from opening.
+  const appPinField=$('appLockPin');
+  const appPinPad=$('appLockKeypad');
+  if(appPinPad&&appPinField){
+    appPinPad.addEventListener('click',e=>{
+      const key=e.target.closest('[data-pin-key]');if(!key)return;
+      const action=key.dataset.pinKey;let value=String(appPinField.value||'');
+      if(action==='clear')value='';
+      else if(action==='back')value=value.slice(0,-1);
+      else if(/^\d$/.test(action)&&value.length<6)value+=action;
+      appPinField.value=value;$('appLockError').textContent='';
+      appPinField.dispatchEvent(new Event('input',{bubbles:true}));
+      if(value.length===6){const form=$('appLockForm');if(form)form.requestSubmit();}
+    });
+  }
   // App-wide access gate. Token is session-scoped and expires server-side.
   $('appLockForm').addEventListener('submit',async e=>{
     e.preventDefault();const pin=String($('appLockPin').value||'').trim();
-    if(pin.length<6){$('appLockError').textContent='กรุณากรอกรหัสเข้าใช้งานให้ครบ';return}
+    if(!/^\\d{6}$/.test(pin)){$('appLockError').textContent=appLanguage==='th'?'กรุณากดรหัสตัวเลข 6 หลัก':'Please enter all 6 digits';return}
     const btn=$('appUnlockButton'),old=btn.textContent;btn.disabled=true;btn.textContent='VERIFYING…';$('appLockError').textContent='';
     try{await unlockWholeApp(pin);$('appLockPin').value='';showToast(appLanguage==='th'?'ปลดล็อกแอปแล้ว':'App unlocked')}
-    catch(err){$('appLockError').textContent=err.message||'รหัสไม่ถูกต้อง หรือไม่สามารถเชื่อมต่อได้';$('appLockPin').select()}
+    catch(err){$('appLockError').textContent=err.message||'รหัสไม่ถูกต้อง หรือไม่สามารถเชื่อมต่อได้';$('appLockPin').value='';}
     finally{btn.disabled=false;btn.textContent=old}
   });
   $('lockAppBtn').addEventListener('click',()=>showAppLock('แอปถูกล็อกแล้ว'));
@@ -800,7 +826,7 @@
   $('appThemeBtn').addEventListener('click',toggleTheme);$('moreThemeBtn').addEventListener('click',toggleTheme);
   syncAppHeight();window.addEventListener('resize',syncAppHeight,{passive:true});if(window.visualViewport)window.visualViewport.addEventListener('resize',syncAppHeight,{passive:true});
   let initialTheme='dark';try{initialTheme=localStorage.getItem(THEME_STORAGE_KEY)||'dark'}catch(e){}applyTheme(initialTheme,false);
-  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=7615').catch(()=>{}));
+  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=7617').catch(()=>{}));
 
   const initial=(location.hash||'#home').slice(1);if(initial.startsWith('detail/')){const id=decodeURIComponent(initial.slice(7));setTimeout(()=>openDetail(id),100)}else route(['home','search','scan','add','more'].includes(initial)?initial:'home',false);
 })();

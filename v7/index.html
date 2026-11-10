@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=5">
   <meta name="theme-color" content="#06101c">
@@ -12,7 +13,7 @@
   <link rel="manifest" href="./manifest.webmanifest?v=772">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=7615">
+  <link rel="stylesheet" href="./styles.css?v=7617">
 </head>
 <body>
   <div class="splash" id="splash">
@@ -29,12 +30,18 @@
   <div class="app-lock-overlay" id="appLockOverlay" role="dialog" aria-modal="true" aria-labelledby="appLockTitle">
     <div class="app-lock-card">
       <img src="./icon-192.png" alt="RISP" class="app-lock-logo">
-      <div class="app-lock-topline"><div class="app-lock-eyebrow">RISP IT ASSET · PRIVATE ACCESS</div><div class="language-picker lock-language-picker"><button type="button" id="appLockLanguageBtn" aria-haspopup="true" aria-expanded="false">🇬🇧 ⌄</button><div class="language-menu" id="appLockLanguageMenu" hidden><button type="button" data-app-lang="en">🇬🇧 English</button><button type="button" data-app-lang="th">🇹🇭 ไทย</button></div></div></div>
+      <div class="app-lock-topline"><div class="app-lock-eyebrow"><strong>RISP IT ASSET</strong><span>PRIVATE ACCESS</span></div><div class="language-picker lock-language-picker"><button type="button" id="appLockLanguageBtn" aria-haspopup="true" aria-expanded="false"><span class="flag-icon flag-gb" aria-hidden="true"></span><span>⌄</span></button><div class="language-menu" id="appLockLanguageMenu" hidden><button type="button" data-app-lang="en"><span class="flag-icon flag-gb" aria-hidden="true"></span> English</button><button type="button" data-app-lang="th"><span class="flag-icon flag-th" aria-hidden="true"></span> ไทย</button></div></div></div>
       <h1 id="appLockTitle">Unlock IT Asset</h1>
       <p id="appLockDescription">Enter the IT access PIN once to open the app and view protected device credentials.</p>
-      <form id="appLockForm">
-        <label for="appLockPin">ACCESS PIN</label>
-        <input id="appLockPin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="32" placeholder="Enter access PIN" required>
+      <form id="appLockForm" class="app-lock-form">
+        <label for="appLockPin" id="appLockPinLabel">ENTER YOUR PIN</label>
+        <input id="appLockPin" type="password" inputmode="none" autocomplete="off" maxlength="6" placeholder="○ ○ ○ ○ ○ ○" readonly required aria-label="Six digit access PIN">
+        <div class="app-pin-keypad" id="appLockKeypad" aria-label="PIN keypad">
+          <button type="button" data-pin-key="1">1</button><button type="button" data-pin-key="2">2</button><button type="button" data-pin-key="3">3</button>
+          <button type="button" data-pin-key="4">4</button><button type="button" data-pin-key="5">5</button><button type="button" data-pin-key="6">6</button>
+          <button type="button" data-pin-key="7">7</button><button type="button" data-pin-key="8">8</button><button type="button" data-pin-key="9">9</button>
+          <button type="button" class="pin-key-action" data-pin-key="clear">CLEAR</button><button type="button" data-pin-key="0">0</button><button type="button" class="pin-key-action" data-pin-key="back">⌫</button>
+        </div>
         <button type="submit" id="appUnlockButton">UNLOCK APP</button>
       </form>
       <div class="app-lock-error" id="appLockError" role="status"></div>
@@ -58,7 +65,7 @@
 
       <div class="header-controls">
         <div class="language-picker" id="appLanguagePicker">
-          <button class="theme-chip language-chip" id="appLanguageBtn" type="button" aria-haspopup="true" aria-expanded="false"><span id="appLanguageFlag">🇬🇧</span><span class="language-caret">⌄</span></button>
+          <button class="theme-chip language-chip" id="appLanguageBtn" type="button" aria-haspopup="true" aria-expanded="false"><span id="appLanguageFlag" class="flag-icon flag-gb" aria-hidden="true"></span><span class="language-caret">⌄</span></button>
           <div class="language-menu" id="appLanguageMenu" hidden>
             <button type="button" data-app-lang="en"><span>🇬🇧</span> English</button>
             <button type="button" data-app-lang="th"><span>🇹🇭</span> ไทย</button>
@@ -279,7 +286,7 @@
               <label class="photo-picker">UPLOAD PHOTO<input id="addPhotoLibraryInput" type="file" accept="image/*"></label>
               <label class="photo-picker">TAKE PHOTO<input id="addPhotoCameraInput" type="file" accept="image/*" capture="environment"></label>
             </div>
-            <button class="photo-ai-button" id="addPhotoAiBtn" type="button" disabled>REMOVE BG (AI) — SLOW MODE</button>
+            <button class="photo-ai-button" id="addPhotoAiBtn" type="button" disabled>REMOVE BACKGROUND — FAST</button>
             <img id="addPhotoPreview" alt="" hidden>
           </div>
           <button class="save-button" id="addSaveBtn" type="submit">＋ ADD DEVICE</button>
@@ -301,7 +308,7 @@
               <label class="photo-picker">UPLOAD PHOTO<input id="editPhotoLibraryInput" type="file" accept="image/*"></label>
               <label class="photo-picker">TAKE PHOTO<input id="editPhotoCameraInput" type="file" accept="image/*" capture="environment"></label>
             </div>
-            <button class="photo-ai-button" id="editPhotoAiBtn" type="button" disabled>REMOVE BG (AI) — SLOW MODE</button>
+            <button class="photo-ai-button" id="editPhotoAiBtn" type="button" disabled>REMOVE BACKGROUND — FAST</button>
             <img id="editPhotoPreview" alt="" hidden>
           </div>
           <div class="immutable-note"><span>⌁</span><div><b>ASSET ID LOCKED</b><p id="editAssetIdText">—</p></div></div>
@@ -403,7 +410,7 @@
         <label class="sheet-primary file-button big">UPLOAD PHOTO<input id="detailPhotoLibraryInput" type="file" accept="image/*"></label>
         <label class="sheet-primary file-button big">TAKE PHOTO<input id="detailPhotoCameraInput" type="file" accept="image/*" capture="environment"></label>
       </div>
-      <button class="photo-ai-button" id="detailPhotoAiBtn" type="button" disabled>REMOVE BG (AI) — SLOW MODE</button>
+      <button class="photo-ai-button" id="detailPhotoAiBtn" type="button" disabled>REMOVE BACKGROUND — FAST</button>
       <div class="connect-actions"><button class="sheet-secondary" id="closePhotoBtn" type="button">CANCEL</button><button class="sheet-primary" id="savePhotoBtn" type="button" disabled>SAVE PHOTO</button></div>
     </div>
   </div>
@@ -510,7 +517,7 @@
   <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.legacy.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script src="./photo-tools.js?v=7615"></script>
-  <script src="./app.js?v=7615"></script>
+  <script src="./photo-tools.js?v=7617"></script>
+  <script src="./app.js?v=7617"></script>
 </body>
 </html>
