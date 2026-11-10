@@ -9,10 +9,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="RISP IT ASSET">
   <title>RISP IT ASSET</title>
-  <link rel="manifest" href="./manifest.webmanifest?v=769">
+  <link rel="manifest" href="./manifest.webmanifest?v=770">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=7611">
+  <link rel="stylesheet" href="./styles.css?v=7613">
 </head>
 <body>
   <div class="splash" id="splash">
@@ -23,6 +23,23 @@
     <div class="splash-sub">CONTROL • SUPPORT • MAINTAIN</div>
     <div class="splash-signal"><i></i><i></i><i></i><i></i><i></i></div>
     <div class="splash-credit">ENGINEERED BY NEWVANA</div>
+  </div>
+
+
+  <div class="app-lock-overlay" id="appLockOverlay" role="dialog" aria-modal="true" aria-labelledby="appLockTitle">
+    <div class="app-lock-card">
+      <img src="./icon-192.png" alt="RISP" class="app-lock-logo">
+      <div class="app-lock-topline"><div class="app-lock-eyebrow">RISP IT ASSET · PRIVATE ACCESS</div><button type="button" id="appLockLanguageBtn">TH</button></div>
+      <h1 id="appLockTitle">Unlock IT Asset</h1>
+      <p id="appLockDescription">Enter the IT access PIN once to open the app and view protected device credentials.</p>
+      <form id="appLockForm">
+        <label for="appLockPin">ACCESS PIN</label>
+        <input id="appLockPin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="32" placeholder="Enter access PIN" required>
+        <button type="submit" id="appUnlockButton">UNLOCK APP</button>
+      </form>
+      <div class="app-lock-error" id="appLockError" role="status"></div>
+      <small>Access expires automatically. Do not share this PIN.</small>
+    </div>
   </div>
 
   <div class="app">
@@ -40,6 +57,8 @@
       </button>
 
       <div class="header-controls">
+        <button class="theme-chip language-chip" id="appLanguageBtn" type="button" aria-label="Switch language">TH</button>
+        <button class="theme-chip" id="lockAppBtn" type="button" aria-label="Lock app">LOCK</button>
         <button class="theme-chip" id="appThemeBtn" type="button" aria-label="Toggle theme">☀</button>
         <button class="sync-chip" id="syncButton" type="button">
           <span class="sync-dot" id="syncDot"></span>
@@ -191,10 +210,11 @@
           <div class="notes-card" id="dNotes">—</div>
         </div>
 
-        <div class="safe-note private-note">
-          <span>🔐</span><div><b>PRIVATE CREDENTIALS</b><p>Protected by the Super Admin unlock. Credentials are loaded only on demand and are never saved to the app cache.</p></div>
-          <button class="private-admin-button" id="openPrivateCredentialsBtn" type="button">VIEW CREDENTIALS</button>
-        </div>
+        <section class="detail-section asset-credentials-section" id="assetCredentialsSection" hidden>
+          <div class="section-head compact"><div><small>PRIVATE INFORMATION</small><h2>Account credentials</h2></div><span class="credential-live-state">UNLOCKED</span></div>
+          <div class="asset-credentials-grid" id="assetCredentialRows"></div>
+          <p class="credential-privacy-note">ข้อมูลนี้จะแสดงเฉพาะในช่วงที่ปลดล็อกแอป และจะถูกซ่อนเมื่อล็อกแอป</p>
+        </section>
         <button class="danger-link" id="deleteAssetBtn" type="button">DELETE DEVICE</button>
         <div class="bottom-spacer"></div>
       </section>
@@ -383,10 +403,10 @@
       <p class="connect-copy">This QR uses the immutable Asset ID — not Libib, Serial or a reusable text value — so it cannot silently jump to another device.</p>
       <div class="generated-qr-card" id="generatedQrCard">
         <div class="generated-qr-code" id="generatedQrCode"></div>
-        <div class="generated-qr-copy"><div class="generated-qr-brand"><img src="./icon-192.png" alt="RISP"><small>RISP IT ASSET</small></div><h3 id="generatedQrTag">—</h3><p id="generatedQrMeta">—</p><p class="generated-qr-identity" id="generatedQrIdentity">—</p><p class="generated-qr-credential-line" id="generatedQrSerial">—</p><p class="generated-qr-credential-line" id="generatedQrId">—</p><p class="generated-qr-payload" id="generatedQrPayload">—</p></div>
+        <div class="generated-qr-copy"><div class="generated-qr-brand"><img src="./icon-192.png" alt="RISP"><small>RISP IT ASSET</small></div><h3 id="generatedQrTag">—</h3><p id="generatedQrMeta">—</p><p class="generated-qr-identity" id="generatedQrIdentity">—</p><p class="generated-qr-serial-info" id="generatedQrSerialInfo">—</p><p class="generated-qr-assigned" id="generatedQrAssigned" hidden></p><p class="generated-qr-credential-line" id="generatedQrSerial">—</p><p class="generated-qr-credential-line" id="generatedQrId">—</p><p class="generated-qr-payload" id="generatedQrPayload">—</p></div>
       </div>
       <p class="qr-identity-note">Legacy Libib / Asset Tag QR codes remain supported, but ambiguous legacy codes are blocked instead of opening the wrong asset.</p>
-      <label class="qr-copy-control-app" for="generatedQrCopies"><span>COPIES</span><input id="generatedQrCopies" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" aria-label="Number of QR label copies"></label>
+      <label class="qr-copy-control-app" for="generatedQrCopies"><span>COPIES</span><input id="generatedQrCopies" type="number" min="1" max="99" step="1" value="1" inputmode="numeric" aria-label="Number of QR label copies"></label>\n      <label class="qr-assigned-toggle-app" id="generatedQrAssignedToggleWrap" hidden><input type="checkbox" id="generatedQrIncludeAssigned"><span>Include assigned person on label</span></label>
       <div class="qr-print-options"><button class="sheet-primary" id="generatedQrPrintBtn" type="button">QR ONLY</button><button class="sheet-primary" id="generatedQrCredentialsBtn" type="button">QR + USERNAME PASSWORD</button><button class="sheet-primary" id="generatedCredentialsOnlyBtn" type="button">USERNAME PASSWORD ONLY</button></div>
       <div class="connect-actions"><button class="sheet-secondary" id="generatedQrCancelBtn" type="button">← BACK TO DEVICE</button></div>
     </div>
@@ -467,7 +487,7 @@
   <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.legacy.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script src="./photo-tools.js?v=7611"></script>
-  <script src="./app.js?v=7611"></script>
+  <script src="./photo-tools.js?v=7613"></script>
+  <script src="./app.js?v=7613"></script>
 </body>
 </html>
