@@ -1,0 +1,620 @@
+(function(){
+  'use strict';
+
+  const CACHE_KEY='RISP_V7_WORLDCLASS_CACHE_7611';
+  const CONNECTION_STORAGE_KEY='RISP_V7_SECURE_CONNECTION_23';
+  const THEME_STORAGE_KEY='RISP_V7_THEME_V1';
+  const CREDENTIAL_TOKEN_SESSION_KEY='RISP_V7_CREDENTIAL_TOKEN_V1';
+  const LEGACY_ADMIN_URL='https://script.google.com/a/macros/risphuket.ac.th/s/AKfycbwNwoDgFIomyWJQhQ5WXFX0b87U7YPCdY2r5QSoY_AUm0cvv6r1055dAzRv2TpGWwgrFQ/exec';
+  const DEVICE_TYPES=['Laptop','Desktop PC','MacBook','Mac mini','iMac','Tablet','iPad','Monitor','Printer','Projector','Network Equipment','Server','Phone','Other'];
+  const DEPARTMENT_OPTIONS=['IT','Staff','Teacher','Student','IA & Specialist','Other'];
+  const STATUSES=['Active','Inactive','In Use','Available','Repair','Maintenance','Storage','Retired','Lost','Other'];
+  const BRAND_OPTIONS_BY_TYPE={
+    'Laptop':['ASUS','Acer','Dell','HP','Lenovo','Apple','MSI'],
+    'Desktop PC':['Dell','HP','Lenovo','ASUS','Acer'],
+    'MacBook':['Apple'],'Mac mini':['Apple'],'iMac':['Apple'],
+    'Tablet':['Mi','Xiaomi','Samsung','Lenovo','Huawei','Redmi'],
+    'iPad':['Apple'],
+    'Phone':['Apple','Samsung','Xiaomi','Mi','Google','OPPO','vivo','Huawei','OnePlus'],
+    'Monitor':['Dell','ASUS','Acer','Samsung','LG','Lenovo','BenQ','HP'],
+    'Printer':['Canon','Epson','Brother','HP'],
+    'Projector':['Epson','BenQ','ViewSonic','Optoma','Acer'],
+    'Network Equipment':['TP-Link','Ubiquiti','MikroTik','Cisco','Hikvision'],
+    'Server':['Dell','HP','Lenovo','Supermicro'],
+    'Other':['ASUS','Acer','Dell','HP','Lenovo','Apple','Samsung','Xiaomi','Mi','Canon','Epson','Brother','LG','TP-Link']
+  };
+  const BRAND_DOMAIN_MAP={'ASUS':'asus.com','ACER':'acer.com','DELL':'dell.com','HP':'hp.com','LENOVO':'lenovo.com','APPLE':'apple.com','MSI':'msi.com','SAMSUNG':'samsung.com','XIAOMI':'mi.com','XIAOMI (MI)':'mi.com','XIAOMI (REDMI)':'mi.com','REDMI':'mi.com','MI':'mi.com','HUAWEI':'huawei.com','GOOGLE':'google.com','OPPO':'oppo.com','VIVO':'vivo.com','ONEPLUS':'oneplus.com','LG':'lg.com','BENQ':'benq.com','CANON':'global.canon','CANNON':'global.canon','EPSON':'epson.com','BROTHER':'brother.com','VIEWSONIC':'viewsonic.com','OPTOMA':'optoma.com','TP-LINK':'tp-link.com','UBIQUITI':'ui.com','MIKROTIK':'mikrotik.com','CISCO':'cisco.com','HIKVISION':'hikvision.com','SUPERMICRO':'supermicro.com'};
+
+  const BRAND_LOGO_URL_MAP={'ASUS':'https://cdn.simpleicons.org/asus/000000','ACER':'https://cdn.simpleicons.org/acer/83B81A','DELL':'https://cdn.simpleicons.org/dell/0672CE','HP':'https://cdn.simpleicons.org/hp/0096D6','LENOVO':'https://cdn.simpleicons.org/lenovo/E2231A','APPLE':'https://cdn.simpleicons.org/apple/000000','MSI':'https://cdn.simpleicons.org/msi/FF0000','SAMSUNG':'https://cdn.simpleicons.org/samsung/1428A0','XIAOMI':'https://cdn.simpleicons.org/xiaomi/FF6900','XIAOMI (MI)':'https://cdn.simpleicons.org/xiaomi/FF6900','XIAOMI (REDMI)':'https://cdn.simpleicons.org/xiaomi/FF6900','REDMI':'https://cdn.simpleicons.org/xiaomi/FF6900','MI':'https://cdn.simpleicons.org/xiaomi/FF6900','HUAWEI':'https://cdn.simpleicons.org/huawei/FF0000','GOOGLE':'https://cdn.simpleicons.org/google/4285F4','OPPO':'https://cdn.simpleicons.org/oppo/2BB673','VIVO':'https://cdn.simpleicons.org/vivo/415FFF','ONEPLUS':'https://cdn.simpleicons.org/oneplus/F5010C','LG':'https://cdn.simpleicons.org/lg/A50034','CANON':'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNDAgNzIiPjxyZWN0IHdpZHRoPSIyNDAiIGhlaWdodD0iNzIiIHJ4PSIxMCIgZmlsbD0id2hpdGUiLz48dGV4dCB4PSIxMjAiIHk9IjQ5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssQXJpYWwsc2Fucy1zZXJpZiIgZm9udC1zaXplPSI0NiIgZm9udC1zdHlsZT0iaXRhbGljIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjQ0MwMDAwIj5DYW5vbjwvdGV4dD48L3N2Zz4=','CANNON':'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNDAgNzIiPjxyZWN0IHdpZHRoPSIyNDAiIGhlaWdodD0iNzIiIHJ4PSIxMCIgZmlsbD0id2hpdGUiLz48dGV4dCB4PSIxMjAiIHk9IjQ5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssQXJpYWwsc2Fucy1zZXJpZiIgZm9udC1zaXplPSI0NiIgZm9udC1zdHlsZT0iaXRhbGljIiBmb250LXdlaWdodD0iOTAwIiBmaWxsPSIjQ0MwMDAwIj5DYW5vbjwvdGV4dD48L3N2Zz4=','EPSON':'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNzAgNzIiPjxyZWN0IHdpZHRoPSIyNzAiIGhlaWdodD0iNzIiIHJ4PSIxMCIgZmlsbD0id2hpdGUiLz48dGV4dCB4PSIxMzUiIHk9IjQ5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwgQmxhY2ssQXJpYWwsc2Fucy1zZXJpZiIgZm9udC1zaXplPSI0MCIgZm9udC13ZWlnaHQ9IjkwMCIgbGV0dGVyLXNwYWNpbmc9IjMiIGZpbGw9IiMwMDMzOTkiPkVQU09OPC90ZXh0Pjwvc3ZnPg==','BROTHER':'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMDAgNzIiPjxyZWN0IHdpZHRoPSIzMDAiIGhlaWdodD0iNzIiIHJ4PSIxMCIgZmlsbD0id2hpdGUiLz48dGV4dCB4PSIxNTAiIHk9IjQ5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwsSGVsdmV0aWNhLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iNDIiIGZvbnQtd2VpZ2h0PSI4MDAiIGxldHRlci1zcGFjaW5nPSItMiIgZmlsbD0iIzAwNzJCQyI+YnJvdGhlcjwvdGV4dD48L3N2Zz4=','VIEWSONIC':'https://cdn.simpleicons.org/viewsonic/000000','TP-LINK':'https://cdn.simpleicons.org/tplink/4ACBD6','UBIQUITI':'https://cdn.simpleicons.org/ubiquiti/0559C9','CISCO':'https://cdn.simpleicons.org/cisco/1BA0D7'};
+
+
+  const FORM_FIELDS=[
+    ['ASSET_TAG','Asset Tag *','text',false],['DEVICE_TYPE','Category *','device',false],['BRAND','Brand','brand',false],['MODEL','Model','text',false],
+    ['SERIAL','Serial Number','text',false],['LIBIB','Libib / QR Code','text',false],['SERVICE_TAG','Service Tag','text',false],['DEPARTMENT','Department','department',false],
+    ['ASSIGNED_TO','Assigned To','text',false],['COLOR','Color','text',false],['STATUS','Status','status',false],['PURCHASE_DATE','Purchase Date','date',false],
+    ['WARRANTY','Warranty','text',false],['COST','Cost (THB)','number',false],['NOTES','Notes','textarea',true],
+    ['PRODUCT_KEY','Product Key','secret',false],['LOCAL_USERNAME','Local Username','secret',false],['LOCAL_PASSWORD','Local Password','secret',false],
+    ['ADMIN_USERNAME','Admin Username','secret',false],['ADMIN_PASSWORD','Admin Password','secret',false],['MICROSOFT_USERNAME','Microsoft Username','secret',false],
+    ['MICROSOFT_PASSWORD','Microsoft Password','secret',false],['EMAIL','Email / Account Email','secret',false],['EMAIL_PASSWORD','Email Password','secret',false],
+    ['ICLOUD','iCloud / Apple ID','secret',false],['ICLOUD_PASSWORD','iCloud Password','secret',false],['PASSWORD_HINT','Password Hint','secret',true]
+  ];
+  const PRIVATE_FORM_KEYS=new Set(['PRODUCT_KEY','LOCAL_USERNAME','LOCAL_PASSWORD','ADMIN_USERNAME','ADMIN_PASSWORD','MICROSOFT_USERNAME','MICROSOFT_PASSWORD','EMAIL','EMAIL_PASSWORD','ICLOUD','ICLOUD_PASSWORD','PASSWORD_HINT']);
+
+  const $=id=>document.getElementById(id);
+  const splash=$('splash');
+  const screens=Array.from(document.querySelectorAll('[data-screen]'));
+  const tabs=Array.from(document.querySelectorAll('.tab[data-route]'));
+  const routeButtons=Array.from(document.querySelectorAll('[data-route]'));
+  const syncButton=$('syncButton'),syncText=$('syncText'),syncBanner=$('syncBanner');
+  const categoryRail=$('categoryRail'),assetList=$('assetList');
+  const searchInput=$('searchInput'),searchResults=$('searchResults'),searchEmpty=$('searchEmpty'),searchResultCount=$('searchResultCount');
+  const connectionSheet=$('connectionSheet'),statusSheet=$('statusSheet'),photoSheet=$('photoSheet'),deleteSheet=$('deleteSheet');
+  const apiUrlInput=$('apiUrlInput'),apiKeyInput=$('apiKeyInput');
+  const credentialSheet=$('credentialSheet'),credentialPinInput=$('credentialPinInput'),credentialAccountSheet=$('credentialAccountSheet'),credentialAccountOptions=$('credentialAccountOptions'),credentialAccountCopy=$('credentialAccountCopy');
+  const qrPrintPortal=$('qrPrintPortal'),generatedQrCopies=$('generatedQrCopies');
+
+  let ASSETS=[];
+  let assetMap=Object.create(null);
+  let currentCategory='__ALL__';
+  let currentSpecialFilter='';
+  let currentDetailId='';
+  let currentRoute='home';
+  let previousRoute='home';
+  let serverConnected=false;
+  let lastSyncAt=0;
+  let requestSeq=0;
+  let addPhotoFile=null;
+  let editPhotoFile=null;
+  let addPhotoPrepared=null;
+  let editPhotoPrepared=null;
+  let detailPhotoData=null;
+  let detailPhotoFile=null;
+  let audioCtx=null;
+  let displayedAssetValue=0;
+  let appValueCategory='__ALL__';
+  let scannerStream=null;
+  let smartQrScanner=null;
+  let scannerUsingSmartEngine=false;
+  let scannerFlashAvailable=false;
+  let scannerLoopActive=false;
+  let scannerBusy=false;
+  let qrDetector=null;
+  let scannerLastTick=0;
+  let scannerWatchdogTimer=null;
+  let scannerHeartbeat=0;
+  let scannedAssetId='';
+  let scannedRaw='';
+  let pendingScanForAdd='';
+  let backendVersion='—';
+  let editReturnRoute='detail';
+  let lastServerGeneration='';
+  let metaPollTimer=null;
+  let credentialToken='';
+  let credentialUnlockedUntil=0;
+  const protectedPhotoCache=new Map();
+
+  // V7.6.12: iPhone visualViewport sizing, fixed bottom navigation, and explicit maintenance sheet close controls.
+  let scanRequest=0,scanResolving=false,cameraStarting=null,cameraEpoch=0,cameraWanted=false;
+  const scanBackdrop=document.createElement('div');
+  scanBackdrop.id='scanResultBackdrop';scanBackdrop.className='sheet-backdrop scan-result-backdrop';scanBackdrop.setAttribute('aria-hidden','true');
+  scanBackdrop.innerHTML='<section class="sheet scan-result-sheet" role="dialog" aria-modal="true" aria-label="QR scan result"><button class="scan-result-close" type="button" aria-label="Close scan result">×</button></section>';
+  scanBackdrop.firstChild.appendChild($('scanResult'));document.body.appendChild(scanBackdrop);
+  const scanClose=scanBackdrop.querySelector('button');
+  function dismissScanResult(restart){scanRequest++;scanResolving=false;closeSheet(scanBackdrop);if(restart&&currentRoute==='scan')startCamera();}
+  scanClose.onclick=()=>dismissScanResult(true);
+  scanBackdrop.addEventListener('click',e=>{if(e.target===scanBackdrop)dismissScanResult(true)});
+  const again=document.createElement('button');again.type='button';again.textContent='SCAN AGAIN';again.onclick=()=>dismissScanResult(true);$('scanResult').appendChild(again);
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&scanBackdrop.classList.contains('open'))dismissScanResult(true)});
+  let photoJobs={add:0,edit:0,detail:0};
+  const qrAuditButton=document.createElement('button');qrAuditButton.type='button';qrAuditButton.className='secondary-button qr-audit-button';qrAuditButton.textContent='QR ISSUES';
+  document.querySelector('[data-screen="more"]').prepend(qrAuditButton);
+  const auditBackdrop=document.createElement('div');auditBackdrop.className='sheet-backdrop qr-audit-backdrop';auditBackdrop.setAttribute('aria-hidden','true');
+  auditBackdrop.innerHTML='<section class="sheet qr-audit-sheet" role="dialog" aria-modal="true" aria-label="QR issues"><div class="audit-heading"><h2>QR Issues</h2><button type="button" aria-label="Close QR issues">×</button></div><p class="audit-summary" aria-live="polite"></p><div class="audit-list"></div></section>';
+  document.body.appendChild(auditBackdrop);auditBackdrop.querySelector('button').onclick=()=>closeSheet(auditBackdrop);
+  auditBackdrop.addEventListener('click',e=>{if(e.target===auditBackdrop)closeSheet(auditBackdrop)});
+  qrAuditButton.onclick=async()=>{
+    openSheet(auditBackdrop);const summary=auditBackdrop.querySelector('.audit-summary'),list=auditBackdrop.querySelector('.audit-list');summary.textContent='Checking live inventory…';list.replaceChildren();
+    try{
+      const r=await jsonpRequest('qr_health',{},30000);summary.textContent=(r.criticalAssets||0)+' critical • '+(r.warningAssets||0)+' warning • '+(r.total||0)+' checked';
+      const items=Array.isArray(r.items)?r.items:[];
+      list.innerHTML=items.length?items.map(a=>'<button type="button" class="audit-row" data-id="'+esc(a.assetId)+'" title="'+esc(a.issues)+'"><b>'+esc(a.assetTag||a.assetId||'Missing Asset ID')+'</b><span>'+esc([a.deviceType,a.brand,a.model].filter(Boolean).join(' • '))+'</span><strong>'+esc(a.status)+'</strong><p>'+esc(a.issues||'Identifier needs review')+'</p></button>').join(''):'<p>All QR identities verified.</p>';
+      list.querySelectorAll('[data-id]').forEach(b=>{b.onclick=()=>{if(!b.dataset.id){showToast('This row needs an Asset ID in the database.');return;}closeSheet(auditBackdrop);openDetail(b.dataset.id)}});
+    }catch(e){summary.textContent='Could not load QR issues: '+e.message;}
+  };
+
+  function standalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}
+  function syncAppHeight(){const vv=window.visualViewport;const h=Math.max(320,Math.round(vv&&vv.height?vv.height:window.innerHeight||document.documentElement.clientHeight||screen.height||800));const top=Math.max(0,Math.round(vv&&Number.isFinite(vv.offsetTop)?vv.offsetTop:0));document.documentElement.style.setProperty('--app-height',h+'px');document.documentElement.style.setProperty('--app-top',top+'px')}
+  function applyTheme(theme,persist){const next=theme==='light'?'light':'dark';document.documentElement.setAttribute('data-theme',next);const btn=$('appThemeBtn'),lbl=$('themeModeLabel');if(btn)btn.textContent=next==='dark'?'☀':'☾';if(lbl)lbl.textContent=next==='dark'?'Dark theme • tap for Light':'Light theme • tap for Dark';const meta=document.querySelector('meta[name="theme-color"]');if(meta)meta.setAttribute('content',next==='dark'?'#06101c':'#f3f2ed');if(persist!==false){try{localStorage.setItem(THEME_STORAGE_KEY,next)}catch(e){}}}
+  function toggleTheme(){applyTheme(document.documentElement.getAttribute('data-theme')==='light'?'dark':'light',true)}
+
+  function normalize(v){return String(v==null?'':v).trim().toUpperCase()}
+  function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
+  function value(v){const s=String(v==null?'':v).trim();return s||'—'}
+  function sleep(ms){return new Promise(r=>setTimeout(r,ms))}
+  function showToast(msg,ms){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),ms||2100)}
+  function setSync(state,text){syncButton.classList.remove('connected','syncing','error');if(state)syncButton.classList.add(state);syncText.textContent=text}
+  function setBackendVersion(v){backendVersion=String(v||'—');$('backendVersion').textContent=backendVersion}
+  function brandDomain(brand){return BRAND_DOMAIN_MAP[normalize(brand)]||''}
+  function brandLogoUrl(brand){const key=normalize(brand);if(BRAND_LOGO_URL_MAP[key])return BRAND_LOGO_URL_MAP[key];const d=brandDomain(brand);return d?'https://www.google.com/s2/favicons?domain='+encodeURIComponent(d)+'&sz=128':''}
+  function brandInitials(brand){const s=String(brand||'').replace(/[^A-Za-z0-9]/g,'').toUpperCase();return s.slice(0,3)||'IT'}
+  function brandLogoMarkup(brand,cls){const raw=String(brand||'').trim();const baseCls=(cls||'brand-logo-chip');if(!raw)return'<span class="'+baseCls+' brand-logo-empty" data-brand-empty="1"><span>⌁</span></span>';const url=brandLogoUrl(raw),txt=brandInitials(raw),wide=['ASUS','ACER','LENOVO','SAMSUNG','XIAOMI','XIAOMI (MI)','XIAOMI (REDMI)','REDMI','MI','CANON','CANNON','BROTHER','EPSON'].includes(normalize(raw))?' data-wide-logo="1"':'';return'<span class="'+baseCls+'"'+wide+' data-brand="'+esc(normalize(raw))+'">'+(url?'<img src="'+esc(url)+'" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline-flex\'"><span style="display:none">'+esc(txt)+'</span>':'<span>'+esc(txt)+'</span>')+'</span>'}
+  function brandsForType(type){return(BRAND_OPTIONS_BY_TYPE[String(type||'').trim()]||BRAND_OPTIONS_BY_TYPE.Other||[]).slice()}
+
+  function route(name,push){
+    const target=document.querySelector('[data-screen="'+name+'"]');if(!target)return;
+    if(currentRoute==='scan'&&name!=='scan'){scanRequest++;scanResolving=false;closeSheet(scanBackdrop);stopCamera();}
+    if(name!==currentRoute){previousRoute=currentRoute;currentRoute=name}
+    screens.forEach(el=>el.classList.toggle('active',el===target));
+    tabs.forEach(el=>el.classList.toggle('active',['detail','edit'].indexOf(name)===-1&&el.dataset.route===name));
+    target.scrollTop=0;
+    if(name==='scan'){resetScannerUi(false);if(!scannerStream&&!scannerLoopActive&&!cameraStarting){window.setTimeout(()=>{if(currentRoute==='scan'&&!scannerStream&&!scannerLoopActive)startCamera().catch(()=>{})},80)}}
+    if(name==='add')prepareAddForm();
+    if(name==='more')$('backendVersion').textContent=backendVersion;
+    if(push!==false){try{history.replaceState({screen:name,id:currentDetailId},'','#'+(name==='detail'?'detail/'+encodeURIComponent(currentDetailId):name))}catch(e){}}
+  }
+
+  routeButtons.forEach(btn=>btn.addEventListener('click',function(){if(this.dataset.route)route(this.dataset.route)}));
+
+  function normalizeApiUrl(raw){
+    let rawUrl=String(raw||'').trim();if(!rawUrl)return'';if(!/^https?:\/\//i.test(rawUrl))rawUrl='https://'+rawUrl;
+    try{const u=new URL(rawUrl);if(u.protocol!=='https:'||u.hostname.toLowerCase()!=='script.google.com')return'';let path=u.pathname.replace(/\/+$/,'');if(!/\/exec$/i.test(path)||path.indexOf('/s/')===-1)return'';u.search='';u.hash='';u.pathname=path;return u.toString().replace(/\/+$/,'')}catch(e){return''}
+  }
+  function loadConnection(){try{const raw=localStorage.getItem(CONNECTION_STORAGE_KEY);if(!raw)return null;const p=JSON.parse(raw);const url=normalizeApiUrl(p&&p.url);const key=String(p&&p.key||'').trim();if(!url||key.length<24)return null;return{url,key}}catch(e){return null}}
+  function saveConnection(url,key){localStorage.setItem(CONNECTION_STORAGE_KEY,JSON.stringify({url,key,savedAt:Date.now()}))}
+  function forgetConnection(){try{localStorage.removeItem(CONNECTION_STORAGE_KEY)}catch(e){}serverConnected=false;setSync('','SETUP');syncBanner.classList.remove('hidden');$('syncBannerTitle').textContent='V7 API not paired';$('syncBannerText').textContent='Tap SETUP and enter the V7 API deployment URL + connection key.'}
+  function syncSheetState(){document.documentElement.classList.toggle('sheet-open',!!document.querySelector('.sheet-backdrop.open'))}
+  function openSheet(el){el.classList.add('open');el.setAttribute('aria-hidden','false');syncSheetState()}
+  function closeSheet(el){el.classList.remove('open');el.setAttribute('aria-hidden','true');syncSheetState()}
+  function openConnectionSheet(){const s=loadConnection();apiUrlInput.value=s?s.url:'';apiKeyInput.value=s?s.key:'';apiKeyInput.type='password';$('toggleKeyBtn').textContent='SHOW';openSheet(connectionSheet)}
+
+  function safeCacheAsset(a){
+    const keys=['ASSET_ID','ASSET_TAG','DEVICE_TYPE','BRAND','MODEL','SERIAL','LIBIB','SERVICE_TAG','DEPARTMENT','ASSIGNED_TO','COLOR','STATUS','PURCHASE_DATE','WARRANTY','COST','NOTES','UPDATED','PHOTO_FILE_ID'];
+    const out={};keys.forEach(k=>out[k]=String(a&&a[k]||''));return out;
+  }
+  function saveCache(){try{localStorage.setItem(CACHE_KEY,JSON.stringify({savedAt:Date.now(),assets:ASSETS.map(safeCacheAsset)}))}catch(e){}}
+  function loadCache(){try{const raw=localStorage.getItem(CACHE_KEY);if(!raw)return null;const d=JSON.parse(raw);return d&&Array.isArray(d.assets)?d:null}catch(e){return null}}
+  function rebuildMap(){assetMap=Object.create(null);ASSETS.forEach(a=>{if(a&&a.ASSET_ID)assetMap[normalize(a.ASSET_ID)]=a})}
+
+  function statusClass(status){const s=normalize(status);if(['ACTIVE','IN USE','AVAILABLE'].includes(s))return'active';if(s.includes('REPAIR')||s.includes('MAINTENANCE'))return'repair';if(['INACTIVE','RETIRED','LOST'].includes(s))return'inactive';return''}
+  function isActive(a){return['ACTIVE','IN USE','AVAILABLE'].includes(normalize(a.STATUS))}
+  function isAttention(a){const s=normalize(a.STATUS);return s.includes('REPAIR')||s.includes('MAINTENANCE')}
+  function imageCandidates(asset,size){const id=String(asset&&asset.PHOTO_FILE_ID||'').trim();if(!id)return[];const e=encodeURIComponent(id),v=encodeURIComponent(String(asset&&asset.UPDATED||id));size=size||420;return['https://lh3.googleusercontent.com/d/'+e+'=w'+size+'?v='+v,'https://drive.google.com/thumbnail?id='+e+'&sz=w'+size+'&v='+v,'https://drive.google.com/uc?export=view&id='+e+'&v='+v]}
+  function photoMarkup(asset,size){const urls=imageCandidates(asset,size||420),type=String(asset.DEVICE_TYPE||'IT').slice(0,11);if(!urls.length)return'<div class="asset-photo"><span class="photo-fallback">'+esc(type)+'</span></div>';return'<div class="asset-photo"><img loading="lazy" src="'+esc(urls[0])+'" data-f1="'+esc(urls[1]||'')+'" data-f2="'+esc(urls[2]||'')+'" data-secure-id="'+esc(asset.ASSET_ID||'')+'" alt="'+esc(asset.ASSET_TAG||'Asset')+'"><span class="photo-fallback" style="display:none">'+esc(type)+'</span></div>'}
+  async function protectedPhotoData(assetId){assetId=String(assetId||'').trim();if(!assetId)return'';if(protectedPhotoCache.has(assetId))return protectedPhotoCache.get(assetId);const p=jsonpRequest('photo',{id:assetId},30000).then(r=>String(r&&r.dataUrl||'')).catch(()=> '');protectedPhotoCache.set(assetId,p);const data=await p;if(data)protectedPhotoCache.set(assetId,Promise.resolve(data));return data}
+  function attachImageFallbacks(root){(root||document).querySelectorAll('img[data-f1]').forEach(img=>{if(img.dataset.bound==='1')return;img.dataset.bound='1';img.addEventListener('error',async function(){const stage=Number(this.dataset.stage||'0');if(stage===0&&this.dataset.f1){this.dataset.stage='1';this.src=this.dataset.f1;return}if(stage<=1&&this.dataset.f2){this.dataset.stage='2';this.src=this.dataset.f2;return}if(this.dataset.secureId&&this.dataset.secureTried!=='1'){this.dataset.secureTried='1';const data=await protectedPhotoData(this.dataset.secureId);if(data){this.style.display='';this.src=data;return}}this.style.display='none';const fb=this.parentElement&&this.parentElement.querySelector('.photo-fallback');if(fb)fb.style.display=''})})}
+  function cardHtml(asset){return'<button class="asset-card" type="button" data-asset-id="'+esc(asset.ASSET_ID)+'">'+photoMarkup(asset,420)+'<div class="asset-main"><div class="asset-kicker">'+esc(value(asset.DEVICE_TYPE))+'</div><div class="asset-tag">'+esc(value(asset.ASSET_TAG))+'</div><div class="asset-device">'+esc([asset.BRAND,asset.MODEL].filter(Boolean).join(' ')||'—')+'</div><div class="asset-assigned">ASSIGNED TO<b>'+esc(asset.ASSIGNED_TO||'Unassigned')+'</b></div></div><div class="asset-side"><span class="status-pill '+statusClass(asset.STATUS)+'">'+esc(value(asset.STATUS))+'</span><span class="chev">›</span></div></button>'}
+  function bindCards(root){(root||document).querySelectorAll('[data-asset-id]').forEach(btn=>{if(btn.dataset.bound==='1')return;btn.dataset.bound='1';btn.addEventListener('click',()=>openDetail(btn.dataset.assetId))});attachImageFallbacks(root)}
+
+  function categoryName(type){const n=normalize(type);if(n==='MAC MINI'||n==='IMAC'||n==='DESKTOP PC')return'DESKTOP';if(n==='TABLET / IPAD')return'TABLET';if(n==='IPAD')return'iPad';return String(type||'Other').trim()||'Other'}
+  function renderCategories(){const counts={};ASSETS.forEach(a=>{const k=categoryName(a.DEVICE_TYPE);counts[k]=(counts[k]||0)+1});const ordered=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]||a.localeCompare(b));categoryRail.innerHTML='<button class="category-chip '+(currentCategory==='__ALL__'?'active':'')+'" data-category="__ALL__">ALL</button>'+ordered.map(k=>'<button class="category-chip '+(normalize(currentCategory)===normalize(k)?'active':'')+'" data-category="'+esc(k)+'">'+esc(k.toUpperCase())+' · '+counts[k]+'</button>').join('');categoryRail.querySelectorAll('[data-category]').forEach(b=>b.addEventListener('click',()=>{currentCategory=b.dataset.category;currentSpecialFilter='';renderHome()}))}
+  function filteredAssets(){let list=ASSETS.slice();if(currentSpecialFilter==='Active')list=list.filter(isActive);else if(currentSpecialFilter==='Repair')list=list.filter(isAttention);else if(currentSpecialFilter==='__UNASSIGNED__')list=list.filter(a=>!String(a.ASSIGNED_TO||'').trim());else if(currentCategory!=='__ALL__')list=list.filter(a=>normalize(categoryName(a.DEVICE_TYPE))===normalize(currentCategory));return list}
+  function moneyNumber(v){const n=Number(String(v==null?'':v).replace(/[^0-9.\-]/g,''));return Number.isFinite(n)?n:0}
+  function formatBaht(n,fixed){return '฿'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:fixed?2:0,maximumFractionDigits:2})}
+  function renderAppPortfolioValue(totalValue,byType){const label=$('assetValueLabel')||document.querySelector('#assetValueCard small'),host=$('assetValueBreakdown');if(appValueCategory!=='__ALL__'&&!Object.prototype.hasOwnProperty.call(byType,appValueCategory))appValueCategory='__ALL__';const selected=appValueCategory==='__ALL__'?totalValue:(byType[appValueCategory]||0);animateAssetValue(selected);if(label)label.textContent=appValueCategory==='__ALL__'?'PORTFOLIO VALUE • LIVE':String(appValueCategory).toUpperCase()+' VALUE • LIVE';if(!host)return;const rows=Object.keys(byType).filter(k=>byType[k]>0).sort((a,b)=>byType[b]-byType[a]).slice(0,8);host.innerHTML=rows.map(k=>'<button type="button" data-value-cat="'+esc(k)+'"><span>'+esc(k)+'</span><b>'+formatBaht(byType[k])+'</b></button>').join('')||'<span class="value-empty">No priced assets yet</span>';host.querySelectorAll('[data-value-cat]').forEach(btn=>btn.addEventListener('click',()=>{appValueCategory=btn.dataset.valueCat||'__ALL__';renderAppPortfolioValue(totalValue,byType)}));}
+  function animateAssetValue(target){target=Math.max(0,Number(target)||0);const el=$('statValue');if(!el)return;const start=displayedAssetValue,diff=target-start,startAt=performance.now(),duration=Math.abs(diff)<1?0:420;if(!duration){displayedAssetValue=target;el.textContent=formatBaht(target);return}function tick(now){const p=Math.min(1,(now-startAt)/duration),ease=1-Math.pow(1-p,3),v=start+diff*ease;el.textContent=formatBaht(v);if(p<1)requestAnimationFrame(tick);else{displayedAssetValue=target;el.textContent=formatBaht(target)}}requestAnimationFrame(tick)}
+  function parseAnalyticsDate(value){const raw=String(value||'').trim();if(!raw)return null;let m=raw.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);if(m){const d=new Date(Number(m[3]),Number(m[2])-1,Number(m[1]));return Number.isNaN(d.getTime())?null:d}m=raw.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);if(m){const d=new Date(Number(m[1]),Number(m[2])-1,Number(m[3]));return Number.isNaN(d.getTime())?null:d}const d=new Date(raw);return Number.isNaN(d.getTime())?null:d}
+  function renderMiniAnalytics(){
+    const host=$('miniAnalytics');if(!host)return;
+    const brands={},age={lt1:0,one3:0,gt3:0,unknown:0};let active=0,attention=0,unassigned=0;const now=new Date();
+    ASSETS.forEach(a=>{const b=String(a.BRAND||'Unknown').trim()||'Unknown';brands[b]=(brands[b]||0)+1;if(isActive(a))active++;if(isAttention(a))attention++;if(!String(a.ASSIGNED_TO||'').trim())unassigned++;const d=parseAnalyticsDate(a.PURCHASE_DATE);if(!d){age.unknown++;return}const years=(now-d)/(365.25*24*3600*1000);if(years<1)age.lt1++;else if(years<3)age.one3++;else age.gt3++});
+    const top=Object.keys(brands).sort((a,b)=>brands[b]-brands[a]||a.localeCompare(b)).slice(0,5),max=top.length?brands[top[0]]:1,total=ASSETS.length||1,health=Math.round(active/total*100),leader=top[0]||'';
+    const bars=top.map((b,i)=>'<div class="analytics-bar premium"><span class="rank">'+String(i+1).padStart(2,'0')+'</span>'+brandLogoMarkup(b,'analytics-brand-logo')+'<span class="brand-name">'+esc(b)+'</span><em><b style="width:'+Math.max(7,Math.round(brands[b]/max*100))+'%"></b><i></i></em><strong>'+brands[b]+'</strong></div>').join('');
+    const knownAge=Math.max(1,age.lt1+age.one3+age.gt3),p1=Math.round(age.lt1/knownAge*100),p2=Math.round(age.one3/knownAge*100),p3=Math.max(0,100-p1-p2);
+    host.innerHTML=''+
+      '<article class="analytics-card analytics-brand-card"><div class="analytics-card-top"><div><small>BRAND DISTRIBUTION • TOP 5</small><strong class="analytics-leader">'+(leader?brandLogoMarkup(leader,'analytics-leader-logo'):'')+'<span>'+esc(leader||'—')+'</span></strong></div><span class="analytics-glyph">TOP</span></div><p>Live manufacturer leaderboard • '+ASSETS.length+' assets</p><div class="analytics-bars">'+bars+'</div></article>'+
+      '<article class="analytics-card analytics-age-card"><div class="analytics-card-top"><div><small>ASSET AGE • PURCHASE DATE</small><strong>'+(age.unknown?age.unknown+' dates missing':age.one3+' mid-life')+'</strong></div><span class="analytics-glyph">AGE</span></div><p>Calculated directly from Purchase Date</p><div class="age-meter"><i style="width:'+p1+'%"></i><i style="width:'+p2+'%"></i><i style="width:'+p3+'%"></i></div><div class="analytics-pills"><span><b>'+age.lt1+'</b>&lt;1Y</span><span><b>'+age.one3+'</b>1–3Y</span><span><b>'+age.gt3+'</b>3Y+</span><span class="age-missing"><b>'+age.unknown+'</b>NO DATE</span></div></article>'+
+      '<article class="analytics-card analytics-health-card"><div class="health-ring" style="--health-deg:'+(health*3.6)+'deg"><div><b>'+health+'%</b><span>READY</span></div></div><div class="health-copy"><small>SERVICE HEALTH</small><strong>'+(attention?attention+' needs attention':'All systems steady')+'</strong><p>Operational snapshot</p><div class="analytics-pills"><span><b>'+active+'</b>ACTIVE</span><span><b>'+attention+'</b>ATTN</span><span><b>'+unassigned+'</b>FREE</span></div></div></article>';
+  }
+  function renderStats(){const active=ASSETS.filter(isActive).length,attention=ASSETS.filter(isAttention).length,unassigned=ASSETS.filter(a=>!String(a.ASSIGNED_TO||'').trim()).length,totalValue=ASSETS.reduce((s,a)=>s+moneyNumber(a.COST),0);$('heroCount').textContent=ASSETS.length;$('statTotal').textContent=ASSETS.length;$('statActive').textContent=active;$('statAttention').textContent=attention;$('statUnassigned').textContent=unassigned;const byType={};ASSETS.forEach(a=>{const k=categoryName(a.DEVICE_TYPE);byType[k]=(byType[k]||0)+moneyNumber(a.COST)});renderAppPortfolioValue(totalValue,byType);renderMiniAnalytics();document.querySelectorAll('[data-stat-filter]').forEach(btn=>{const f=btn.dataset.statFilter;const on=(f==='__ALL__'&&!currentSpecialFilter&&currentCategory==='__ALL__')||(f==='Active'&&currentSpecialFilter==='Active')||(f==='Repair'&&currentSpecialFilter==='Repair')||(f==='__UNASSIGNED__'&&currentSpecialFilter==='__UNASSIGNED__');btn.classList.toggle('active-filter',on);btn.setAttribute('aria-pressed',on?'true':'false')})}
+  function renderHome(){renderStats();renderCategories();const list=filteredAssets();$('visibleCount').textContent=list.length;let title='All Devices';if(currentSpecialFilter==='Active')title='Active Devices';else if(currentSpecialFilter==='Repair')title='Needs Attention';else if(currentSpecialFilter==='__UNASSIGNED__')title='Unassigned';else if(currentCategory!=='__ALL__')title=currentCategory;$('inventoryTitle').textContent=title;assetList.classList.remove('skeleton-list');assetList.innerHTML=list.length?list.map(cardHtml).join(''):'<div class="empty-state"><div class="empty-icon">⌁</div><h3>No devices here</h3><p>Reset the filter or sync the inventory.</p></div>';bindCards(assetList)}
+  document.querySelectorAll('[data-stat-filter]').forEach(btn=>btn.addEventListener('click',()=>{const f=btn.dataset.statFilter;currentCategory='__ALL__';currentSpecialFilter=f==='__ALL__'?'':f;renderHome()}));$('clearFilterBtn').addEventListener('click',()=>{currentCategory='__ALL__';currentSpecialFilter='';renderHome()});
+
+  function searchHaystack(a){return[a.ASSET_ID,a.ASSET_TAG,a.DEVICE_TYPE,a.BRAND,a.MODEL,a.SERIAL,a.LIBIB,a.SERVICE_TAG,a.DEPARTMENT,a.ASSIGNED_TO,a.STATUS].join(' ').toUpperCase()}
+  function renderSearch(){const q=normalize(searchInput.value);const list=q?ASSETS.filter(a=>searchHaystack(a).includes(q)):ASSETS.slice(0,40);searchResultCount.textContent=list.length+' result'+(list.length===1?'':'s');searchResults.innerHTML=list.map(cardHtml).join('');searchEmpty.classList.toggle('hidden',list.length>0);bindCards(searchResults)}
+  searchInput.addEventListener('input',renderSearch);$('clearSearchBtn').addEventListener('click',()=>{searchInput.value='';renderSearch();searchInput.focus()});
+
+  function applyAssets(assets,fromServer){ASSETS=Array.isArray(assets)?assets.map(a=>Object.assign({},a)):[];rebuildMap();renderHome();renderSearch();if(fromServer){serverConnected=true;lastSyncAt=Date.now();setSync('connected','LIVE');syncBanner.classList.add('hidden');saveCache()}if(currentDetailId&&assetMap[normalize(currentDetailId)])setDetail(assetMap[normalize(currentDetailId)])}
+
+  function dateToInput(v){const s=String(v||'').trim();if(!s)return'';let m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);if(m)return m[3]+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0');return''}
+  function setDetail(asset){asset=asset||{};$('detailTopTag').textContent=value(asset.ASSET_TAG);$('detailType').textContent=value(asset.DEVICE_TYPE).toUpperCase();$('detailTag').textContent=value(asset.ASSET_TAG);$('detailDevice').textContent=[asset.BRAND,asset.MODEL].filter(Boolean).join(' ')||'—';const brandBadge=$('detailBrandBadge');if(brandBadge)brandBadge.innerHTML=brandLogoMarkup(asset.BRAND,'detail-brand-icon')+'<span><small>MANUFACTURER</small><b>'+esc(value(asset.BRAND))+'</b></span>';$('detailStatus').textContent=value(asset.STATUS);$('detailAssigned').textContent=asset.ASSIGNED_TO||'Unassigned';$('dAssetId').textContent=value(asset.ASSET_ID);$('dSerial').textContent=value(asset.SERIAL);$('dService').textContent=value(asset.SERVICE_TAG);$('dLibib').textContent=value(asset.LIBIB);const qrReady=$('detailQrReady');if(qrReady)qrReady.textContent='QR READY • CANONICAL ASSET ID • '+value(asset.ASSET_ID);$('dDepartment').textContent=value(asset.DEPARTMENT);$('dColor').textContent=value(asset.COLOR);$('dPurchase').textContent=value(asset.PURCHASE_DATE);$('dWarranty').textContent=value(asset.WARRANTY);$('dCost').textContent=String(asset.COST||'').trim()?formatBaht(moneyNumber(asset.COST),true):'—';$('dUpdated').textContent=value(asset.UPDATED);$('dNotes').textContent=value(asset.NOTES);const img=$('detailPhoto'),fb=$('detailPhotoFallback'),urls=imageCandidates(asset,1100);img.hidden=true;fb.style.display='grid';fb.textContent=String(asset.DEVICE_TYPE||'IT').slice(0,11).toUpperCase();if(urls.length){let idx=0,secureTried=false;img.onload=()=>{img.hidden=false;fb.style.display='none'};img.onerror=async()=>{idx++;if(idx<urls.length){img.src=urls[idx];return}if(!secureTried&&asset.ASSET_ID){secureTried=true;const data=await protectedPhotoData(asset.ASSET_ID);if(data){img.src=data;return}}img.hidden=true;fb.style.display='grid'};img.src=urls[0]}}
+
+  let maintenanceRecords=[],maintenanceEditingId='';
+  function moneyTHB(v){return '฿'+(Number(v)||0).toLocaleString('en-US',{maximumFractionDigits:2})}
+  function renderMaintenance(records){
+    maintenanceRecords=Array.isArray(records)?records:[];
+    const host=$('maintenanceList'),summary=$('maintenanceSummary');
+    if(!host||!summary)return;
+    const total=maintenanceRecords.reduce((s,r)=>s+(Number(r.TOTAL_COST)||0),0);
+    summary.innerHTML='<div><small>RECORDS</small><b>'+maintenanceRecords.length+'</b></div><div><small>TOTAL SPENT</small><b>'+esc(moneyTHB(total))+'</b></div>';
+    if(!maintenanceRecords.length){host.innerHTML='<div class="maintenance-empty"><span class="mnt-empty-tool" aria-hidden="true">🔧</span><b>No service history yet</b><small>Repairs, checks and warranty visits appear here.</small></div>';return}
+    host.innerHTML=maintenanceRecords.map(r=>{
+      const files=[...(Array.isArray(r.PHOTOS)?r.PHOTOS:[]),...(Array.isArray(r.DOCUMENTS)?r.DOCUMENTS:[])];
+      const links=files.map(f=>'<a href="'+esc(f.url||('https://drive.google.com/open?id='+encodeURIComponent(f.id||'')))+'" target="_blank" rel="noopener">'+(String(f.mimeType||'').indexOf('pdf')>=0?'▤ ':'▧ ')+esc(f.name||'Attachment')+'</a>').join('');
+      return '<article class="maintenance-record"><div class="maintenance-record-top"><div><small>'+esc(r.TYPE||'Service')+' · '+esc(r.REPORTED_DATE||'Date not set')+'</small><h3>'+esc(r.VENDOR||'IT Department')+'</h3></div><span class="maintenance-status">'+esc(r.STATUS||'Logged')+'</span></div><p><b>Issue</b> '+esc(r.PROBLEM||'—')+'</p>'+(r.DIAGNOSIS?'<p><b>Diagnosis</b> '+esc(r.DIAGNOSIS)+'</p>':'')+(r.ACTION_TAKEN?'<p><b>Work done</b> '+esc(r.ACTION_TAKEN)+'</p>':'')+(r.PARTS?'<p><b>Parts</b> '+esc(r.PARTS)+'</p>':'')+'<div class="maintenance-cost"><span>Parts '+esc(moneyTHB(r.PARTS_COST))+' · Labour '+esc(moneyTHB(r.LABOR_COST))+'</span><b>'+esc(moneyTHB(r.TOTAL_COST))+'</b></div>'+(links?'<div class="maintenance-files">'+links+'</div>':'')+(r.NOTES?'<small class="maintenance-notes">'+esc(r.NOTES)+'</small>':'')+'<div class="maintenance-record-actions"><button type="button" data-mnt-edit="'+esc(r.RECORD_ID)+'">✎ Edit</button><button type="button" data-mnt-delete="'+esc(r.RECORD_ID)+'">Delete</button></div></article>'
+    }).join('');
+  }
+  async function loadMaintenance(id){
+    const host=$('maintenanceList');if(host)host.innerHTML='<div class="maintenance-empty"><span class="mnt-loading"></span> Loading history…</div>';
+    try{const p=await jsonpRequest('maintenance',{id:id||currentDetailId},22000);renderMaintenance(p.records||[])}
+    catch(e){if(host)host.innerHTML='<div class="maintenance-empty maintenance-error">Could not load history. '+esc(e.message||'')+'</div>'}
+  }
+  function openMaintenanceForm(record){
+    if(!currentDetailId){showToast('Open an asset first');return}
+    maintenanceEditingId=record&&record.RECORD_ID?String(record.RECORD_ID):'';
+    $('maintenanceForm').reset();
+    const map={mntType:'TYPE',mntReported:'REPORTED_DATE',mntSent:'SENT_DATE',mntReturn:'RETURN_DATE',mntStatus:'STATUS',mntVendor:'VENDOR',mntContact:'CONTACT',mntProblem:'PROBLEM',mntDiagnosis:'DIAGNOSIS',mntAction:'ACTION_TAKEN',mntParts:'PARTS',mntPartsCost:'PARTS_COST',mntLaborCost:'LABOR_COST',mntNotes:'NOTES'};
+    Object.keys(map).forEach(id=>{const el=$(id);if(el)el.value=record&&record[map[id]]!=null?record[map[id]]:(id==='mntPartsCost'||id==='mntLaborCost'?'0':'')});
+    if(!record)$('mntReported').value=new Date().toISOString().slice(0,10);
+    $('maintenanceFormTitle').textContent=maintenanceEditingId?'Edit service record':'Add service record';
+    $('saveMaintenanceBtn').textContent=maintenanceEditingId?'SAVE CHANGES':'SAVE RECORD';
+    openSheet($('maintenanceSheet'));
+  }
+  function readFileData(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve({name:file.name,mimeType:file.type||'application/octet-stream',dataUrl:String(r.result||'')});r.onerror=()=>reject(new Error('Could not read '+file.name));r.readAsDataURL(file)})}
+  async function collectMaintenanceFiles(inputId){
+    const files=Array.from($(inputId).files||[]);
+    if(files.length>4)throw new Error('Maximum 4 files per attachment group.');
+    for(const f of files)if(f.size>3*1024*1024)throw new Error(f.name+' is over 3 MB.');
+    return Promise.all(files.map(readFileData));
+  }
+  $('addMaintenanceBtn').addEventListener('click',()=>openMaintenanceForm(null));
+  $('maintenanceList').addEventListener('click',async e=>{
+    const edit=e.target.closest('[data-mnt-edit]'),del=e.target.closest('[data-mnt-delete]');
+    if(edit){const record=maintenanceRecords.find(r=>String(r.RECORD_ID)===edit.dataset.mntEdit);if(record)openMaintenanceForm(record);return}
+    if(del){const rid=del.dataset.mntDelete;if(!confirm('Delete this service record? Drive attachments will be retained.'))return;del.disabled=true;del.textContent='…';try{await writeRequest('maintenance_delete',{id:currentDetailId,recordId:rid});maintenanceRecords=maintenanceRecords.filter(r=>String(r.RECORD_ID)!==rid);renderMaintenance(maintenanceRecords);showToast('Service record deleted')}catch(err){del.disabled=false;del.textContent='Delete';showToast(err.message||'Could not delete record',3500)}}
+  });
+  $('cancelMaintenanceBtn').addEventListener('click',()=>{maintenanceEditingId='';closeSheet($('maintenanceSheet'))});
+  $('closeMaintenanceBtn').addEventListener('click',()=>{maintenanceEditingId='';closeSheet($('maintenanceSheet'))});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('maintenanceSheet').classList.contains('open')){maintenanceEditingId='';closeSheet($('maintenanceSheet'))}});
+  $('maintenanceSheet').addEventListener('click',e=>{if(e.target===$('maintenanceSheet')){maintenanceEditingId='';closeSheet($('maintenanceSheet'))}});
+  $('maintenanceForm').addEventListener('submit',async e=>{
+    e.preventDefault();if(!currentDetailId)return;
+    const btn=$('saveMaintenanceBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='SAVING…';
+    try{
+      const photos=await collectMaintenanceFiles('mntPhotos'),documents=await collectMaintenanceFiles('mntDocuments');
+      const payload={type:$('mntType').value,reportedDate:$('mntReported').value,sentDate:$('mntSent').value,returnDate:$('mntReturn').value,status:$('mntStatus').value,vendor:$('mntVendor').value,contact:$('mntContact').value,problem:$('mntProblem').value,diagnosis:$('mntDiagnosis').value,actionTaken:$('mntAction').value,parts:$('mntParts').value,partsCost:$('mntPartsCost').value,laborCost:$('mntLaborCost').value,notes:$('mntNotes').value,photos:photos,documents:documents};
+      if(maintenanceEditingId)await writeRequest('maintenance_update',{id:currentDetailId,recordId:maintenanceEditingId,payload:JSON.stringify(payload)});
+      else await writeRequest('maintenance_add',{id:currentDetailId,payload:JSON.stringify(payload)});
+      maintenanceEditingId='';closeSheet($('maintenanceSheet'));showToast('Service record saved ✓',1800);
+      // POST completion is awaited; refresh immediately without the old artificial 900ms delay.
+      await loadMaintenance(currentDetailId);
+    }catch(err){showToast(err.message||'Could not save service record',4000)}
+    finally{btn.disabled=false;btn.textContent=old}
+  });
+
+
+  async function openDetail(id){currentDetailId=String(id||'');const lite=assetMap[normalize(currentDetailId)]||{};setDetail(lite);route('detail',false);try{history.replaceState({screen:'detail',id:currentDetailId},'','#detail/'+encodeURIComponent(currentDetailId))}catch(e){};if(loadConnection()){fetchAsset(currentDetailId).then(d=>mergeDetail(d)).catch(()=>{});loadMaintenance(currentDetailId)}}
+  function mergeDetail(detail){if(!detail||!detail.ASSET_ID)return;const k=normalize(detail.ASSET_ID);const merged=Object.assign({},assetMap[k]||{},detail);assetMap[k]=merged;let found=false;ASSETS=ASSETS.map(a=>{if(normalize(a.ASSET_ID)===k){found=true;return merged}return a});if(!found)ASSETS.push(merged);if(normalize(currentDetailId)===k)setDetail(merged);renderHome();renderSearch();saveCache()}
+  $('detailBack').addEventListener('click',()=>route(['home','search','scan'].includes(previousRoute)?previousRoute:'home'));
+  $('detailMoreBtn').addEventListener('click',openEditCurrent);$('editAssetBtn').addEventListener('click',openEditCurrent);$('refreshAssetBtn').addEventListener('click',async()=>{if(!currentDetailId)return;try{showToast('Refreshing…');mergeDetail(await fetchAsset(currentDetailId));await loadMaintenance(currentDetailId);showToast('Device refreshed')}catch(e){showToast(e.message)}});
+  $('copyAssetBtn').addEventListener('click',()=>copyText($('dAssetId').textContent));document.querySelectorAll('.copy-row').forEach(b=>b.addEventListener('click',()=>copyText($(b.dataset.copyId).textContent)));
+  function copyText(t){const s=String(t||'').trim();if(!s||s==='—')return;const p=navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(s):Promise.reject();p.then(()=>showToast('Copied')).catch(()=>{const ta=document.createElement('textarea');ta.value=s;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');showToast('Copied')}catch(e){}ta.remove()})}
+
+  function nextRequestId(prefix){requestSeq++;return prefix+'_'+requestSeq+'_'+Date.now().toString(36)}
+  function jsonpRequest(action,extra,timeoutMs){const saved=loadConnection();if(!saved)return Promise.reject(new Error('V7 API is not paired.'));extra=extra||{};timeoutMs=Math.max(3000,Number(timeoutMs)||22000);return new Promise((resolve,reject)=>{const cb='RISPv7_'+nextRequestId('r').replace(/[^A-Za-z0-9_$]/g,'_');const script=document.createElement('script');let done=false;const cleanup=()=>{if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(e){window[cb]=undefined}try{script.remove()}catch(e){}};window[cb]=payload=>{cleanup();if(!payload||payload.success===false){reject(new Error(payload&&payload.error?payload.error:'V7 API returned an invalid response.'));return}resolve(payload)};const p=new URLSearchParams();p.set('v7api',String(action||'bootstrap'));p.set('key',saved.key);p.set('callback',cb);p.set('t',Date.now());Object.keys(extra).forEach(k=>{if(extra[k]!=null&&String(extra[k])!=='')p.set(k,String(extra[k]))});script.async=true;script.src=saved.url+'?'+p.toString();script.onerror=()=>{cleanup();reject(new Error('Could not reach the V7 API deployment.'))};const timer=setTimeout(()=>{cleanup();reject(new Error('V7 API timed out.'))},timeoutMs);document.head.appendChild(script)})}
+  async function fetchAsset(id){const p=await jsonpRequest('asset',{id},22000);if(!p.asset)throw new Error('Device not found.');if(p.version)setBackendVersion(p.version);return p.asset}
+  async function syncInventory(showMsg){if(!loadConnection())throw new Error('V7 API is not paired.');setSync('syncing','SYNC');const p=await jsonpRequest('bootstrap',{},25000);if(p.version)setBackendVersion(p.version);if(p.generatedAt)lastServerGeneration=String(p.generatedAt);if(!Array.isArray(p.assets))throw new Error('Inventory payload is missing assets.');applyAssets(p.assets,true);if(showMsg!==false)showToast('Inventory synced');return p.assets}
+  function showApiError(err){serverConnected=false;setSync('error','RETRY');syncBanner.classList.remove('hidden');$('syncBannerTitle').textContent='V7 API connection failed';$('syncBannerText').textContent=err&&err.message?err.message:String(err||'Unknown API error')}
+  async function connectApi(){const saved=loadConnection();if(!saved){setSync('','SETUP');syncBanner.classList.remove('hidden');$('syncBannerTitle').textContent='V7 API not paired';$('syncBannerText').textContent='Tap SETUP and enter the V7 API deployment URL + connection key.';return}setSync('syncing','CONNECT');try{await syncInventory(false)}catch(e){showApiError(e)}}
+
+
+  async function sha256Hex(text){const enc=new TextEncoder().encode(String(text||''));const buf=await crypto.subtle.digest('SHA-256',enc);return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('')}
+  function loadCredentialToken(){if(credentialToken&&Date.now()<credentialUnlockedUntil)return credentialToken;try{const raw=sessionStorage.getItem(CREDENTIAL_TOKEN_SESSION_KEY);if(!raw)return'';const p=JSON.parse(raw);if(p&&p.token&&Number(p.expiresAt)>Date.now()){credentialToken=String(p.token);credentialUnlockedUntil=Number(p.expiresAt);return credentialToken}}catch(e){}credentialToken='';credentialUnlockedUntil=0;return''}
+  function saveCredentialToken(token,expiresIn){credentialToken=String(token||'');credentialUnlockedUntil=Date.now()+Math.max(60,Number(expiresIn||900)-15)*1000;try{sessionStorage.setItem(CREDENTIAL_TOKEN_SESSION_KEY,JSON.stringify({token:credentialToken,expiresAt:credentialUnlockedUntil}))}catch(e){}}
+  function clearCredentialToken(){credentialToken='';credentialUnlockedUntil=0;try{sessionStorage.removeItem(CREDENTIAL_TOKEN_SESSION_KEY)}catch(e){}}
+  function renderCredentialGrid(data){const fields=[['PRODUCT_KEY','Product Key'],['LOCAL_USERNAME','Local Username'],['LOCAL_PASSWORD','Local Password'],['ADMIN_USERNAME','Admin Username'],['ADMIN_PASSWORD','Admin Password'],['MICROSOFT_USERNAME','Microsoft Username'],['MICROSOFT_PASSWORD','Microsoft Password'],['EMAIL','Email / Account Email'],['EMAIL_PASSWORD','Email Password'],['ICLOUD','iCloud / Apple ID'],['ICLOUD_PASSWORD','iCloud Password'],['PASSWORD_HINT','Password Hint']];const rows=fields.filter(x=>String(data&&data[x[0]]||'').trim()).map(x=>'<div class="credential-row"><span>'+esc(x[1])+'</span><b>'+esc(String(data[x[0]]||''))+'</b><button class="credential-copy" type="button" data-cred-copy="'+esc(String(data[x[0]]||''))+'">COPY</button></div>').join('');$('credentialGrid').innerHTML=rows||'<div class="credential-empty">No private credentials have been entered for this asset.</div>';$('credentialGrid').querySelectorAll('[data-cred-copy]').forEach(btn=>btn.addEventListener('click',()=>copyText(btn.dataset.credCopy)))}
+  async function fetchPrivateCredentials(pin){
+    if(!currentDetailId)throw new Error('Open a device first.');
+    let token=loadCredentialToken();
+    if(token){try{const p=await jsonpRequest('credentials',{id:currentDetailId,credToken:token},16000);if(p.credentialToken)saveCredentialToken(p.credentialToken,p.expiresIn);return p.credentials||{}}catch(e){clearCredentialToken();token=''}}
+    const bucket=Math.floor(Date.now()/60000),proof=await sha256Hex(String(pin||'')+':'+String(currentDetailId)+':'+String(bucket));
+    try{
+      const p=await jsonpRequest('cred_unlock',{id:currentDetailId,bucket,proof},18000);
+      if(p.credentialToken)saveCredentialToken(p.credentialToken,p.expiresIn);
+      return p.credentials||{};
+    }catch(primaryErr){
+      const ch=await jsonpRequest('cred_challenge',{},14000),fallbackProof=await sha256Hex(String(pin||'')+':'+String(ch.challenge||''));
+      const p=await jsonpRequest('credentials',{id:currentDetailId,challengeId:ch.challengeId,proof:fallbackProof},22000);
+      if(p.credentialToken)saveCredentialToken(p.credentialToken,p.expiresIn);return p.credentials||{};
+    }
+  }
+  async function openPrivateCredentialSheet(){if(!currentDetailId){showToast('Open a device first');return}credentialPinInput.value='';credentialPinInput.type='password';$('toggleCredentialPinBtn').textContent='SHOW';$('credentialDataPane').hidden=true;$('credentialUnlockPane').hidden=!!loadCredentialToken();openSheet(credentialSheet);if(loadCredentialToken()){try{$('credentialSheetCopy').textContent='Secure session unlocked • loading credentials…';const data=await fetchPrivateCredentials('');if(pendingCredentialPrintMode&&pendingCredentialPrintAsset){handleCredentialPrintData(pendingCredentialPrintMode,pendingCredentialPrintAsset,data);return}renderCredentialGrid(data);$('credentialUnlockPane').hidden=true;$('credentialDataPane').hidden=false;$('credentialSheetCopy').textContent='Private credentials • session unlock expires automatically.'}catch(e){clearCredentialToken();$('credentialUnlockPane').hidden=false;$('credentialDataPane').hidden=true;$('credentialSheetCopy').textContent=e.message||'Unlock required.'}}}
+
+  async function writeRequest(action,data){const saved=loadConnection();if(!saved)throw new Error('V7 API is not paired.');const body=new URLSearchParams();body.set('v7write',action);body.set('key',saved.key);body.set('t',Date.now());Object.keys(data||{}).forEach(k=>{if(data[k]!=null)body.set(k,String(data[k]))});await fetch(saved.url,{method:'POST',mode:'no-cors',body});}
+  function optimisticPatchAsset(id,payload){const key=normalize(id),base=assetMap[key]||{};const merged=Object.assign({},base,payload||{}, {ASSET_ID:String(id||base.ASSET_ID||''),UPDATED:new Date().toISOString()});assetMap[key]=merged;let found=false;ASSETS=ASSETS.map(a=>{if(normalize(a.ASSET_ID)===key){found=true;return merged}return a});if(!found&&merged.ASSET_ID)ASSETS.push(merged);if(normalize(currentDetailId)===key)setDetail(merged);renderHome();renderSearch();saveCache();return merged}
+  function quietBackgroundSync(delay){setTimeout(async()=>{try{const p=await jsonpRequest('bootstrap',{},25000);if(p.version)setBackendVersion(p.version);if(p.generatedAt)lastServerGeneration=String(p.generatedAt);if(Array.isArray(p.assets))applyAssets(p.assets,true)}catch(e){}},Math.max(250,Number(delay)||650))}
+
+  syncButton.addEventListener('click',()=>loadConnection()?syncInventory(true).catch(showApiError):openConnectionSheet());$('openBackendBtn').addEventListener('click',openConnectionSheet);$('moreSyncBtn').addEventListener('click',()=>syncInventory(true).catch(showApiError));$('moreConnectionBtn').addEventListener('click',openConnectionSheet);
+  $('closeConnectionBtn').addEventListener('click',()=>closeSheet(connectionSheet));connectionSheet.addEventListener('click',e=>{if(e.target===connectionSheet)closeSheet(connectionSheet)});$('toggleKeyBtn').addEventListener('click',()=>{const show=apiKeyInput.type==='password';apiKeyInput.type=show?'text':'password';$('toggleKeyBtn').textContent=show?'HIDE':'SHOW'});$('saveConnectionBtn').addEventListener('click',()=>{const url=normalizeApiUrl(apiUrlInput.value),key=String(apiKeyInput.value||'').trim();if(!url){showToast('Paste a valid Apps Script /exec URL');return}if(key.length<24){showToast('Connection key looks too short');return}saveConnection(url,key);closeSheet(connectionSheet);showToast('API paired — connecting…');connectApi()});$('disconnectBtn').addEventListener('click',()=>{forgetConnection();closeSheet(connectionSheet);showToast('Connection forgotten')});$('openAdminWebBtn').addEventListener('click',()=>window.open(LEGACY_ADMIN_URL,'_blank','noopener'));function openPrivateAdmin(){const u=LEGACY_ADMIN_URL+(currentDetailId?'?id='+encodeURIComponent(currentDetailId):'');window.open(u,'_blank','noopener')}$('openPrivateCredentialsBtn').addEventListener('click',openPrivateCredentialSheet);
+
+  function isKnownOption(list,val){return list.some(x=>normalize(x)===normalize(val))}
+  function selectWithOtherHtml(id,list,val,emptyLabel){val=String(val||'').trim();const base=list.filter(x=>normalize(x)!=='OTHER');const custom=!!val&&!isKnownOption(base,val)&&normalize(val)!=='OTHER';const chooseOther=custom||normalize(val)==='OTHER';let options=emptyLabel?'<option value="">'+esc(emptyLabel)+'</option>':'';options+=base.map(x=>'<option value="'+esc(x)+'" '+(normalize(x)===normalize(val)?'selected':'')+'>'+esc(x)+'</option>').join('');options+='<option value="__OTHER__" '+(chooseOther?'selected':'')+'>Other (specify)</option>';return'<div class="select-custom-wrap"><select id="'+id+'" data-custom-other="1">'+options+'</select><input id="'+id+'_OTHER" class="custom-other-input" type="text" value="'+esc(custom?val:'')+'" placeholder="Please specify" '+(chooseOther?'':'hidden')+'></div>'}
+  function brandChoiceHtml(list,selected){selected=String(selected||'');return(list||[]).map(x=>'<button type="button" class="brand-choice '+(normalize(x)===normalize(selected)?'selected':'')+'" data-brand-choice="'+esc(x)+'"><span class="brand-choice-mark">'+brandLogoMarkup(x,'brand-choice-logo')+'</span><span class="brand-choice-name">'+esc(x)+'</span><i>✓</i></button>').join('')}
+  function brandSelectHtml(prefix,id,val){const typeEl=$(prefix+'_DEVICE_TYPE');let type=typeEl?String(typeEl.value||'Laptop'):'Laptop';if(type==='__OTHER__'){const o=$(prefix+'_DEVICE_TYPE_OTHER');type=String(o&&o.value||'Other')||'Other'}const list=brandsForType(type);val=String(val||'').trim();const known=list.find(x=>normalize(x)===normalize(val)),custom=!!val&&!known;let options='<option value="">Not set</option>'+list.map(x=>'<option value="'+esc(x)+'" '+(known===x?'selected':'')+'>'+esc(x)+'</option>').join('')+'<option value="__OTHER__" '+(custom?'selected':'')+'>Other (specify)</option>';return'<div class="brand-select-wrap"><div class="brand-selected-card"><span id="'+id+'_LOGO">'+brandLogoMarkup(val,'brand-form-icon')+'</span><div><small>SELECTED BRAND</small><b id="'+id+'_SELECTED_TEXT">'+esc(val||'Not set')+'</b></div><select id="'+id+'" data-custom-other="1" data-brand-select="1">'+options+'</select></div><div id="'+id+'_CHIPS" class="brand-choice-strip">'+brandChoiceHtml(list,known||'')+'</div><input id="'+id+'_OTHER" class="custom-other-input" type="text" value="'+esc(custom?val:'')+'" placeholder="Please specify brand" '+(custom?'':'hidden')+'></div>'}
+  function fieldHtml(prefix,key,label,type,full,val){const id=prefix+'_'+key;let control='';val=val==null?'':String(val);if(type==='device')control=selectWithOtherHtml(id,DEVICE_TYPES,val||'Laptop','');else if(type==='brand')control=brandSelectHtml(prefix,id,val);else if(type==='department')control=selectWithOtherHtml(id,DEPARTMENT_OPTIONS,val,'Not set');else if(type==='status')control='<select id="'+id+'">'+STATUSES.map(x=>'<option value="'+esc(x)+'" '+(normalize(x)===normalize(val||'Active')?'selected':'')+'>'+esc(x)+'</option>').join('')+'</select>';else if(type==='textarea')control='<textarea id="'+id+'">'+esc(val)+'</textarea>';else if(type==='date')control='<input id="'+id+'" type="date" value="'+esc(dateToInput(val))+'">';else if(type==='number')control='<input id="'+id+'" inputmode="decimal" value="'+esc(val.replace(/[^0-9.,-]/g,''))+'" placeholder="0.00">';else if(type==='secret')control='<input id="'+id+'" type="text" value="'+esc(val)+'" autocomplete="off" placeholder="'+(prefix==='edit'?'Leave blank to keep current':'Optional')+'">';else control='<input id="'+id+'" type="text" value="'+esc(val)+'" '+(key==='ASSET_TAG'?'required':'')+'>';return'<div class="field '+(full?'full':'')+'"><label for="'+id+'">'+esc(label)+'</label>'+control+'</div>'}
+  function updateBrandFormLogo(prefix){const s=$(prefix+'_BRAND'),host=$(prefix+'_BRAND_LOGO');if(!s||!host)return;let v=String(s.value||'');if(v==='__OTHER__'){const o=$(prefix+'_BRAND_OTHER');v=String(o&&o.value||'')}host.innerHTML=brandLogoMarkup(v,'brand-form-icon');const t=$(prefix+'_BRAND_SELECTED_TEXT');if(t)t.textContent=v||'Not set'}
+  function bindBrandChoices(prefix){const host=$(prefix+'_BRAND_CHIPS'),select=$(prefix+'_BRAND');if(!host||!select)return;host.querySelectorAll('[data-brand-choice]').forEach(btn=>{btn.addEventListener('click',()=>{select.value=String(btn.dataset.brandChoice||'');const other=$(prefix+'_BRAND_OTHER');if(other){other.value='';other.hidden=true;other.required=false}host.querySelectorAll('.brand-choice').forEach(x=>x.classList.toggle('selected',x===btn));updateBrandFormLogo(prefix)})})}
+  function rebuildBrandField(prefix,preserve){const typeEl=$(prefix+'_DEVICE_TYPE'),brandEl=$(prefix+'_BRAND');if(!typeEl||!brandEl)return;let type=String(typeEl.value||'Other');if(type==='__OTHER__'){const o=$(prefix+'_DEVICE_TYPE_OTHER');type=String(o&&o.value||'Other')||'Other'}let current=preserve!=null?String(preserve):String(brandEl.value||'');if(current==='__OTHER__'){const o=$(prefix+'_BRAND_OTHER');current=String(o&&o.value||'')}const vals=brandsForType(type),known=vals.find(x=>normalize(x)===normalize(current));brandEl.innerHTML='<option value="">Not set</option>'+vals.map(x=>'<option value="'+esc(x)+'">'+esc(x)+'</option>').join('')+'<option value="__OTHER__">Other (specify)</option>';brandEl.value=!current?'':(known||'__OTHER__');const chips=$(prefix+'_BRAND_CHIPS');if(chips){chips.innerHTML=brandChoiceHtml(vals,known||'');bindBrandChoices(prefix)}const other=$(prefix+'_BRAND_OTHER');if(other){other.value=current&&!known?current:'';other.hidden=brandEl.value!=='__OTHER__';other.required=brandEl.value==='__OTHER__'}updateBrandFormLogo(prefix)}
+  function bindCustomFields(prefix){['DEVICE_TYPE','DEPARTMENT','BRAND'].forEach(key=>{const s=$(prefix+'_'+key),o=$(prefix+'_'+key+'_OTHER');if(!s||!o)return;const apply=()=>{const show=s.value==='__OTHER__';o.hidden=!show;o.required=show;if(key==='BRAND')updateBrandFormLogo(prefix);if(show)setTimeout(()=>{if(document.activeElement===s)o.focus()},0)};s.addEventListener('change',()=>{apply();if(key==='DEVICE_TYPE')rebuildBrandField(prefix,null)});o.addEventListener('input',()=>{if(key==='BRAND')updateBrandFormLogo(prefix)});apply()});rebuildBrandField(prefix,(()=>{const s=$(prefix+'_BRAND');if(!s)return'';if(s.value==='__OTHER__'){const o=$(prefix+'_BRAND_OTHER');return String(o&&o.value||'')}return s.value})());bindBrandChoices(prefix)}
+  function renderFormFields(prefix,asset){asset=asset||{};let privateStarted=false;return FORM_FIELDS.map(f=>{let pre='';if(PRIVATE_FORM_KEYS.has(f[0])&&!privateStarted){privateStarted=true;pre='<div class="form-section-head full"><small>ACCOUNT & ACCESS</small><b>Private credentials</b><p>'+(prefix==='edit'?'Enter only values you want to replace. Blank fields keep their current secrets.':'Enter credentials now if needed. PIN is required only later when viewing them from Device Detail.')+'</p></div>'}return pre+fieldHtml(prefix,f[0],f[1],f[2],f[3],PRIVATE_FORM_KEYS.has(f[0])&&prefix==='edit'?'':(asset[f[0]]||''))}).join('')}
+  function collectForm(prefix){const out={};FORM_FIELDS.forEach(f=>{const el=$(prefix+'_'+f[0]);if(!el)return;let v=String(el.value||'').trim();if(el.dataset&&el.dataset.customOther==='1'&&v==='__OTHER__'){const other=$(prefix+'_'+f[0]+'_OTHER');v=String(other&&other.value||'').trim()}if(prefix==='edit'&&PRIVATE_FORM_KEYS.has(f[0])&&!v)return;out[f[0]]=v});return out}
+  function publicOptimisticPayload(payload){const out={};Object.keys(payload||{}).forEach(k=>{if(!PRIVATE_FORM_KEYS.has(k))out[k]=payload[k]});return out}
+  function validateFormPayload(payload){if(!payload.ASSET_TAG)return'Asset Tag is required';if(!payload.DEVICE_TYPE)return'Please specify Category';const typeSelect=$((currentRoute==='edit'?'edit':'add')+'_DEVICE_TYPE');if(typeSelect&&typeSelect.value==='__OTHER__'&&!payload.DEVICE_TYPE)return'Please specify Category';const depSelect=$((currentRoute==='edit'?'edit':'add')+'_DEPARTMENT');if(depSelect&&depSelect.value==='__OTHER__'&&!payload.DEPARTMENT)return'Please specify Department';return''}
+  function resetAddPhoto(){addPhotoFile=null;addPhotoPrepared=null;['addPhotoLibraryInput','addPhotoCameraInput'].forEach(id=>{const e=$(id);if(e)e.value=''});$('addPhotoPreview').hidden=true;$('addPhotoPreview').removeAttribute('src');if($('addPhotoAiBtn'))$('addPhotoAiBtn').disabled=true}
+  function prepareAddForm(){if(!$('addFormFields').children.length){$('addFormFields').innerHTML=renderFormFields('add',{DEVICE_TYPE:'Laptop',STATUS:'Active'});bindCustomFields('add')}if(pendingScanForAdd){$('add_LIBIB').value=pendingScanForAdd;pendingScanForAdd='';showToast('Scanned code added to Libib / QR')}}
+  prepareAddForm();
+  async function usePhotoFile(file,mode,useAi){
+    if(!file)return;const job=++photoJobs[mode],prefix=mode==='edit'?'edit':'add',preview=$(prefix+'PhotoPreview'),button=$(prefix+'SaveBtn'),aiButton=$(prefix+'PhotoAiBtn');
+    if(mode==='edit'){editPhotoFile=file;editPhotoPrepared=null}else{addPhotoFile=file;addPhotoPrepared=null}
+    preview.hidden=true;button.disabled=true;if(aiButton)aiButton.disabled=true;
+    try{const d=useAi?await window.RISPPhoto.prepareAI(file):await compressImage(file);if(job!==photoJobs[mode])return;if(mode==='edit')editPhotoPrepared=d;else addPhotoPrepared=d;preview.src=d.dataUrl;preview.hidden=false;showToast(d.backgroundRemoved?'AI background removed • photo ready':'White background ready • photo ready');}
+    catch(e){showToast(e.message||'Could not prepare photo');}
+    finally{if(job===photoJobs[mode]){button.disabled=false;if(aiButton)aiButton.disabled=!((mode==='edit'?editPhotoFile:addPhotoFile));}}
+  }
+  ['addPhotoLibraryInput','addPhotoCameraInput'].forEach(id=>$(id).addEventListener('change',function(){usePhotoFile(this.files&&this.files[0],'add',false)}));
+  $('addPhotoAiBtn').addEventListener('click',()=>usePhotoFile(addPhotoFile,'add',true));
+  $('addScanCodeBtn').addEventListener('click',()=>{stopCamera();resetScannerUi(true);route('scan');showToast('Scan a code for the new device')});
+  async function confirmCreatedByTag(tag){for(let i=0;i<5;i++){await syncInventory(false);const a=ASSETS.find(x=>normalize(x.ASSET_TAG)===normalize(tag));if(a)return a;await sleep(220+i*140)}return null}
+  let generatedQrAsset=null;
+  let generatedQrPrintMode='qr-only';
+  let generatedQrCredentials=null;
+  let generatedQrIncludeAssigned=false;
+  let pendingCredentialPrintMode='';
+  let pendingCredentialPrintAsset=null;
+  let pendingCredentialPrintData=null;
+  let pendingCredentialPairs=[];
+  let selectedCredentialIndex=0;
+  function cancelPendingCredentialPrint(){pendingCredentialPrintMode='';pendingCredentialPrintAsset=null;pendingCredentialPrintData=null;pendingCredentialPairs=[];selectedCredentialIndex=0;if(credentialAccountSheet)closeSheet(credentialAccountSheet)}
+  function isLaptopAsset(asset){return !!asset&&normalize(asset.DEVICE_TYPE)==='LAPTOP'}
+  function splitLocalCredentialValues(value){return String(value==null?'':value).split(',').map(x=>String(x||'').trim()).filter(Boolean)}
+  function credentialPairsFromData(data){const usernames=splitLocalCredentialValues(data&&data.LOCAL_USERNAME),passwords=splitLocalCredentialValues(data&&data.LOCAL_PASSWORD),count=Math.max(usernames.length,passwords.length),pairs=[];for(let i=0;i<count;i++){const username=(usernames.length===1?usernames[0]:usernames[i])||'',password=(passwords.length===1?passwords[0]:passwords[i])||'';if(username&&password)pairs.push({username,password,index:i})}return pairs}
+  function firstCredentialPair(data){const pairs=credentialPairsFromData(data);return pairs[0]||null}
+  function credentialReady(data){return credentialPairsFromData(data).length>0}
+  function fitCredentialPrintText(root){if(!root)return;root.querySelectorAll('.credential-print-line').forEach(el=>{let size=12.4;const min=6.2;el.style.fontSize=size+'px';let guard=40;while(guard--&&((el.scrollWidth>el.clientWidth+1)||(el.scrollHeight>el.clientHeight+1))&&size>min){size=Math.max(min,size-.2);el.style.fontSize=size+'px'}})}
+  function fitGeneratedCredentialText(){['generatedQrSerial','generatedQrId'].forEach(id=>{const el=$(id);if(!el||!el.classList.contains('generated-qr-credential-line'))return;let size=parseFloat(getComputedStyle(el).fontSize)||9;const min=5.3;let guard=32;while(guard--&&((el.scrollWidth>el.clientWidth+1)||(el.scrollHeight>el.clientHeight+1))&&size>min){size=Math.max(min,size-.2);el.style.fontSize=size+'px'}el.style.setProperty('--credential-fit-size',(size*.75).toFixed(2)+'pt')})}
+  function setGeneratedQrMode(mode){generatedQrPrintMode=mode||'qr-only';const credentialMode=generatedQrPrintMode==='qr-credentials'||generatedQrPrintMode==='credentials-only';const card=$('generatedQrCard');if(card)card.classList.toggle('qr-credential-mode',credentialMode);const code=$('generatedQrCode');if(code)code.hidden=generatedQrPrintMode==='credentials-only';const asset=generatedQrAsset||{};const creds=generatedQrCredentials||{};$('generatedQrTag').textContent=value(asset.ASSET_TAG);$('generatedQrMeta').textContent=generatedQrPrintMode==='credentials-only'?'Laptop credentials':([asset.DEVICE_TYPE,asset.BRAND].filter(Boolean).join(' • ')||'IT Asset');$('generatedQrSerial').textContent=credentialMode?'User: '+value(creds.username):'Serial: '+value(asset.SERIAL||asset.SERVICE_TAG);$('generatedQrId').textContent=credentialMode?'Pw: '+value(creds.password):'Asset ID: '+value(asset.ASSET_ID);$('generatedQrSerial').classList.toggle('generated-qr-credential-line',credentialMode);$('generatedQrId').classList.toggle('generated-qr-credential-line',credentialMode);['generatedQrSerial','generatedQrId'].forEach(id=>{const el=$(id);if(el){el.style.removeProperty('font-size');el.style.removeProperty('--credential-fit-size')}});$('generatedQrPayload').textContent=generatedQrPrintMode==='credentials-only'?'':'QR: '+canonicalQrPayload(asset);$('generatedQrPayload').hidden=generatedQrPrintMode==='credentials-only'}
+  function renderGeneratedQr(asset){generatedQrAsset=asset||null;generatedQrCredentials=null;generatedQrPrintMode='qr-only';if(!asset)return;const host=$('generatedQrCode');if(host){host.hidden=false;host.innerHTML=''}$('generatedQrCard').classList.remove('qr-credential-mode');$('generatedQrPayload').hidden=false;$('generatedQrSerial').classList.remove('generated-qr-credential-line');$('generatedQrId').classList.remove('generated-qr-credential-line');['generatedQrSerial','generatedQrId'].forEach(id=>{const el=$(id);if(el){el.style.removeProperty('font-size');el.style.removeProperty('--credential-fit-size')}});$('generatedQrTag').textContent=value(asset.ASSET_TAG);$('generatedQrMeta').textContent=[asset.DEVICE_TYPE,asset.BRAND].filter(Boolean).join(' • ')||'IT Asset';$('generatedQrSerial').textContent='Serial: '+value(asset.SERIAL||asset.SERVICE_TAG);$('generatedQrId').textContent='Asset ID: '+value(asset.ASSET_ID);$('generatedQrPayload').textContent=canonicalQrPayload(asset);if(typeof QRCode==='function'&&host){new QRCode(host,{text:canonicalQrPayload(asset),width:164,height:164,colorDark:'#07111d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M})}const laptop=isLaptopAsset(asset);['generatedQrCredentialsBtn','generatedCredentialsOnlyBtn'].forEach(id=>{const b=$(id);if(b){b.disabled=!laptop;b.title=laptop?'':'Username / password printing is for Laptop assets only.'}})}
+  function qrDisplayAssetNameApp(asset){const raw=String(asset&&(asset.ASSET_TAG||asset.ASSET_ID)||'—').trim();return raw.replace(/\s*\([^)]*\)\s*$/,'').trim()||value(asset&&asset.ASSET_ID)}
+  function openGeneratedQrSheet(asset){if(!asset||!asset.ASSET_ID)return;renderGeneratedQr(asset);openSheet($('generatedQrSheet'))}
+  function buildCredentialPrintPage(asset,pair){const page=document.createElement('section');page.className='credential-print-page';const sticker=document.createElement('div');sticker.className='credential-print-sticker';sticker.innerHTML='<div class="credential-print-line"><b>User: </b><span>'+esc(pair&&pair.username||'-')+'</span></div><div class="credential-print-line"><b>Pw: </b><span>'+esc(pair&&pair.password||'-')+'</span></div>';page.appendChild(sticker);for(let i=1;i<60;i++)page.appendChild(document.createElement('div'));return page}
+  function renderCredentialAccountPicker(asset,pairs){pendingCredentialPairs=pairs;selectedCredentialIndex=0;credentialAccountCopy.textContent=(asset&&asset.ASSET_TAG?value(asset.ASSET_TAG)+' • ':'')+'Choose one of '+pairs.length+' Local Username / Local Password pairs to print.';credentialAccountOptions.innerHTML=pairs.map((pair,index)=>'<button type="button" class="credential-account-option '+(index===0?'selected':'')+'" data-credential-account-index="'+index+'"><i></i><b>User: '+esc(pair.username)+'</b><small>Pw: '+esc(pair.password)+'</small></button>').join('');openSheet(credentialAccountSheet)}
+  function handleCredentialPrintData(mode,asset,data){const pairs=credentialPairsFromData(data);if(!pairs.length){cancelPendingCredentialPrint();closeSheet(credentialSheet);showToast('No Local Username / Local Password saved for this laptop',3400);return}pendingCredentialPrintData=data;if(pairs.length===1){finishCredentialPrint(mode,asset,data,pairs[0]);return}closeSheet(credentialSheet);renderCredentialAccountPicker(asset,pairs)}
+  function finishCredentialPrint(mode,asset,creds,pair){const chosen=pair||firstCredentialPair(creds);if(!chosen){cancelPendingCredentialPrint();closeSheet(credentialSheet);showToast('No matching Local Username / Local Password pair',3400);return}generatedQrAsset=asset;generatedQrCredentials=chosen;cancelPendingCredentialPrint();closeSheet($('credentialSheet'));if(mode==='credentials-only'){const portal=$('credentialPrintPortal');portal.innerHTML='';portal.appendChild(buildCredentialPrintPage(asset,chosen));portal.hidden=false;closeSheet($('generatedQrSheet'));document.body.classList.add('printing-credentials-only');setTimeout(()=>{fitCredentialPrintText(portal);window.print();setTimeout(()=>{document.body.classList.remove('printing-credentials-only');portal.hidden=true},350)},80);return}setGeneratedQrMode('qr-credentials');openSheet($('generatedQrSheet'));setTimeout(()=>{fitGeneratedCredentialText();window.print()},120)}
+  function qrCopyCountApp(){let n=Number.parseInt(generatedQrCopies&&generatedQrCopies.value,10);if(!Number.isFinite(n))n=1;n=Math.max(1,Math.min(99,n));if(generatedQrCopies)generatedQrCopies.value=String(n);return n}
+  function fitGeneratedCredentialText(root){if(!root)return;root.querySelectorAll('.generated-qr-credential-line').forEach(el=>{let size=7.35;const min=5.25;el.style.fontSize=size+'pt';while(el.scrollWidth>el.clientWidth&&size>min){size=Math.max(min,size-.2);el.style.fontSize=size.toFixed(2)+'pt'}})}
+  function setGeneratedQrMode(mode){
+    generatedQrPrintMode=mode||'qr-only';
+    const credentialMode=generatedQrPrintMode==='qr-credentials'||generatedQrPrintMode==='credentials-only';
+    const card=$('generatedQrCard'),code=$('generatedQrCode'),identity=$('generatedQrIdentity'),serial=$('generatedQrSerial'),id=$('generatedQrId'),payload=$('generatedQrPayload'),asset=generatedQrAsset||{},creds=generatedQrCredentials||{};
+    if(card)card.classList.toggle('qr-credential-mode',credentialMode);
+    if(code)code.hidden=generatedQrPrintMode==='credentials-only';
+    $('generatedQrTag').textContent=qrDisplayAssetNameApp(asset);
+    $('generatedQrMeta').textContent=generatedQrPrintMode==='credentials-only'?'Laptop credentials':([asset.DEVICE_TYPE,asset.BRAND].filter(Boolean).join(' • ')||'IT Asset');
+    if(identity){identity.textContent='Asset ID: '+value(asset.ASSET_ID)+' • '+([asset.DEVICE_TYPE,asset.BRAND].filter(Boolean).join(' • ')||'IT Asset');identity.hidden=generatedQrPrintMode==='credentials-only'}
+    const serialInfo=$('generatedQrSerialInfo');if(serialInfo){serialInfo.textContent='Serial: '+value(asset.SERIAL||asset.SERVICE_TAG);serialInfo.hidden=generatedQrPrintMode==='credentials-only'}
+    const assigned=$('generatedQrAssigned');if(assigned){assigned.textContent=generatedQrIncludeAssigned?'Assigned to: '+value(asset.ASSIGNED_TO):'';assigned.hidden=!generatedQrIncludeAssigned||!String(asset.ASSIGNED_TO||'').trim()||generatedQrPrintMode==='credentials-only'}
+    if(serial){serial.textContent=credentialMode?'User: '+value(creds.username):'';serial.hidden=!credentialMode;serial.classList.toggle('generated-qr-credential-line',credentialMode)}
+    if(id){id.textContent=credentialMode?'Pw: '+value(creds.password):'';id.hidden=!credentialMode;id.classList.toggle('generated-qr-credential-line',credentialMode)}
+    if(payload){payload.textContent=generatedQrPrintMode==='credentials-only'?'':'QR: '+canonicalQrPayload(asset);payload.hidden=generatedQrPrintMode==='credentials-only'}
+    fitGeneratedCredentialText(card);
+  }
+  function renderGeneratedQr(asset){
+    generatedQrAsset=asset||null;generatedQrCredentials=null;generatedQrPrintMode='qr-only';generatedQrIncludeAssigned=false;
+    const assignedToggleWrap=$('generatedQrAssignedToggleWrap'),assignedToggle=$('generatedQrIncludeAssigned');
+    const hasAssignee=!!String(asset&&asset.ASSIGNED_TO||'').trim();
+    if(assignedToggleWrap)assignedToggleWrap.hidden=!hasAssignee;
+    if(assignedToggle)assignedToggle.checked=false;
+    if(generatedQrCopies)generatedQrCopies.value='1';
+    if(!asset)return;
+    const host=$('generatedQrCode');if(host){host.hidden=false;host.innerHTML=''}
+    $('generatedQrCard').classList.remove('qr-credential-mode');
+    ['generatedQrSerial','generatedQrId'].forEach(id=>{const el=$(id);if(el){el.hidden=true;el.textContent='';el.classList.remove('generated-qr-credential-line');el.style.removeProperty('font-size')}});
+    const identity=$('generatedQrIdentity');if(identity){identity.hidden=false;identity.textContent='Asset ID: '+value(asset.ASSET_ID)+' • '+([asset.DEVICE_TYPE,asset.BRAND].filter(Boolean).join(' • ')||'IT Asset')}
+    const serialInfo=$('generatedQrSerialInfo');if(serialInfo){serialInfo.hidden=false;serialInfo.textContent='Serial: '+value(asset.SERIAL||asset.SERVICE_TAG)}
+    const assigned=$('generatedQrAssigned');if(assigned){assigned.hidden=true;assigned.textContent=''}
+    $('generatedQrTag').textContent=qrDisplayAssetNameApp(asset);$('generatedQrMeta').textContent=[asset.DEVICE_TYPE,asset.BRAND].filter(Boolean).join(' • ')||'IT Asset';$('generatedQrPayload').textContent=canonicalQrPayload(asset);$('generatedQrPayload').hidden=false;
+    if(typeof QRCode==='function'&&host){new QRCode(host,{text:canonicalQrPayload(asset),width:220,height:220,colorDark:'#07111d',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M})}
+    const laptop=isLaptopAsset(asset);['generatedQrCredentialsBtn','generatedCredentialsOnlyBtn'].forEach(id=>{const b=$(id);if(b){b.disabled=!laptop;b.title=laptop?'':'Username / password printing is for Laptop assets only.'}})
+  }
+  function buildCredentialPrintPage(asset,pair,rows){const page=document.createElement('section');page.className='credential-print-page';const list=Array.isArray(rows)?rows:[pair];list.forEach(chosen=>{const sticker=document.createElement('div');sticker.className='credential-print-sticker';sticker.innerHTML='<div class="credential-print-line"><b>User: </b>'+esc(chosen&&chosen.username||'-')+'</div><div class="credential-print-line"><b>Pw: </b>'+esc(chosen&&chosen.password||'-')+'</div>';page.appendChild(sticker)});for(let i=list.length;i<60;i++)page.appendChild(document.createElement('div'));return page}
+  function cloneGeneratedQrCardForPrint(){const source=$('generatedQrCard');if(!source)return null;const clone=source.cloneNode(true);clone.removeAttribute('id');clone.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));const host=clone.querySelector('.generated-qr-code');const canvas=source.querySelector('.generated-qr-code canvas');if(host&&canvas){try{const img=document.createElement('img');img.src=canvas.toDataURL('image/png');img.alt='QR Code';host.replaceChildren(img)}catch(e){}}return clone}
+  function buildQrPrintPortal(copies){if(!qrPrintPortal)return;qrPrintPortal.innerHTML='';const pageCount=Math.ceil(copies/30);for(let pageIndex=0;pageIndex<pageCount;pageIndex++){const page=document.createElement('section');page.className='pwa-qr-sheet-page';const grid=document.createElement('div');grid.className='pwa-qr-sheet-grid';const count=Math.min(30,copies-pageIndex*30);for(let i=0;i<count;i++){const cell=document.createElement('div');cell.className='pwa-qr-label-cell';const card=cloneGeneratedQrCardForPrint();if(card)cell.appendChild(card);grid.appendChild(cell)}for(let i=count;i<30;i++)grid.appendChild(document.createElement('div'));page.appendChild(grid);qrPrintPortal.appendChild(page)}qrPrintPortal.hidden=false;qrPrintPortal.setAttribute('aria-hidden','false')}
+  function printGeneratedQrCopies(){if(!generatedQrAsset||!qrPrintPortal)return;const copies=qrCopyCountApp();buildQrPrintPortal(copies);document.body.classList.add('printing-qr-labels');requestAnimationFrame(()=>requestAnimationFrame(()=>{window.print();setTimeout(()=>{document.body.classList.remove('printing-qr-labels');qrPrintPortal.hidden=true;qrPrintPortal.setAttribute('aria-hidden','true')},900)}))}
+  function finishCredentialPrint(mode,asset,creds,pair){
+    const chosen=pair||firstCredentialPair(creds);
+    if(!chosen){cancelPendingCredentialPrint();closeSheet(credentialSheet);showToast('No matching Local Username / Local Password pair',3400);return}
+    generatedQrAsset=asset;generatedQrCredentials=chosen;cancelPendingCredentialPrint();closeSheet($('credentialSheet'));
+    if(mode==='credentials-only'){
+      $('credentialOnlySticker').innerHTML='<div><b>User:</b> '+esc(chosen.username||'-')+'</div><div><b>Pw:</b> '+esc(chosen.password||'-')+'</div>';
+      $('credentialOnlyCopies').value=String(qrCopyCountApp());
+      openSheet($('credentialOnlyPreviewSheet'));return;
+    }
+    setGeneratedQrMode('qr-credentials');openSheet($('generatedQrSheet'));
+    setTimeout(()=>{fitGeneratedCredentialText($('generatedQrCard'));printGeneratedQrCopies()},120)
+  }
+  function printGeneratedQr(){if(!generatedQrAsset)return;setGeneratedQrMode('qr-only');setTimeout(printGeneratedQrCopies,80)}
+  async function requestCredentialPrint(mode){const asset=generatedQrAsset;if(!asset||!isLaptopAsset(asset)){showToast('Username / password stickers are for Laptop assets only');return}currentDetailId=String(asset.ASSET_ID||currentDetailId||'');pendingCredentialPrintMode=mode;pendingCredentialPrintAsset=asset;if(loadCredentialToken()){try{handleCredentialPrintData(mode,asset,await fetchPrivateCredentials(''));return}catch(e){clearCredentialToken()}}openPrivateCredentialSheet()}
+  function legacyPrintGeneratedQr(){if(!generatedQrAsset)return;setGeneratedQrMode('qr-only');window.print()}
+  $('addAssetForm').addEventListener('submit',async e=>{e.preventDefault();const payload=collectForm('add'),problem=validateFormPayload(payload);if(problem){showToast(problem);return}const existing=ASSETS.find(a=>normalize(a.ASSET_TAG)===normalize(payload.ASSET_TAG));if(existing){showToast('Asset Tag already exists');return}const btn=$('addSaveBtn'),old=btn.textContent,photo=addPhotoPrepared,tag=payload.ASSET_TAG;btn.disabled=true;btn.textContent='SAVING…';try{await writeRequest('add',{payload:JSON.stringify(payload)});showToast('DEVICE SAVED • QR READY ✓',2400);$('addAssetForm').reset();$('addFormFields').innerHTML=renderFormFields('add',{DEVICE_TYPE:'Laptop',STATUS:'Active'});bindCustomFields('add');resetAddPhoto();route('home');(async()=>{try{const created=await confirmCreatedByTag(tag);if(created){openGeneratedQrSheet(created);if(photo){showToast('Uploading device photo…',2300);uploadPreparedPhotoForAsset(created.ASSET_ID,photo).then(()=>{showToast('Device + photo ready ✓');quietBackgroundSync(450)}).catch(()=>showToast('Device saved • photo needs retry',3400))}}else showToast('Device saved • QR will appear after sync',3200)}catch(e){showToast('Device saved • sync to open QR',3200)}})()}catch(err){showToast(err.message||'Could not add device',3400)}finally{btn.disabled=false;btn.textContent=old}});
+
+  function resetEditPhoto(){editPhotoFile=null;editPhotoPrepared=null;['editPhotoLibraryInput','editPhotoCameraInput'].forEach(id=>{const e=$(id);if(e)e.value=''});$('editPhotoPreview').hidden=true;$('editPhotoPreview').removeAttribute('src');if($('editPhotoAiBtn'))$('editPhotoAiBtn').disabled=true}
+  function openEditCurrent(){const asset=assetMap[normalize(currentDetailId)];if(!asset)return;editReturnRoute=currentRoute==='edit'?'detail':currentRoute;stopCamera();$('editTopTag').textContent=value(asset.ASSET_TAG);$('editAssetIdText').textContent=value(asset.ASSET_ID);$('editFormFields').innerHTML=renderFormFields('edit',asset);bindCustomFields('edit');resetEditPhoto();route('edit')}
+  ['editPhotoLibraryInput','editPhotoCameraInput'].forEach(id=>$(id).addEventListener('change',function(){usePhotoFile(this.files&&this.files[0],'edit',false)}));
+  $('editPhotoAiBtn').addEventListener('click',()=>usePhotoFile(editPhotoFile,'edit',true));
+  $('editBack').addEventListener('click',()=>route('detail'));$('editCancelBtn').addEventListener('click',()=>route('detail'));
+  async function confirmEdited(id,payload){for(let i=0;i<5;i++){const a=await fetchAsset(id);let ok=true;['ASSET_TAG','DEVICE_TYPE','BRAND','MODEL','SERIAL','LIBIB','SERVICE_TAG','DEPARTMENT','ASSIGNED_TO','COLOR','STATUS','WARRANTY','COST','NOTES'].forEach(k=>{if(Object.prototype.hasOwnProperty.call(payload,k)&&normalize(k==='COST'?moneyNumber(a[k]):a[k])!==normalize(k==='COST'?moneyNumber(payload[k]):payload[k]))ok=false});if(ok)return a;await sleep(180+i*120)}return fetchAsset(id)}
+  $('editAssetForm').addEventListener('submit',async e=>{e.preventDefault();const payload=collectForm('edit'),problem=validateFormPayload(payload);if(problem){showToast(problem);return}const btn=$('editSaveBtn'),old=btn.textContent,id=currentDetailId,photo=editPhotoPrepared,returnRoute=editReturnRoute||'detail';btn.disabled=true;btn.textContent='SAVING…';try{await writeRequest('edit',{id,payload:JSON.stringify(payload)});optimisticPatchAsset(id,publicOptimisticPayload(payload));resetEditPhoto();showToast('SAVE SUCCESS ✓',2300);route(returnRoute==='edit'?'detail':returnRoute);if(photo){showToast('Changes saved • uploading photo…',2600);uploadPreparedPhotoForAsset(id,photo).then(()=>{showToast('Photo saved ✓');quietBackgroundSync(400)}).catch(()=>{showToast('Changes saved • photo sync needs retry',3400);quietBackgroundSync(1200)})}else quietBackgroundSync(450)}catch(err){showToast(err.message||'Could not save changes',3400)}finally{btn.disabled=false;btn.textContent=old}});
+
+  function openStatusSheet(){const a=assetMap[normalize(currentDetailId)];if(!a)return;$('statusAssetLabel').textContent=value(a.ASSET_TAG);$('statusOptions').innerHTML=STATUSES.map(s=>'<button type="button" class="status-option '+statusClass(s)+' '+(normalize(s)===normalize(a.STATUS)?'current':'')+'" data-status="'+esc(s)+'"><i></i><b>'+esc(s)+'</b></button>').join('');$('statusOptions').querySelectorAll('[data-status]').forEach(b=>b.addEventListener('click',()=>saveStatus(b.dataset.status)));openSheet(statusSheet)}
+  $('detailStatusCard').addEventListener('click',openStatusSheet);$('closeStatusBtn').addEventListener('click',()=>closeSheet(statusSheet));statusSheet.addEventListener('click',e=>{if(e.target===statusSheet)closeSheet(statusSheet)});
+  async function saveStatus(status){const id=currentDetailId,a=assetMap[normalize(id)];if(!a)return;closeSheet(statusSheet);const old=a.STATUS;a.STATUS=status;setDetail(a);renderHome();showToast('Saving status…');try{await writeRequest('status',{id,status});optimisticPatchAsset(id,{STATUS:status});showToast('Status saved ✓');quietBackgroundSync(450)}catch(e){a.STATUS=old;mergeDetail(a);showToast(e.message||'Could not change status',3200)}}
+
+  function resetPhotoSheet(){detailPhotoData=null;detailPhotoFile=null;['detailPhotoLibraryInput','detailPhotoCameraInput'].forEach(id=>{const e=$(id);if(e)e.value=''});$('photoPreview').hidden=true;$('photoPreviewEmpty').style.display='';$('savePhotoBtn').disabled=true;if($('detailPhotoAiBtn'))$('detailPhotoAiBtn').disabled=true}
+  $('changePhotoBtn').addEventListener('click',()=>{const a=assetMap[normalize(currentDetailId)];$('photoAssetLabel').textContent=a?value(a.ASSET_TAG):'Device photo';resetPhotoSheet();openSheet(photoSheet)});$('closePhotoBtn').addEventListener('click',()=>closeSheet(photoSheet));photoSheet.addEventListener('click',e=>{if(e.target===photoSheet)closeSheet(photoSheet)});
+  async function prepareDetailPhoto(file,useAi){
+    if(!file)return;const job=++photoJobs.detail;detailPhotoFile=file;detailPhotoData=null;$('savePhotoBtn').disabled=true;$('detailPhotoAiBtn').disabled=true;
+    try{const d=useAi?await window.RISPPhoto.prepareAI(file):await compressImage(file);if(job!==photoJobs.detail)return;detailPhotoData=d;$('photoPreview').src=d.dataUrl;$('photoPreview').hidden=false;$('photoPreviewEmpty').style.display='none';$('savePhotoBtn').disabled=false;showToast(d.backgroundRemoved?'AI background removed • Save photo':'White background ready • Save photo');}
+    catch(e){showToast(e.message||'Could not prepare photo');}
+    finally{if(job===photoJobs.detail)$('detailPhotoAiBtn').disabled=!detailPhotoFile;}
+  }
+  ['detailPhotoLibraryInput','detailPhotoCameraInput'].forEach(id=>$(id).addEventListener('change',function(){prepareDetailPhoto(this.files&&this.files[0],false)}));
+  $('detailPhotoAiBtn').addEventListener('click',()=>prepareDetailPhoto(detailPhotoFile,true));
+  async function waitForPhotoChange(assetId,before){for(let i=0;i<6;i++){const a=await fetchAsset(assetId);if(String(a.PHOTO_FILE_ID||'')&&String(a.PHOTO_FILE_ID||'')!==String(before||''))return a;await sleep(240+i*100)}throw new Error('Photo upload was not confirmed.')}
+  $('savePhotoBtn').addEventListener('click',()=>{if(!detailPhotoData||!currentDetailId)return;const id=currentDetailId,photo=detailPhotoData,btn=$('savePhotoBtn');btn.disabled=true;btn.textContent='SAVED • SYNCING…';closeSheet(photoSheet);showToast('Photo saved locally • syncing…',1400);writeRequest('photo',{id,dataUrl:photo.dataUrl,fileName:photo.fileName,mimeType:photo.mimeType}).then(()=>{quietBackgroundSync(180);showToast('Photo synced ✓',1800)}).catch(()=>showToast('Photo saved locally • sync failed',2800)).finally(()=>{btn.disabled=false;btn.textContent='SAVE PHOTO'})});
+  async function uploadPreparedPhotoForAsset(assetId,photo){if(!photo)return;await writeRequest('photo',{id:assetId,dataUrl:photo.dataUrl,fileName:photo.fileName,mimeType:photo.mimeType});quietBackgroundSync(420);return assetMap[normalize(assetId)]||{ASSET_ID:assetId}}
+  async function uploadPhotoForAsset(assetId,file){const d=await compressImage(file);return uploadPreparedPhotoForAsset(assetId,d)}
+  function compressImage(file){return window.RISPPhoto.prepare(file)}
+
+  $('deleteAssetBtn').addEventListener('click',()=>{const a=assetMap[normalize(currentDetailId)];$('deleteAssetLabel').textContent=a?value(a.ASSET_TAG)+' • '+value(a.ASSET_ID):value(currentDetailId);openSheet(deleteSheet)});$('cancelDeleteBtn').addEventListener('click',()=>closeSheet(deleteSheet));deleteSheet.addEventListener('click',e=>{if(e.target===deleteSheet)closeSheet(deleteSheet)});$('confirmDeleteBtn').addEventListener('click',async()=>{const id=currentDetailId,btn=$('confirmDeleteBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='DELETING…';try{await writeRequest('delete',{id});ASSETS=ASSETS.filter(a=>normalize(a.ASSET_ID)!==normalize(id));delete assetMap[normalize(id)];saveCache();renderHome();renderSearch();closeSheet(deleteSheet);currentDetailId='';showToast('Device deleted ✓');route('home');quietBackgroundSync(450)}catch(e){showToast(e.message||'Could not delete device',3200)}finally{btn.disabled=false;btn.textContent=old}});
+
+
+  document.querySelectorAll('[data-private-help]').forEach(btn=>btn.addEventListener('click',()=>showToast('Open the saved device → Private Credentials → unlock with Super Admin PIN.')));
+  function printCredentialOnlySticker(){
+    const copies=Math.max(1,Math.min(99,Number.parseInt($('credentialOnlyCopies').value,10)||1));
+    const portal=$('credentialPrintPortal');portal.innerHTML='';
+    const pageCount=Math.ceil(copies/60);
+    for(let pageIndex=0;pageIndex<pageCount;pageIndex++){
+      const page=document.createElement('section');page.className='credential-print-page';
+      const count=Math.min(60,copies-pageIndex*60);
+      for(let i=0;i<count;i++){const sticker=document.createElement('div');sticker.className='credential-print-sticker';sticker.innerHTML='<div class="credential-print-line"><b>User: </b>'+esc(generatedQrCredentials.username||'-')+'</div><div class="credential-print-line"><b>Pw: </b>'+esc(generatedQrCredentials.password||'-')+'</div>';page.appendChild(sticker)}
+      for(let i=count;i<60;i++)page.appendChild(document.createElement('div'));
+      portal.appendChild(page);
+    }
+    portal.hidden=false;document.body.classList.add('printing-credentials-only');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{fitCredentialPrintText(portal);window.print();setTimeout(()=>{document.body.classList.remove('printing-credentials-only');portal.hidden=true;portal.innerHTML=''},900)}));
+  }
+  $('credentialOnlyBackBtn').addEventListener('click',()=>{closeSheet($('credentialOnlyPreviewSheet'));openSheet($('generatedQrSheet'))});
+  $('credentialOnlyPrintBtn').addEventListener('click',printCredentialOnlySticker);
+  $('credentialOnlyPreviewSheet').addEventListener('click',e=>{if(e.target===$('credentialOnlyPreviewSheet'))closeSheet($('credentialOnlyPreviewSheet'))});
+  $('generatedQrCancelBtn').addEventListener('click',()=>{cancelPendingCredentialPrint();closeSheet($('generatedQrSheet'))});
+  $('generatedQrPrintBtn').addEventListener('click',printGeneratedQr);
+  if($('generatedQrIncludeAssigned'))$('generatedQrIncludeAssigned').addEventListener('change',()=>{generatedQrIncludeAssigned=!!$('generatedQrIncludeAssigned').checked;setGeneratedQrMode(generatedQrPrintMode)});
+  $('generatedQrCredentialsBtn').addEventListener('click',()=>requestCredentialPrint('qr-credentials'));
+  $('generatedCredentialsOnlyBtn').addEventListener('click',()=>requestCredentialPrint('credentials-only'));
+  $('generatedQrSheet').addEventListener('click',e=>{if(e.target===$('generatedQrSheet'))closeSheet($('generatedQrSheet'))});
+  $('detailPrintQrBtn').addEventListener('click',()=>{const a=assetMap[normalize(currentDetailId)];if(a)openGeneratedQrSheet(a)});
+  $('closeCredentialBtn').addEventListener('click',()=>{cancelPendingCredentialPrint();closeSheet(credentialSheet)});$('closeCredentialDataBtn').addEventListener('click',()=>{cancelPendingCredentialPrint();closeSheet(credentialSheet)});credentialSheet.addEventListener('click',e=>{if(e.target===credentialSheet){cancelPendingCredentialPrint();closeSheet(credentialSheet)}});
+  credentialAccountOptions.addEventListener('click',e=>{const option=e.target.closest('[data-credential-account-index]');if(!option)return;selectedCredentialIndex=Number(option.dataset.credentialAccountIndex||0);credentialAccountOptions.querySelectorAll('[data-credential-account-index]').forEach(x=>x.classList.toggle('selected',x===option))});
+  $('cancelCredentialAccountBtn').addEventListener('click',()=>{cancelPendingCredentialPrint();closeSheet(credentialAccountSheet)});
+  $('useCredentialAccountBtn').addEventListener('click',()=>{const pair=pendingCredentialPairs[selectedCredentialIndex];if(!pair){showToast('Choose a Local account first');return}const mode=pendingCredentialPrintMode,asset=pendingCredentialPrintAsset,data=pendingCredentialPrintData;finishCredentialPrint(mode,asset,data,pair)});
+  credentialAccountSheet.addEventListener('click',e=>{if(e.target===credentialAccountSheet){cancelPendingCredentialPrint();closeSheet(credentialAccountSheet)}});
+  $('toggleCredentialPinBtn').addEventListener('click',()=>{const show=credentialPinInput.type==='password';credentialPinInput.type=show?'text':'password';$('toggleCredentialPinBtn').textContent=show?'HIDE':'SHOW'});
+  $('unlockCredentialBtn').addEventListener('click',async()=>{const pin=String(credentialPinInput.value||'').trim();if(pin.length<6){showToast('Enter the Super Admin PIN');return}const btn=$('unlockCredentialBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='UNLOCKING…';try{const data=await fetchPrivateCredentials(pin);if(pendingCredentialPrintMode&&pendingCredentialPrintAsset){credentialPinInput.value='';handleCredentialPrintData(pendingCredentialPrintMode,pendingCredentialPrintAsset,data);return}renderCredentialGrid(data);$('credentialUnlockPane').hidden=true;$('credentialDataPane').hidden=false;$('credentialSheetCopy').textContent='Private credentials • unlocked for this app session.';credentialPinInput.value='';showToast('Private credentials unlocked ✓')}catch(e){clearCredentialToken();showToast(e.message||'Unlock failed',3200)}finally{btn.disabled=false;btn.textContent=old}});
+  $('lockCredentialBtn').addEventListener('click',()=>{clearCredentialToken();$('credentialDataPane').hidden=true;$('credentialUnlockPane').hidden=false;$('credentialSheetCopy').textContent='Enter your Super Admin PIN once. The unlocked session expires automatically and is not written to local storage.';showToast('Private credentials locked')});
+
+  /* QR scanner — V7.5.4 SMART ENGINE
+     Primary: qr-scanner worker/native BarcodeDetector engine at high resolution.
+     Fallback: direct BarcodeDetector + jsQR loop if the CDN engine is unavailable. */
+  function resetScannerUi(clear){if(clear){scannedAssetId='';scannedRaw='';$('scanResult').classList.add('hidden');$('scanMatch').classList.add('hidden');$('scanMatchPhoto').innerHTML='<span>IT</span>'}$('scannerState').textContent=scannerStream?'SMART SCAN • LIVE':'SMART SCAN • READY';$('scannerMark').style.opacity=scannerStream?'.09':'1'}
+  function smartScanRegion(video){
+    const width=Math.max(1,video.videoWidth||1920),height=Math.max(1,video.videoHeight||1080),scale=Math.min(1,1600/Math.max(width,height));
+    return {x:0,y:0,width,height,downScaledWidth:Math.max(1,Math.round(width*scale)),downScaledHeight:Math.max(1,Math.round(height*scale))};
+  }
+  function clearScannerWatchdog(){if(scannerWatchdogTimer){clearInterval(scannerWatchdogTimer);scannerWatchdogTimer=null}}
+  function armScannerWatchdog(){clearScannerWatchdog();scannerHeartbeat=Date.now();scannerWatchdogTimer=setInterval(async()=>{if(currentRoute!=='scan'||scannerBusy||scanResolving||scanBackdrop.classList.contains('open'))return;const v=$('scannerVideo'),track=v&&v.srcObject&&v.srcObject.getVideoTracks&&v.srcObject.getVideoTracks()[0];const stale=!v||v.readyState<2||!track||track.readyState!=='live';if(stale){await stopCamera();setTimeout(()=>{if(currentRoute==='scan')startCamera().catch(()=>{})},180)}},2200)}
+  async function tuneCameraTrack(){try{const v=$('scannerVideo'),stream=v&&v.srcObject;if(!stream)return;scannerStream=stream;const track=stream.getVideoTracks&&stream.getVideoTracks()[0];if(!track)return;const caps=track.getCapabilities?track.getCapabilities():{},advanced=[];if(Array.isArray(caps.focusMode)&&caps.focusMode.includes('continuous'))advanced.push({focusMode:'continuous'});if(Array.isArray(caps.exposureMode)&&caps.exposureMode.includes('continuous'))advanced.push({exposureMode:'continuous'});if(Array.isArray(caps.whiteBalanceMode)&&caps.whiteBalanceMode.includes('continuous'))advanced.push({whiteBalanceMode:'continuous'});const constraints={width:{ideal:1920},height:{ideal:1080},frameRate:{ideal:30,max:60}};if(advanced.length)constraints.advanced=advanced;await track.applyConstraints(constraints).catch(()=>{});if(window.QrScanner&&smartQrScanner&&typeof smartQrScanner.hasFlash==='function'){scannerFlashAvailable=await smartQrScanner.hasFlash().catch(()=>false);const flash=$('scannerFlashBtn');if(flash)flash.hidden=!scannerFlashAvailable}}catch(e){}}
+  async function startCamera(){
+    cameraWanted=true;
+    if(currentRoute!=='scan'||scanBackdrop.classList.contains('open')||scanResolving||document.visibilityState==='hidden')return;
+    if(cameraStarting)return cameraStarting;
+    if(scannerStream||scannerLoopActive)return;
+    const epoch=++cameraEpoch,v=$('scannerVideo');primeAudio();$('scannerState').textContent='STARTING CAMERA…';
+    const valid=()=>epoch===cameraEpoch&&currentRoute==='scan'&&cameraWanted&&!scanBackdrop.classList.contains('open');
+    cameraStarting=(async()=>{
+      try{
+        if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)throw new Error('Use HTTPS and allow camera access.');
+        if(window.QrScanner){
+          const engine=new QrScanner(v,result=>{const raw=String(result&&result.data!=null?result.data:result||'').trim();if(raw&&!scannerBusy&&!scanResolving){scannerBusy=true;handleScanValue(raw,'camera').finally(()=>{scannerBusy=false})}},{preferredCamera:'environment',maxScansPerSecond:30,calculateScanRegion:smartScanRegion,highlightScanRegion:false,highlightCodeOutline:false,returnDetailedScanResult:true});
+          smartQrScanner=engine;try{engine.setInversionMode('both')}catch(e){}
+          try{await engine.start();if(!valid()){engine.destroy();return;}scannerStream=v.srcObject;scannerUsingSmartEngine=true;scannerLoopActive=true;}
+          catch(e){engine.destroy();if(smartQrScanner===engine)smartQrScanner=null;if(!valid())return;}
+        }
+        if(!scannerStream){
+          const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false});
+          if(!valid()){stream.getTracks().forEach(t=>t.stop());return;}
+          scannerStream=stream;v.srcObject=stream;await v.play();
+          if(!valid()){stream.getTracks().forEach(t=>t.stop());v.srcObject=null;scannerStream=null;return;}
+          scannerLoopActive=true;scannerUsingSmartEngine=false;requestAnimationFrame(scannerLoop);
+        }
+        await tuneCameraTrack();if(!valid())return;
+        resetScannerUi(false);$('startCameraBtn').textContent='RESTART CAMERA';$('scannerState').textContent='CAMERA LIVE • AIM AT QR';armScannerWatchdog();
+      }catch(e){
+        if(valid()){$('scannerState').textContent='CAMERA UNAVAILABLE';showToast(e.name==='NotAllowedError'?'Allow camera access, then tap Start Camera.':(e.message||'Cannot start camera.'),4500);}
+        scannerLoopActive=false;if(scannerStream)scannerStream.getTracks().forEach(t=>t.stop());scannerStream=null;
+      }
+    })().finally(()=>{cameraStarting=null;});
+    return cameraStarting;
+  }
+  async function stopCamera(){
+    cameraWanted=false;cameraEpoch++;clearScannerWatchdog();scannerLoopActive=false;
+    if(smartQrScanner){try{smartQrScanner.destroy()}catch(e){}smartQrScanner=null;}
+    if(scannerStream){scannerStream.getTracks().forEach(t=>t.stop());scannerStream=null;}
+    const v=$('scannerVideo');if(v&&v.srcObject){v.srcObject.getTracks().forEach(t=>t.stop());v.srcObject=null;}
+    scannerUsingSmartEngine=false;scannerFlashAvailable=false;
+    const flash=$('scannerFlashBtn');if(flash){flash.hidden=true;flash.classList.remove('active');flash.textContent='FLASH';}
+    $('startCameraBtn').textContent='START CAMERA';resetScannerUi(false);
+  }
+
+  $('startCameraBtn').addEventListener('click',async()=>{await stopCamera();if(cameraStarting)await cameraStarting;startCamera().catch(()=>{})});
+  const flashBtn=$('scannerFlashBtn');if(flashBtn)flashBtn.addEventListener('click',async()=>{if(!smartQrScanner||!scannerFlashAvailable)return;try{await smartQrScanner.toggleFlash();const on=smartQrScanner.isFlashOn();flashBtn.classList.toggle('active',!!on);flashBtn.textContent=on?'FLASH ON':'FLASH'}catch(e){showToast('Flash is not available on this camera')}});
+  async function scannerLoop(ts){if(!scannerLoopActive||!scannerStream||scannerUsingSmartEngine)return;requestAnimationFrame(scannerLoop);if(scannerBusy||!ts||ts-scannerLastTick<70)return;scannerLastTick=ts;const video=$('scannerVideo');if(video.readyState<2)return;scannerHeartbeat=Date.now();scannerBusy=true;try{let result='';if('BarcodeDetector'in window){try{if(!qrDetector)qrDetector=new BarcodeDetector({formats:['qr_code']});const codes=await qrDetector.detect(video);if(codes&&codes[0])result=codes[0].rawValue||''}catch(e){}}if(!result&&window.jsQR){const c=$('scannerCanvas'),region=smartScanRegion(video),max=1600;c.width=Math.min(max,region.downScaledWidth);c.height=Math.min(max,region.downScaledHeight);const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(video,region.x,region.y,region.width,region.height,0,0,c.width,c.height);const img=ctx.getImageData(0,0,c.width,c.height);const qr=window.jsQR(img.data,img.width,img.height,{inversionAttempts:'attemptBoth'});if(qr&&qr.data)result=qr.data}if(result){await stopCamera();await handleScanValue(result,'camera')}}finally{scannerBusy=false}}
+  $('manualScanBtn').addEventListener('click',()=>{const v=$('manualScanInput').value.trim();if(v)handleScanValue(v,'manual')});$('manualScanInput').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('manualScanBtn').click()}});
+  $('qrImageInput').addEventListener('change',async function(){
+    const file=this.files&&this.files[0];this.value='';if(!file)return;await stopCamera();
+    try{const raw=await scanImageFile(file);if(raw)await handleScanValue(raw,'image');else showToast('No QR code found. Try a clearer image.');}
+    catch(e){showToast('Could not read QR image. Try a clearer photo.');}
+  });
+  async function scanImageFile(file){
+    if(window.QrScanner){try{const r=await QrScanner.scanImage(file,{returnDetailedScanResult:true,alsoTryWithoutScanRegion:true});const raw=String(r&&r.data!=null?r.data:r||'').trim();if(raw)return raw}catch(e){}}
+    return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onerror=reject;fr.onload=async()=>{const img=new Image();img.onerror=reject;img.onload=async()=>{try{if('BarcodeDetector'in window){try{const det=new BarcodeDetector({formats:['qr_code']});const codes=await det.detect(img);if(codes&&codes[0]){resolve(codes[0].rawValue||'');return}}catch(e){}}const c=$('scannerCanvas'),max=2000,scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));c.width=Math.round(img.naturalWidth*scale);c.height=Math.round(img.naturalHeight*scale);const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,c.width,c.height);if(window.jsQR){const d=ctx.getImageData(0,0,c.width,c.height),qr=window.jsQR(d.data,d.width,d.height,{inversionAttempts:'attemptBoth'});resolve(qr&&qr.data?qr.data:'')}else resolve('')}catch(e){reject(e)}};img.src=fr.result};fr.readAsDataURL(file)})
+  }
+  function canonicalQrPayload(asset){const id=String(asset&&asset.ASSET_ID||'').trim();return id?'RISPIT|1|'+id:''}
+  function parseCanonicalQr(raw){const p=String(raw||'').trim().split('|');return p.length===3&&normalize(p[0])==='RISPIT'&&p[1]==='1'?String(p[2]||'').trim():''}
+  async function resolveScanAuthoritative(raw){
+    const canonicalId=parseCanonicalQr(raw);
+    if(canonicalId){const local=assetMap[normalize(canonicalId)];if(local)return{found:true,asset:local,mode:'canonical-local'}}
+    if(!loadConnection())return{found:false,ambiguous:false,offline:true};
+    const p=await jsonpRequest('resolve',{value:String(raw||'')},18000);
+    if(p.ambiguous)return{found:false,ambiguous:true,matches:p.matches||[],message:p.message||'Ambiguous QR identity'};
+    if(!p.found)return{found:false,ambiguous:false,message:p.message||'Asset not found'};
+    let asset=assetMap[normalize(p.assetId)];
+    if(!asset){try{asset=await fetchAsset(p.assetId);mergeDetail(asset)}catch(e){asset={ASSET_ID:p.assetId,ASSET_TAG:p.assetTag,DEVICE_TYPE:p.deviceType,BRAND:p.brand,MODEL:p.model,STATUS:p.status,ASSIGNED_TO:p.assignedTo,PHOTO_FILE_ID:p.photoFileId}}}
+    return{found:true,asset,mode:p.mode||'server',matchedBy:p.matchedBy||''};
+  }
+  function primeAudio(){try{const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;if(!audioCtx)audioCtx=new AC();if(audioCtx.state==='suspended')audioCtx.resume()}catch(e){}}
+  function playThunder(){try{primeAudio();const ctx=audioCtx;if(!ctx)return;if(ctx.state==='suspended'){ctx.resume().then(function(){if(audioCtx===ctx)playThunder()}).catch(function(){});return}const now=ctx.currentTime,dur=.72,buffer=ctx.createBuffer(1,Math.floor(ctx.sampleRate*dur),ctx.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++){const t=i/data.length;data[i]=(Math.random()*2-1)*Math.pow(1-t,2.8)}const noise=ctx.createBufferSource();noise.buffer=buffer;const crack=ctx.createBiquadFilter();crack.type='bandpass';crack.frequency.setValueAtTime(1900,now);crack.Q.setValueAtTime(.65,now);const crackGain=ctx.createGain();crackGain.gain.setValueAtTime(.0001,now);crackGain.gain.exponentialRampToValueAtTime(.34,now+.008);crackGain.gain.exponentialRampToValueAtTime(.025,now+.18);const rumble=ctx.createBiquadFilter();rumble.type='lowpass';rumble.frequency.setValueAtTime(180,now);const rumbleGain=ctx.createGain();rumbleGain.gain.setValueAtTime(.0001,now);rumbleGain.gain.exponentialRampToValueAtTime(.18,now+.035);rumbleGain.gain.exponentialRampToValueAtTime(.0001,now+.72);const master=ctx.createGain();master.gain.value=.7;noise.connect(crack);crack.connect(crackGain);crackGain.connect(master);const noise2=ctx.createBufferSource();noise2.buffer=buffer;noise2.playbackRate.value=.7;noise2.connect(rumble);rumble.connect(rumbleGain);rumbleGain.connect(master);const osc=ctx.createOscillator(),og=ctx.createGain();osc.type='sine';osc.frequency.setValueAtTime(72,now);osc.frequency.exponentialRampToValueAtTime(38,now+.65);og.gain.setValueAtTime(.0001,now);og.gain.exponentialRampToValueAtTime(.1,now+.03);og.gain.exponentialRampToValueAtTime(.0001,now+.68);osc.connect(og);og.connect(master);master.connect(ctx.destination);noise.start(now);noise.stop(now+dur);noise2.start(now+.02);noise2.stop(now+dur);osc.start(now);osc.stop(now+.7)}catch(e){}}
+  function setScanMatch(asset){const box=$('scanMatch'),photo=$('scanMatchPhoto');if(!asset){box.classList.add('hidden');photo.innerHTML='<span>IT</span>';return}box.classList.remove('hidden');$('scanMatchType').textContent=value(asset.DEVICE_TYPE).toUpperCase();$('scanMatchTag').textContent=value(asset.ASSET_TAG);$('scanMatchDevice').textContent=[asset.BRAND,asset.MODEL].filter(Boolean).join(' ')||'—';$('scanMatchAssigned').textContent=asset.ASSIGNED_TO?'Assigned to '+asset.ASSIGNED_TO:'Unassigned';$('scanMatchStatus').textContent=value(asset.STATUS);$('scanMatchStatus').className='scan-match-status '+statusClass(asset.STATUS);const urls=imageCandidates(asset,720);photo.innerHTML=urls.length?'<img src="'+esc(urls[0])+'" data-f1="'+esc(urls[1]||'')+'" data-f2="'+esc(urls[2]||'')+'" data-secure-id="'+esc(asset.ASSET_ID||'')+'" alt=""><span class="photo-fallback" style="display:none">'+esc(String(asset.DEVICE_TYPE||'IT').slice(0,10))+'</span>':'<span>'+esc(String(asset.DEVICE_TYPE||'IT').slice(0,10))+'</span>';attachImageFallbacks(photo)}
+  async function handleScanValue(raw,source){
+    raw=String(raw||'').trim();if(!raw||scanResolving)return;
+    const job=++scanRequest;scanResolving=true;scannedRaw=raw;scannedAssetId='';
+    await stopCamera();if(source!=='manual')playThunder();
+    setScanMatch(null);$('scanResultValue').textContent=raw;$('scanResult').classList.remove('hidden');
+    $('scanResultText').textContent='Checking live inventory…';$('scannerState').textContent='VERIFYING';$('scanOpenBtn').hidden=true;$('scanAddBtn').hidden=true;
+    openSheet(scanBackdrop);scanClose.focus();
+    try{
+      const resolved=await resolveScanAuthoritative(raw);if(job!==scanRequest||currentRoute!=='scan')return;
+      if(resolved.found&&resolved.asset){const a=resolved.asset;scannedAssetId=a.ASSET_ID;setScanMatch(a);$('scanResultText').textContent=resolved.mode==='canonical-local'?'Asset ID found in saved inventory':'Verified against live inventory';$('scanOpenBtn').hidden=false;$('scannerState').textContent='MATCH FOUND';if(navigator.vibrate)navigator.vibrate(50);return;}
+      if(resolved.ambiguous){$('scanResultText').textContent='Multiple devices share this QR. '+(resolved.matches||[]).map(x=>x.assetTag||x.assetId).join(', ')+'. Check QR Issues.';$('scannerState').textContent='MULTIPLE MATCHES';return;}
+      if(resolved.offline){$('scanResultText').textContent='Reconnect to verify this code. No device has been added.';$('scannerState').textContent='CONNECTION REQUIRED';return;}
+      closeSheet(scanBackdrop);pendingScanForAdd=raw;route('add');showToast('New QR — complete device details and save');
+    }catch(e){if(job===scanRequest){$('scanResultText').textContent='Could not verify QR: '+(e.message||'Connection error');$('scannerState').textContent='TRY AGAIN';}}
+    finally{if(job===scanRequest)scanResolving=false;}
+  }
+
+  $('scanOpenBtn').addEventListener('click',()=>{if(scannedAssetId){closeSheet(scanBackdrop);openDetail(scannedAssetId)}});$('scanAddBtn').addEventListener('click',()=>{closeSheet(scanBackdrop);pendingScanForAdd=scannedRaw;route('add')});
+
+  function setupVisibilitySync(){document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden'){if(currentRoute==='scan')stopCamera().catch(()=>{});return}if(document.visibilityState==='visible'){if(currentRoute==='scan')setTimeout(()=>startCamera().catch(()=>{}),220);if(loadConnection()&&Date.now()-lastSyncAt>120000)syncInventory(false).catch(()=>{})}})}
+  async function pollRemoteMeta(){if(document.visibilityState!=='visible'||!loadConnection())return;try{const p=await jsonpRequest('meta',{},12000);if(p.version)setBackendVersion(p.version);if(typeof p.totalValue==='number')animateAssetValue(p.totalValue);const stamp=String(p.generatedAt||'');if(stamp&&lastServerGeneration&&stamp!==lastServerGeneration){quietBackgroundSync(80)}else if(stamp&&!lastServerGeneration){lastServerGeneration=stamp}}catch(e){}}
+  function startMetaPolling(){if(metaPollTimer)clearInterval(metaPollTimer);metaPollTimer=setInterval(pollRemoteMeta,12000);window.addEventListener('focus',pollRemoteMeta);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pollRemoteMeta()})}
+
+  const cache=loadCache();if(cache&&cache.assets&&cache.assets.length){applyAssets(cache.assets,false);setSync('','CACHE')}else $('visibleCount').textContent='—';
+  setTimeout(()=>splash.classList.add('hidden'),standalone()?480:620);
+  if(loadConnection())connectApi();else{setSync('','SETUP');syncBanner.classList.remove('hidden')}
+  setupVisibilitySync();
+  startMetaPolling();
+  $('appThemeBtn').addEventListener('click',toggleTheme);$('moreThemeBtn').addEventListener('click',toggleTheme);
+  syncAppHeight();window.addEventListener('resize',syncAppHeight,{passive:true});if(window.visualViewport)window.visualViewport.addEventListener('resize',syncAppHeight,{passive:true});
+  let initialTheme='dark';try{initialTheme=localStorage.getItem(THEME_STORAGE_KEY)||'dark'}catch(e){}applyTheme(initialTheme,false);
+  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=769').catch(()=>{}));
+
+  const initial=(location.hash||'#home').slice(1);if(initial.startsWith('detail/')){const id=decodeURIComponent(initial.slice(7));setTimeout(()=>openDetail(id),100)}else route(['home','search','scan','add','more'].includes(initial)?initial:'home',false);
+})();
