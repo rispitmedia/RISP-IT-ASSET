@@ -3,7 +3,7 @@
 <head>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=5">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#06101c">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +13,7 @@
   <link rel="manifest" href="./manifest.webmanifest?v=772">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=7620">
+  <link rel="stylesheet" href="./styles.css?v=7621">
 </head>
 <body>
   <div class="splash" id="splash">
@@ -27,7 +27,7 @@
   </div>
 
 
-  <div class="app-lock-overlay hidden" id="appLockOverlay" role="dialog" aria-modal="true" aria-labelledby="appLockTitle">
+  <div class="app-lock-overlay" id="appLockOverlay" role="dialog" aria-modal="true" aria-labelledby="appLockTitle">
     <div class="app-lock-card">
       <img src="./icon-192.png" alt="RISP" class="app-lock-logo">
       <div class="app-lock-topline"><div class="app-lock-eyebrow"><strong>RISP IT ASSET</strong><span>PRIVATE ACCESS</span></div><div class="language-picker lock-language-picker"><button type="button" id="appLockLanguageBtn" aria-haspopup="true" aria-expanded="false"><span class="flag-icon flag-gb" aria-hidden="true"></span><span>⌄</span></button><div class="language-menu" id="appLockLanguageMenu" hidden><button type="button" data-app-lang="en"><span class="flag-icon flag-gb" aria-hidden="true"></span> English</button><button type="button" data-app-lang="th"><span class="flag-icon flag-th" aria-hidden="true"></span> ไทย</button></div></div></div>
@@ -71,7 +71,7 @@
             <button type="button" data-app-lang="th"><span>🇹🇭</span> ไทย</button>
           </div>
         </div>
-        
+        <button class="theme-chip" id="lockAppBtn" type="button" aria-label="Lock app">LOCK</button>
         <button class="theme-chip" id="appThemeBtn" type="button" aria-label="Toggle theme">☀</button>
         <button class="sync-chip" id="syncButton" type="button">
           <span class="sync-dot" id="syncDot"></span>
@@ -286,7 +286,7 @@
               <label class="photo-picker">UPLOAD PHOTO<input id="addPhotoLibraryInput" type="file" accept="image/*"></label>
               <label class="photo-picker">TAKE PHOTO<input id="addPhotoCameraInput" type="file" accept="image/*" capture="environment"></label>
             </div>
-            <button class="photo-ai-button" id="addPhotoAiBtn" type="button" disabled>REMOVE BACKGROUND — AI</button>
+            <button class="photo-ai-button" id="addPhotoAiBtn" type="button" disabled>REMOVE BACKGROUND — FAST</button>
             <img id="addPhotoPreview" alt="" hidden>
           </div>
           <button class="save-button" id="addSaveBtn" type="submit">＋ ADD DEVICE</button>
@@ -308,7 +308,7 @@
               <label class="photo-picker">UPLOAD PHOTO<input id="editPhotoLibraryInput" type="file" accept="image/*"></label>
               <label class="photo-picker">TAKE PHOTO<input id="editPhotoCameraInput" type="file" accept="image/*" capture="environment"></label>
             </div>
-            <button class="photo-ai-button" id="editPhotoAiBtn" type="button" disabled>REMOVE BACKGROUND — AI</button>
+            <button class="photo-ai-button" id="editPhotoAiBtn" type="button" disabled>REMOVE BACKGROUND — FAST</button>
             <img id="editPhotoPreview" alt="" hidden>
           </div>
           <div class="immutable-note"><span>⌁</span><div><b>ASSET ID LOCKED</b><p id="editAssetIdText">—</p></div></div>
@@ -328,6 +328,7 @@
           <button id="moreSyncBtn" type="button"><span class="more-icon">↻</span><div><b>Sync inventory</b><small>Pull fresh data from ASSET_DATABASE</small></div><i>›</i></button>
           <button id="moreConnectionBtn" type="button"><span class="more-icon">⚡</span><div><b>V7 API connection</b><small>Deployment URL and connection key</small></div><i>›</i></button>
           <button id="moreThemeBtn" type="button"><span class="more-icon">◐</span><div><b>Appearance</b><small id="themeModeLabel">Dark theme</small></div><i>›</i></button>
+          <button id="changeAppPinBtn" type="button"><span class="more-icon">⌑</span><div><b>Change app passcode</b><small>Update the PIN used to unlock this app</small></div><i>›</i></button>
           <button id="openAdminWebBtn" type="button"><span class="more-icon">⌘</span><div><b>Open Admin Web</b><small>Private Admin + QR Label Studio</small></div><i>↗</i></button>
         </div>
         <div class="system-card">
@@ -337,7 +338,7 @@
           <div><small>ENGINEERED</small><b>NEWVANA</b></div>
         </div>
         <div class="safe-note">
-          <span>🛡️</span><div><b>SPLIT-SECURITY BRIDGE</b><p>Normal asset data stays on the fast V7 bridge. Private credentials are fetched on demand and are not saved in the offline inventory cache.</p></div>
+          <span>🛡️</span><div><b>SPLIT-SECURITY BRIDGE</b><p>Normal asset data stays on the fast V7 bridge. Private credentials are fetched only after Super Admin proof and are never saved in the offline inventory cache.</p></div>
         </div>
         <div class="bottom-spacer"></div>
       </section>
@@ -345,7 +346,19 @@
 
 
 
-
+  <div class="pin-change-overlay hidden" id="pinChangeOverlay" role="dialog" aria-modal="true" aria-labelledby="pinChangeTitle">
+    <form class="pin-change-card" id="pinChangeForm">
+      <div class="pin-change-head"><div><small>SECURITY SETTINGS</small><h2 id="pinChangeTitle">Change app passcode</h2><p>Enter your current PIN, then choose a new 6–12 digit PIN.</p></div><button type="button" id="pinChangeClose" aria-label="Close">×</button></div>
+      <label for="pinCurrent">CURRENT PIN</label>
+      <input id="pinCurrent" type="password" inputmode="numeric" autocomplete="current-password" maxlength="12" required>
+      <label for="pinNew">NEW PIN</label>
+      <input id="pinNew" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" maxlength="12" required>
+      <label for="pinConfirm">CONFIRM NEW PIN</label>
+      <input id="pinConfirm" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" maxlength="12" required>
+      <div class="pin-change-error" id="pinChangeError" role="status"></div>
+      <div class="pin-change-actions"><button type="button" class="secondary-wide" id="pinChangeCancel">CANCEL</button><button type="submit" class="save-button" id="pinChangeSave">SAVE NEW PIN</button></div>
+    </form>
+  </div>
 
     <nav class="tabbar" aria-label="Main navigation">
       <button class="tab active" data-route="home" aria-label="Home">
@@ -373,7 +386,7 @@
       <p class="connect-copy">The API URL and connection key are saved only on this device. Updating the app does not normally require pairing again.</p>
       <label class="connect-field"><span>V7 API DEPLOYMENT URL</span><input id="apiUrlInput" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec"></label>
       <label class="connect-field"><span>CONNECTION KEY</span><div class="key-field"><input id="apiKeyInput" type="password" autocomplete="off" placeholder="Paste your connection key"><button id="toggleKeyBtn" type="button">SHOW</button></div></label>
-      <div class="connect-note"><b>FULL CONTROL • SPLIT SECURITY</b><p>Normal inventory and device credentials use the connected V7 API.</p></div>
+      <div class="connect-note"><b>FULL CONTROL • SPLIT SECURITY</b><p>Normal inventory uses the standard bridge. Private credentials require a separate short-lived Super Admin unlock.</p></div>
       <div class="connect-actions"><button class="sheet-secondary" id="closeConnectionBtn" type="button">CANCEL</button><button class="sheet-primary" id="saveConnectionBtn" type="button">SAVE & CONNECT</button></div>
       <button class="disconnect-link" id="disconnectBtn" type="button">Forget saved connection</button>
     </div>
@@ -397,7 +410,7 @@
         <label class="sheet-primary file-button big">UPLOAD PHOTO<input id="detailPhotoLibraryInput" type="file" accept="image/*"></label>
         <label class="sheet-primary file-button big">TAKE PHOTO<input id="detailPhotoCameraInput" type="file" accept="image/*" capture="environment"></label>
       </div>
-      <button class="photo-ai-button" id="detailPhotoAiBtn" type="button" disabled>REMOVE BACKGROUND — AI</button>
+      <button class="photo-ai-button" id="detailPhotoAiBtn" type="button" disabled>REMOVE BACKGROUND — FAST</button>
       <div class="connect-actions"><button class="sheet-secondary" id="closePhotoBtn" type="button">CANCEL</button><button class="sheet-primary" id="savePhotoBtn" type="button" disabled>SAVE PHOTO</button></div>
     </div>
   </div>
@@ -447,14 +460,14 @@
     <div class="sheet credential-sheet">
       <div class="grabber"></div>
       <div class="connect-head"><div class="connect-icon">🔐</div><div><small>SUPER ADMIN</small><h2>Private credentials</h2></div></div>
-      <p class="connect-copy" id="credentialSheetCopy">Credentials are loaded directly from the connected asset database.</p>
-      <div id="credentialUnlockPane" hidden>
+      <p class="connect-copy" id="credentialSheetCopy">Enter your Super Admin PIN once. The unlocked session expires automatically and is not written to local storage.</p>
+      <div id="credentialUnlockPane">
         <label class="connect-field"><span>SUPER ADMIN PIN</span><div class="key-field"><input id="credentialPinInput" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit PIN" maxlength="6"><button id="toggleCredentialPinBtn" type="button">SHOW</button></div></label>
         <div class="connect-actions"><button class="sheet-secondary" id="closeCredentialBtn" type="button">CANCEL</button><button class="sheet-primary" id="unlockCredentialBtn" type="button">UNLOCK</button></div>
       </div>
       <div id="credentialDataPane" hidden>
         <div class="credential-grid" id="credentialGrid"></div>
-        <div class="connect-actions"><button class="sheet-primary" id="closeCredentialDataBtn" type="button">DONE</button></div>
+        <div class="connect-actions"><button class="sheet-secondary" id="lockCredentialBtn" type="button">LOCK</button><button class="sheet-primary" id="closeCredentialDataBtn" type="button">DONE</button></div>
       </div>
     </div>
   </div>
@@ -505,6 +518,6 @@
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="./photo-tools.js?v=7620"></script>
-  <script src="./app.js?v=7620"></script>
+  <script src="./app.js?v=7621"></script>
 </body>
 </html>
