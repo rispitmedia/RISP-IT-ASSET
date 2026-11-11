@@ -49,7 +49,6 @@
   const categoryRail=$('categoryRail'),assetList=$('assetList');
   const searchInput=$('searchInput'),searchResults=$('searchResults'),searchEmpty=$('searchEmpty'),searchResultCount=$('searchResultCount');
   const connectionSheet=$('connectionSheet'),statusSheet=$('statusSheet'),photoSheet=$('photoSheet'),deleteSheet=$('deleteSheet');
-  let connectionOpenedFromLock=false;
   const apiUrlInput=$('apiUrlInput'),apiKeyInput=$('apiKeyInput');
   const credentialSheet=$('credentialSheet'),credentialPinInput=$('credentialPinInput'),credentialAccountSheet=$('credentialAccountSheet'),credentialAccountOptions=$('credentialAccountOptions'),credentialAccountCopy=$('credentialAccountCopy');
   const qrPrintPortal=$('qrPrintPortal'),generatedQrCopies=$('generatedQrCopies');
@@ -96,7 +95,7 @@
   const credentialDetailLoads=new Map();
   const protectedPhotoCache=new Map();
 
-  // V7.6.18: fixed six-digit PIN validation, visible submit fallback, and guarded auto-submit, full-screen iPhone safe-area layout, balanced credential QR label, and faster live sync.
+  // V7.6.17: reliable EN/TH language menu, full-screen iPhone safe-area layout, balanced credential QR label, and faster live sync.
   let scanRequest=0,scanResolving=false,cameraStarting=null,cameraEpoch=0,cameraWanted=false;
   const scanBackdrop=document.createElement('div');
   scanBackdrop.id='scanResultBackdrop';scanBackdrop.className='sheet-backdrop scan-result-backdrop';scanBackdrop.setAttribute('aria-hidden','true');
@@ -175,7 +174,7 @@
     try{const u=new URL(rawUrl);if(u.protocol!=='https:'||u.hostname.toLowerCase()!=='script.google.com')return'';let path=u.pathname.replace(/\/+$/,'');if(!/\/exec$/i.test(path)||path.indexOf('/s/')===-1)return'';u.search='';u.hash='';u.pathname=path;return u.toString().replace(/\/+$/,'')}catch(e){return''}
   }
   function loadConnection(){try{const raw=localStorage.getItem(CONNECTION_STORAGE_KEY);if(!raw)return null;const p=JSON.parse(raw);const url=normalizeApiUrl(p&&p.url);const key=String(p&&p.key||'').trim();if(!url||key.length<24)return null;return{url,key}}catch(e){return null}}
-  function saveConnection(url,key){localStorage.setItem(CONNECTION_STORAGE_KEY,JSON.stringify({url,key,savedAt:Date.now()}))}
+  function saveConnection(url,key){try{localStorage.setItem(CONNECTION_STORAGE_KEY,JSON.stringify({url,key,savedAt:Date.now()}));return true}catch(e){return false}}
   function forgetConnection(){try{localStorage.removeItem(CONNECTION_STORAGE_KEY)}catch(e){}serverConnected=false;setSync('','SETUP');syncBanner.classList.remove('hidden');$('syncBannerTitle').textContent='V7 API not paired';$('syncBannerText').textContent='Tap SETUP and enter the V7 API deployment URL + connection key.'}
   function syncSheetState(){document.documentElement.classList.toggle('sheet-open',!!document.querySelector('.sheet-backdrop.open'))}
   function openSheet(el){el.classList.add('open');el.setAttribute('aria-hidden','false');syncSheetState()}
@@ -393,6 +392,7 @@
     const lockTitle=$('appLockTitle');if(lockTitle)lockTitle.textContent=appLanguage==='th'?'ปลดล็อก RISP IT ASSET':'Unlock RISP IT ASSET';
     const lockDesc=$('appLockDescription');if(lockDesc)lockDesc.textContent=appLanguage==='th'?'กรอกรหัส PIN 6 หลักเพื่อเข้าใช้งานแอป':'Enter your 6-digit PIN to access the app.';
     const lockButton=$('appUnlockButton');if(lockButton)lockButton.textContent=appLanguage==='th'?'ปลดล็อกแอป':'UNLOCK APP';
+    const setupButton=$('appLockSetupButton');if(setupButton)setupButton.textContent=appLanguage==='th'?'ตั้งค่าการเชื่อมต่อ API':'SET UP API CONNECTION';
     const pinInput=$('appLockPin');if(pinInput)pinInput.setAttribute('aria-label',appLanguage==='th'?'รหัส PIN 6 หลัก':'Six digit access PIN');
 
     document.querySelectorAll('[data-app-lang]').forEach(x=>x.classList.toggle('selected',x.dataset.appLang===appLanguage));
@@ -471,9 +471,7 @@
   function quietBackgroundSync(delay){setTimeout(async()=>{try{const p=await jsonpRequest('bootstrap',{},25000);if(p.version)setBackendVersion(p.version);if(p.generatedAt)lastServerGeneration=String(p.generatedAt);if(Array.isArray(p.assets))applyAssets(p.assets,true)}catch(e){}},Math.max(250,Number(delay)||650))}
 
   syncButton.addEventListener('click',()=>loadConnection()?syncInventory(true).catch(showApiError):openConnectionSheet());$('openBackendBtn').addEventListener('click',openConnectionSheet);$('moreSyncBtn').addEventListener('click',()=>syncInventory(true).catch(showApiError));$('moreConnectionBtn').addEventListener('click',openConnectionSheet);
-  function closeConnectionAndRestoreLock(){closeSheet(connectionSheet);if(connectionOpenedFromLock){connectionOpenedFromLock=false;$('appLockOverlay').classList.remove('hidden');document.body.classList.add('app-is-locked')}}
-  $('appLockSetupBtn').addEventListener('click',()=>{connectionOpenedFromLock=true;$('appLockOverlay').classList.add('hidden');document.body.classList.remove('app-is-locked');openConnectionSheet()});
-  $('closeConnectionBtn').addEventListener('click',closeConnectionAndRestoreLock);connectionSheet.addEventListener('click',e=>{if(e.target===connectionSheet)closeConnectionAndRestoreLock()});$('toggleKeyBtn').addEventListener('click',()=>{const show=apiKeyInput.type==='password';apiKeyInput.type=show?'text':'password';$('toggleKeyBtn').textContent=show?'HIDE':'SHOW'});$('saveConnectionBtn').addEventListener('click',()=>{const url=normalizeApiUrl(apiUrlInput.value),key=String(apiKeyInput.value||'').trim();if(!url){showToast('Paste a valid Apps Script /exec URL');return}if(key.length<24){showToast('Connection key looks too short');return}saveConnection(url,key);closeSheet(connectionSheet);if(connectionOpenedFromLock){connectionOpenedFromLock=false;$('appLockOverlay').classList.remove('hidden');document.body.classList.add('app-is-locked')}showToast('API paired — connecting…');connectApi()});$('disconnectBtn').addEventListener('click',()=>{forgetConnection();closeSheet(connectionSheet);showToast('Connection forgotten')});$('openAdminWebBtn').addEventListener('click',()=>window.open(LEGACY_ADMIN_URL,'_blank','noopener'));function openPrivateAdmin(){const u=LEGACY_ADMIN_URL+(currentDetailId?'?id='+encodeURIComponent(currentDetailId):'');window.open(u,'_blank','noopener')}if($('openPrivateCredentialsBtn'))$('openPrivateCredentialsBtn').addEventListener('click',openPrivateCredentialSheet);
+  $('closeConnectionBtn').addEventListener('click',()=>closeSheet(connectionSheet));connectionSheet.addEventListener('click',e=>{if(e.target===connectionSheet)closeSheet(connectionSheet)});$('toggleKeyBtn').addEventListener('click',()=>{const show=apiKeyInput.type==='password';apiKeyInput.type=show?'text':'password';$('toggleKeyBtn').textContent=show?'HIDE':'SHOW'});$('saveConnectionBtn').addEventListener('click',()=>{const url=normalizeApiUrl(apiUrlInput.value),key=String(apiKeyInput.value||'').trim();if(!url){showToast('Paste a valid Apps Script /exec URL');return}if(key.length<24){showToast('Connection key looks too short');return}if(!saveConnection(url,key)){showToast('Unable to save connection on this device. Check Chrome site storage settings.',4200);return}closeSheet(connectionSheet);showToast('API paired — connecting…');connectApi()});$('disconnectBtn').addEventListener('click',()=>{forgetConnection();closeSheet(connectionSheet);showToast('Connection forgotten')});$('openAdminWebBtn').addEventListener('click',()=>window.open(LEGACY_ADMIN_URL,'_blank','noopener'));function openPrivateAdmin(){const u=LEGACY_ADMIN_URL+(currentDetailId?'?id='+encodeURIComponent(currentDetailId):'');window.open(u,'_blank','noopener')}if($('openPrivateCredentialsBtn'))$('openPrivateCredentialsBtn').addEventListener('click',openPrivateCredentialSheet);
 
   function isKnownOption(list,val){return list.some(x=>normalize(x)===normalize(val))}
   function selectWithOtherHtml(id,list,val,emptyLabel){val=String(val||'').trim();const base=list.filter(x=>normalize(x)!=='OTHER');const custom=!!val&&!isKnownOption(base,val)&&normalize(val)!=='OTHER';const chooseOther=custom||normalize(val)==='OTHER';let options=emptyLabel?'<option value="">'+esc(emptyLabel)+'</option>':'';options+=base.map(x=>'<option value="'+esc(x)+'" '+(normalize(x)===normalize(val)?'selected':'')+'>'+esc(x)+'</option>').join('');options+='<option value="__OTHER__" '+(chooseOther?'selected':'')+'>Other (specify)</option>';return'<div class="select-custom-wrap"><select id="'+id+'" data-custom-other="1">'+options+'</select><input id="'+id+'_OTHER" class="custom-other-input" type="text" value="'+esc(custom?val:'')+'" placeholder="Please specify" '+(chooseOther?'':'hidden')+'></div>'}
@@ -654,53 +652,29 @@
   // On-screen numeric PIN keypad; readonly input prevents the iOS keyboard from opening.
   const appPinField=$('appLockPin');
   const appPinPad=$('appLockKeypad');
-  let appPinVerifying=false;
   if(appPinPad&&appPinField){
     appPinPad.addEventListener('click',e=>{
-      const key=e.target.closest('[data-pin-key]');if(!key||appPinVerifying)return;
+      const key=e.target.closest('[data-pin-key]');if(!key)return;
       const action=key.dataset.pinKey;let value=String(appPinField.value||'');
       if(action==='clear')value='';
       else if(action==='back')value=value.slice(0,-1);
       else if(/^\d$/.test(action)&&value.length<6)value+=action;
-      appPinField.value=value;
-      $('appLockError').textContent='';
+      appPinField.value=value;$('appLockError').textContent='';
       appPinField.dispatchEvent(new Event('input',{bubbles:true}));
-      // Auto-submit on the sixth digit; the visible Unlock button remains as a fallback.
-      if(value.length===6){
-        const form=$('appLockForm');
-        if(form){
-          if(typeof form.requestSubmit==='function')form.requestSubmit($('appUnlockButton'));
-          else form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));
-        }
-      }
+      if(value.length===6){const form=$('appLockForm');if(form)form.requestSubmit();}
     });
   }
+  // API setup is intentionally available before app unlock for first-time devices.
+  $('appLockSetupButton').addEventListener('click',()=>openConnectionSheet());
+
   // App-wide access gate. Token is session-scoped and expires server-side.
   $('appLockForm').addEventListener('submit',async e=>{
-    e.preventDefault();
-    if(appPinVerifying)return;
-    const pin=String(appPinField&&appPinField.value||'').trim();
-    if(!/^\d{6}$/.test(pin)){
-      $('appLockError').textContent=appLanguage==='th'?'กรุณากรอกรหัส PIN ให้ครบ 6 หลัก':'Please enter all 6 digits';
-      return;
-    }
-    appPinVerifying=true;
-    const btn=$('appUnlockButton'),old=btn.textContent;
-    btn.disabled=true;btn.textContent=appLanguage==='th'?'กำลังตรวจสอบ…':'VERIFYING…';
-    if(appPinPad)appPinPad.querySelectorAll('button').forEach(k=>k.disabled=true);
-    $('appLockError').textContent='';
-    try{
-      await unlockWholeApp(pin);
-      appPinField.value='';
-      showToast(appLanguage==='th'?'ปลดล็อกแอปแล้ว':'App unlocked');
-    }catch(err){
-      $('appLockError').textContent=err.message|| (appLanguage==='th'?'รหัสไม่ถูกต้อง หรือไม่สามารถเชื่อมต่อได้':'Incorrect PIN or connection error');
-      appPinField.value='';
-    }finally{
-      appPinVerifying=false;
-      btn.disabled=false;btn.textContent=old;
-      if(appPinPad)appPinPad.querySelectorAll('button').forEach(k=>k.disabled=false);
-    }
+    e.preventDefault();const pin=String($('appLockPin').value||'').trim();
+    if(!/^\d{6}$/.test(pin)){$('appLockError').textContent=appLanguage==='th'?'กรุณากดรหัสตัวเลข 6 หลัก':'Please enter all 6 digits';return}
+    const btn=$('appUnlockButton'),old=btn.textContent;btn.disabled=true;btn.textContent='VERIFYING…';$('appLockError').textContent='';
+    try{await unlockWholeApp(pin);$('appLockPin').value='';showToast(appLanguage==='th'?'ปลดล็อกแอปแล้ว':'App unlocked')}
+    catch(err){$('appLockError').textContent=err.message||'รหัสไม่ถูกต้อง หรือไม่สามารถเชื่อมต่อได้';$('appLockPin').value='';}
+    finally{btn.disabled=false;btn.textContent=old}
   });
   $('lockAppBtn').addEventListener('click',()=>showAppLock('แอปถูกล็อกแล้ว'));
 

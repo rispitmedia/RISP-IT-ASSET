@@ -701,18 +701,8 @@ button,input,select,textarea{font-family:var(--risp-font)!important}
 .language-menu button{white-space:nowrap!important;justify-content:flex-start!important;padding:10px 13px!important;font-size:13px!important}
 .language-picker>button{white-space:nowrap!important;min-width:62px!important}
 
-/* V7.6.18 — visible PIN submit fallback; keypad still auto-submits at six digits. */
-#appUnlockButton{
-  display:flex!important;width:100%!important;min-height:54px!important;margin:2px 0 0!important;
-  padding:0 18px!important;align-items:center!important;justify-content:center!important;
-  border:1px solid rgba(132,202,255,.48)!important;border-radius:14px!important;
-  background:linear-gradient(135deg,#43a9f4 0%,#176db5 100%)!important;color:#fff!important;
-  font-size:14px!important;font-weight:900!important;letter-spacing:.12em!important;
-  box-shadow:0 8px 22px rgba(22,119,195,.25),inset 0 1px rgba(255,255,255,.2)!important;
-}
-#appUnlockButton:active{transform:translateY(1px)!important;filter:brightness(1.08)!important}
-#appUnlockButton:disabled,.app-pin-keypad button:disabled{opacity:.58!important;cursor:wait!important}
 
-/* V7.6.19 — allow first-time API pairing without unlocking the app */
-.lock-setup-button{display:block!important;width:100%;height:42px!important;margin-top:8px;border:1px solid rgba(91,157,208,.42)!important;border-radius:12px!important;background:rgba(18,47,73,.72)!important;color:#9fcdf0!important;font-size:10px!important;font-weight:900!important;letter-spacing:.1em!important;cursor:pointer}
-.lock-setup-button:active{background:rgba(43,103,151,.7)!important}
+/* V7.6.18: first-run API setup is accessible from the locked PIN screen. */
+.app-lock-setup-button{display:block;width:100%;min-height:46px;margin:12px 0 0;border:1px solid rgba(91,157,208,.55);border-radius:13px;background:rgba(20,49,75,.78);color:#a9d8ff;font-size:10px;font-weight:900;letter-spacing:.09em}
+.app-lock-setup-button:active{background:rgba(39,91,132,.9)}
+#connectionSheet.open{z-index:100001!important}
