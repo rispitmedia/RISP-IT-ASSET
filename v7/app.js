@@ -482,7 +482,7 @@
     if(!file)return;const job=++photoJobs[mode],prefix=mode==='edit'?'edit':'add',preview=$(prefix+'PhotoPreview'),button=$(prefix+'SaveBtn'),aiButton=$(prefix+'PhotoAiBtn');
     if(mode==='edit'){editPhotoFile=file;editPhotoPrepared=null}else{addPhotoFile=file;addPhotoPrepared=null}
     preview.hidden=true;button.disabled=true;if(aiButton)aiButton.disabled=true;
-    try{const d=useAi?await window.RISPPhoto.prepareAI(file):await compressImage(file);if(job!==photoJobs[mode])return;if(mode==='edit')editPhotoPrepared=d;else addPhotoPrepared=d;preview.src=d.dataUrl;preview.hidden=false;showToast(d.backgroundRemoved?'Background removed • transparent PNG ready':'White background ready • photo ready');}
+    try{const d=useAi?await window.RISPPhoto.prepareAI(file):await compressImage(file);if(job!==photoJobs[mode])return;if(mode==='edit')editPhotoPrepared=d;else addPhotoPrepared=d;preview.src=d.dataUrl;preview.hidden=false;showToast(d.backgroundRemoved?'AI removed background • transparent PNG ready':'White background ready • photo ready');}
     catch(e){showToast(e.message||'Could not prepare photo');}
     finally{if(job===photoJobs[mode]){button.disabled=false;if(aiButton)aiButton.disabled=!((mode==='edit'?editPhotoFile:addPhotoFile));}}
   }
@@ -760,7 +760,7 @@
   $('appThemeBtn').addEventListener('click',toggleTheme);$('moreThemeBtn').addEventListener('click',toggleTheme);
   syncAppHeight();window.addEventListener('resize',syncAppHeight,{passive:true});if(window.visualViewport)window.visualViewport.addEventListener('resize',syncAppHeight,{passive:true});
   let initialTheme='dark';try{initialTheme=localStorage.getItem(THEME_STORAGE_KEY)||'dark'}catch(e){}applyTheme(initialTheme,false);
-  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=7618').catch(()=>{}));
+  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=7620').catch(()=>{}));
 
   const initial=(location.hash||'#home').slice(1);if(initial.startsWith('detail/')){const id=decodeURIComponent(initial.slice(7));setTimeout(()=>openDetail(id),100)}else route(['home','search','scan','add','more'].includes(initial)?initial:'home',false);
 })();

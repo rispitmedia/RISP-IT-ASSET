@@ -1,86 +1,66 @@
-/* RISP IT ASSET V7.6.17 — local high-quality white-background cutout. */
+/* RISP IT ASSET V7.6.20 — AI cutout with real transparent PNG output. */
 (function (root) {
   'use strict';
-  const normalCache = new WeakMap(), cutCache = new WeakMap();
-
+  var aiModulePromise = null;
+  var normalCache = new WeakMap(), aiCache = new WeakMap();
+  function validate(file) {
+    if (!file || !/^image\//.test(file.type)) throw new Error('Select an image file.');
+    if (file.size > 30 * 1024 * 1024) throw new Error('Choose a photo smaller than 30 MB.');
+  }
   function read(blob) {
-    return new Promise((resolve, reject) => {
-      const r = new FileReader(); r.onload = () => resolve(r.result);
-      r.onerror = () => reject(new Error('Cannot read this image.')); r.readAsDataURL(blob);
+    return new Promise(function(resolve,reject){var r=new FileReader();r.onload=function(){resolve(r.result);};r.onerror=function(){reject(new Error('Cannot read this image.'));};r.readAsDataURL(blob);});
+  }
+  function loadCanvas(blob,maxSize) {
+    return new Promise(function(resolve,reject){
+      var url=URL.createObjectURL(blob),img=new Image();
+      img.onload=function(){URL.revokeObjectURL(url);var scale=Math.min(1,maxSize/Math.max(img.naturalWidth,img.naturalHeight));var c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.naturalWidth*scale));c.height=Math.max(1,Math.round(img.naturalHeight*scale));c.getContext('2d',{willReadFrequently:true}).drawImage(img,0,0,c.width,c.height);resolve(c);};
+      img.onerror=function(){URL.revokeObjectURL(url);reject(new Error('Cannot open this image. Use JPG or PNG.'));};img.src=url;
     });
   }
-  function toBlob(canvas, mime, quality) {
-    return new Promise((resolve, reject) => canvas.toBlob(b => b ? resolve(b) : reject(new Error('Cannot prepare image.')), mime || 'image/png', quality == null ? 1 : quality));
+  function canvasBlob(canvas,type,quality){return new Promise(function(resolve,reject){canvas.toBlob(function(b){b?resolve(b):reject(new Error('Could not encode transparent PNG.'));},type,quality);});}
+  function deadline(promise,ms,label){var timer;return Promise.race([promise,new Promise(function(_,reject){timer=setTimeout(function(){reject(new Error(label||'Background removal timed out.'));},ms);})]).then(function(v){clearTimeout(timer);return v;},function(e){clearTimeout(timer);throw e;});}
+  function progressPanel(){
+    var el=document.createElement('div');el.setAttribute('role','status');el.setAttribute('aria-live','polite');
+    el.style.cssText='position:fixed;inset:0;z-index:999999;display:grid;place-items:center;padding:20px;background:rgba(2,9,17,.76);backdrop-filter:blur(8px);font:14px/1.5 system-ui;color:#eff7ff';
+    el.innerHTML='<div style="width:min(390px,100%);padding:24px;border-radius:20px;background:#0c1a2a;border:1px solid #34516f;box-shadow:0 24px 80px #0008"><b style="font-size:18px">Removing background with AI</b><p style="margin:10px 0 0;color:#9bb3c9">Loading AI model…</p><small style="color:#718ba4">Keep this page open. The first run may take a while.</small></div>';
+    document.body.appendChild(el);return {el,status:el.querySelector('p')};
   }
-  async function imageCanvas(blob, maxSize) {
-    const url = URL.createObjectURL(blob), img = new Image();
-    try {
-      await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('Cannot open this image. Use a JPG or PNG photo.'));img.src=url;});
-      const scale=Math.min(1,maxSize/Math.max(img.naturalWidth,img.naturalHeight));
-      const c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.naturalWidth*scale));c.height=Math.max(1,Math.round(img.naturalHeight*scale));
-      c.getContext('2d',{willReadFrequently:true}).drawImage(img,0,0,c.width,c.height);return c;
-    } finally { URL.revokeObjectURL(url); }
+  async function removeBackgroundAI(file){
+    validate(file);var ui=progressPanel();
+    try{
+      var input=await loadCanvas(file,1800);var inputBlob=await canvasBlob(input,'image/png');
+      if(!aiModulePromise){
+        aiModulePromise=import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.7.0/+esm').catch(function(first){
+          return import('https://esm.sh/@imgly/background-removal@1.7.0?bundle').catch(function(second){aiModulePromise=null;throw new Error('โหลด AI ไม่สำเร็จ ตรวจสอบอินเทอร์เน็ตแล้วลองใหม่ ('+((second&&second.message)||(first&&first.message)||'CDN unavailable')+')');});
+        });
+      }
+      ui.status.textContent='Loading AI model…';
+      var mod=await deadline(aiModulePromise,90000,'โหลด AI เกินเวลา กรุณาลองใหม่');
+      var remove=mod.removeBackground||mod.default;
+      if(typeof remove!=='function')throw new Error('AI background-removal module is unavailable.');
+      ui.status.textContent='AI is separating the device from its background…';
+      var cut=await deadline(remove(inputBlob,{
+        model:'isnet_quint8',device:'cpu',output:{format:'image/png',quality:1},
+        progress:function(key,current,total){if(!ui.el.isConnected)return;var pct=total?Math.round(current/total*100):0;ui.status.textContent=String(key||'').toLowerCase().indexOf('fetch')===0?'Downloading AI model… '+pct+'%':'Removing background… '+pct+'%';}
+      }),240000,'AI ลบพื้นหลังเกินเวลา กรุณาลองรูปที่มีขนาดเล็กลง');
+      if(!(cut instanceof Blob))throw new Error('AI did not return an image.');
+      var c=await loadCanvas(cut,1600),ctx=c.getContext('2d',{willReadFrequently:true}),im=ctx.getImageData(0,0,c.width,c.height),d=im.data;
+      var minX=c.width,minY=c.height,maxX=-1,maxY=-1;
+      for(var y=0;y<c.height;y++)for(var x=0;x<c.width;x++){if(d[(y*c.width+x)*4+3]>12){if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}}
+      if(maxX<minX||maxY<minY)throw new Error('AI could not detect the device. Try another photo.');
+      var pad=Math.max(12,Math.round(Math.max(maxX-minX+1,maxY-minY+1)*.035));
+      minX=Math.max(0,minX-pad);minY=Math.max(0,minY-pad);maxX=Math.min(c.width-1,maxX+pad);maxY=Math.min(c.height-1,maxY+pad);
+      var crop=document.createElement('canvas');crop.width=maxX-minX+1;crop.height=maxY-minY+1;
+      crop.getContext('2d').putImageData(ctx.getImageData(minX,minY,crop.width,crop.height),0,0);
+      var out=document.createElement('canvas');out.width=1200;out.height=1200;var o=out.getContext('2d');o.clearRect(0,0,1200,1200);o.imageSmoothingEnabled=true;o.imageSmoothingQuality='high';
+      var scale=Math.min(1080/crop.width,1080/crop.height),w=crop.width*scale,h=crop.height*scale;o.drawImage(crop,(1200-w)/2,(1200-h)/2,w,h);
+      var png=await canvasBlob(out,'image/png');
+      return {dataUrl:await read(png),fileName:String(file.name||'device').replace(/\.[^.]+$/,'')+'-no-bg.png',mimeType:'image/png',blob:png,backgroundRemoved:true,whiteBackground:false};
+    } finally {if(ui.el&&ui.el.remove)ui.el.remove();}
   }
-  function validate(file){if(!file||!/^image\//.test(file.type))throw new Error('Select an image file.');if(file.size>30*1024*1024)throw new Error('Choose a photo smaller than 30 MB.');}
-  function median(values){values.sort((a,b)=>a-b);return values[Math.floor(values.length/2)]||0;}
-  function getBorderColor(d,w,h){
-    const rs=[],gs=[],bs=[],step=Math.max(1,Math.floor(Math.max(w,h)/300));
-    for(let x=0;x<w;x+=step){let p=x*4;rs.push(d[p]);gs.push(d[p+1]);bs.push(d[p+2]);p=((h-1)*w+x)*4;rs.push(d[p]);gs.push(d[p+1]);bs.push(d[p+2]);}
-    for(let y=0;y<h;y+=step){let p=y*w*4;rs.push(d[p]);gs.push(d[p+1]);bs.push(d[p+2]);p=(y*w+w-1)*4;rs.push(d[p]);gs.push(d[p+1]);bs.push(d[p+2]);}
-    return [median(rs),median(gs),median(bs)];
-  }
-  function isBackground(r,g,b,bg){
-    const max=Math.max(r,g,b),min=Math.min(r,g,b),avg=(r+g+b)/3;
-    const chroma=max-min,dist=Math.sqrt((r-bg[0])**2+(g-bg[1])**2+(b-bg[2])**2);
-    // Accept white, warm-white, and light-grey shadows connected to the image edge.
-    return avg>184 && min>166 && chroma<78 && dist<112;
-  }
-  async function removeWhiteBackground(file){
-    const src=await imageCanvas(file,1500),w=src.width,h=src.height,ctx=src.getContext('2d',{willReadFrequently:true});
-    const image=ctx.getImageData(0,0,w,h),d=image.data,bg=getBorderColor(d,w,h);
-    const count=w*h,seen=new Uint8Array(count),stack=new Int32Array(count);let head=0,tail=0,removed=0;
-    function push(i){if(i<0||i>=count||seen[i])return;const p=i*4;if(!isBackground(d[p],d[p+1],d[p+2],bg))return;seen[i]=1;stack[tail++]=i;}
-    for(let x=0;x<w;x++){push(x);push((h-1)*w+x);}
-    for(let y=1;y<h-1;y++){push(y*w);push(y*w+w-1);}
-    while(head<tail){
-      const i=stack[head++],p=i*4;d[p+3]=0;removed++;
-      const x=i%w;if(x>0)push(i-1);if(x<w-1)push(i+1);if(i>=w)push(i-w);if(i<count-w)push(i+w);
-    }
-    if(removed<count*.003)throw new Error('Could not find a plain light background touching the photo edges. Try a photo with more white space around the device.');
-    // Smooth the cut edge: remove a thin connected halo and reduce semi-transparent fringe.
-    const fringe=new Uint8Array(count);
-    for(let i=0;i<count;i++)if(seen[i]){
-      const x=i%w;if(x>0)fringe[i-1]=1;if(x<w-1)fringe[i+1]=1;if(i>=w)fringe[i-w]=1;if(i<count-w)fringe[i+w]=1;
-    }
-    for(let i=0;i<count;i++)if(fringe[i]&&!seen[i]){
-      const p=i*4,avg=(d[p]+d[p+1]+d[p+2])/3;
-      if(avg>172){const alpha=Math.max(0,Math.min(255,Math.round((220-avg)*5.2)));d[p+3]=Math.min(d[p+3],alpha);}
-    }
-    // Find subject bounds after transparency; crop away transparent margins.
-    let minX=w,minY=h,maxX=-1,maxY=-1;
-    for(let y=0;y<h;y++)for(let x=0;x<w;x++)if(d[(y*w+x)*4+3]>18){if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}
-    if(maxX<minX||maxY<minY)throw new Error('The subject could not be isolated. Try another photo.');
-    const cw=maxX-minX+1,ch=maxY-minY+1,crop=document.createElement('canvas');crop.width=cw;crop.height=ch;
-    const cropData=ctx.createImageData(cw,ch);
-    for(let y=0;y<ch;y++){const from=((minY+y)*w+minX)*4;cropData.data.set(d.subarray(from,from+cw*4),y*cw*4);}
-    crop.getContext('2d').putImageData(cropData,0,0);
-    // High-resolution transparent output with modest clear margin, keeping original proportions.
-    const out=document.createElement('canvas'),size=1200;out.width=size;out.height=size;
-    const o=out.getContext('2d');o.clearRect(0,0,size,size);o.imageSmoothingEnabled=true;o.imageSmoothingQuality='high';
-    const scale=Math.min(1080/cw,1080/ch),dw=cw*scale,dh=ch*scale;o.drawImage(crop,(size-dw)/2,(size-dh)/2,dw,dh);
-    const blob=await toBlob(out,'image/png',1);
-    return {dataUrl:await read(blob),fileName:String(file.name||'device').replace(/\.[^.]+$/,'')+'-transparent.png',mimeType:'image/png',blob,backgroundRemoved:true,whiteBackground:false};
-  }
-  async function whiteBackground(file){
-    const source=await imageCanvas(file,1200),out=document.createElement('canvas');out.width=1200;out.height=1200;
-    const c=out.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,1200,1200);
-    const scale=Math.min(1080/source.width,1080/source.height),w=source.width*scale,h=source.height*scale;
-    c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.drawImage(source,(1200-w)/2,(1200-h)/2,w,h);
-    const blob=await toBlob(out,'image/jpeg',.9);
-    return {dataUrl:await read(blob),fileName:String(file.name||'device').replace(/\.[^.]+$/,'')+'.jpg',mimeType:'image/jpeg',blob,backgroundRemoved:false,whiteBackground:true};
-  }
+  async function normalPhoto(file){validate(file);var src=await loadCanvas(file,1200),out=document.createElement('canvas');out.width=1200;out.height=1200;var c=out.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,1200,1200);var scale=Math.min(1080/src.width,1080/src.height),w=src.width*scale,h=src.height*scale;c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.drawImage(src,(1200-w)/2,(1200-h)/2,w,h);var jpg=await canvasBlob(out,'image/jpeg',.9);return {dataUrl:await read(jpg),fileName:String(file.name||'device').replace(/\.[^.]+$/,'')+'.jpg',mimeType:'image/jpeg',blob:jpg,backgroundRemoved:false,whiteBackground:true};}
   root.RISPPhoto={
-    prepare(file){validate(file);if(normalCache.has(file))return normalCache.get(file);const p=whiteBackground(file);normalCache.set(file,p);p.catch(()=>normalCache.delete(file));return p;},
-    prepareAI(file){validate(file);if(cutCache.has(file))return cutCache.get(file);const p=removeWhiteBackground(file);cutCache.set(file,p);p.catch(()=>cutCache.delete(file));return p;}
+    prepare:function(file){validate(file);if(normalCache.has(file))return normalCache.get(file);var p=normalPhoto(file);normalCache.set(file,p);p.catch(function(){normalCache.delete(file);});return p;},
+    prepareAI:function(file){validate(file);if(aiCache.has(file))return aiCache.get(file);var p=removeBackgroundAI(file);aiCache.set(file,p);p.catch(function(){aiCache.delete(file);});return p;}
   };
 })(window);

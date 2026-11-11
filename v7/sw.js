@@ -1,6 +1,6 @@
-const CACHE_NAME='risp-it-asset-v7-6-18-no-pin';
+const CACHE_NAME='risp-it-asset-v7-6-20-no-pin-alpha';
 const CORE=[
-  './','./index.html','./asset/index.html','./styles.css?v=7618','./app.js?v=7618','./photo-tools.js?v=7618','./manifest.webmanifest?v=772',
+  './','./index.html','./asset/index.html','./styles.css?v=7620','./app.js?v=7620','./photo-tools.js?v=7620','./manifest.webmanifest?v=772',
   './icon-192.png','./icon-512.png','./apple-touch-icon.png'
 ];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});

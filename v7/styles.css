@@ -701,8 +701,6 @@ button,input,select,textarea{font-family:var(--risp-font)!important}
 .language-menu button{white-space:nowrap!important;justify-content:flex-start!important;padding:10px 13px!important;font-size:13px!important}
 .language-picker>button{white-space:nowrap!important;min-width:62px!important}
 
-
-/* V7.6.18: first-run API setup is accessible from the locked PIN screen. */
-.app-lock-setup-button{display:block;width:100%;min-height:46px;margin:12px 0 0;border:1px solid rgba(91,157,208,.55);border-radius:13px;background:rgba(20,49,75,.78);color:#a9d8ff;font-size:10px;font-weight:900;letter-spacing:.09em}
-.app-lock-setup-button:active{background:rgba(39,91,132,.9)}
-#connectionSheet.open{z-index:100001!important}
+/* V7.6.20: visibly preview true PNG transparency instead of a flat white panel. */
+.photo-preview-shell{background-color:#152333!important;background-image:linear-gradient(45deg,#26394b 25%,transparent 25%),linear-gradient(-45deg,#26394b 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#26394b 75%),linear-gradient(-45deg,transparent 75%,#26394b 75%)!important;background-size:22px 22px!important;background-position:0 0,0 11px,11px -11px,-11px 0!important}
+.photo-preview-shell img{background:transparent!important;object-fit:contain}
