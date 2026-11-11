@@ -718,3 +718,12 @@ html,body{ -webkit-text-size-adjust:100%; overscroll-behavior-x:none; }
   .search-box input,.field input,.field select,.field textarea,.connect-field input,.connect-field select,.connect-field textarea{font-size:16px!important;}
   button,input,select,textarea{touch-action:manipulation;}
 }
+
+
+/* V7.6.23 — iPhone Home Screen: paint the safe-area behind the status bar.
+   Keep the safe-area inset for layout; extend the navy header background upward. */
+:root{--risp-header-top:#0b223d;--risp-header-bottom:#071522}
+html,body{background:var(--risp-header-top)!important}
+.app{background:linear-gradient(180deg,var(--risp-header-top) 0%,#07111d 34%,#050b14 100%)!important}
+.app-header{position:relative!important;isolation:isolate!important;overflow:visible!important;background:transparent!important}
+.app-header::before{content:"";position:absolute;z-index:-1;left:0;right:0;top:calc(-1 * var(--safe-top));height:calc(100% + var(--safe-top));background:linear-gradient(180deg,var(--risp-header-top) 0%,var(--risp-header-bottom) 100%);border-bottom:1px solid rgba(95,151,205,.14);box-shadow:0 8px 28px rgba(0,0,0,.18);pointer-events:none}
