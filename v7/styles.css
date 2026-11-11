@@ -706,47 +706,15 @@ button,input,select,textarea{font-family:var(--risp-font)!important}
 .photo-preview-shell img{background:transparent!important;object-fit:contain}
 
 
-/* V7.6.21 — iPhone PWA interaction fixes */
-@media (max-width: 719px) {
-  /* iOS Safari auto-zooms focused form controls below 16px. */
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
-  textarea,
-  select,
-  .field input,
-  .field select,
-  .field textarea,
-  .search-input,
-  #searchInput {
-    font-size: 16px !important;
-  }
-
-  /* Prevent double-tap zoom on app controls while preserving pinch accessibility. */
-  button, input, select, textarea, a, [role="button"] {
-    touch-action: manipulation;
-  }
-
-  /* Keep the language picker above the clipped app content and cards. */
-  .app-header {
-    position: relative !important;
-    z-index: 50000 !important;
-    overflow: visible !important;
-  }
-  .header-controls {
-    position: relative !important;
-    z-index: 50001 !important;
-    overflow: visible !important;
-  }
-  .language-picker {
-    position: relative !important;
-    z-index: 50002 !important;
-    isolation: isolate;
-  }
-  .language-menu {
-    z-index: 50003 !important;
-    max-width: calc(100vw - 24px) !important;
-    max-height: min(60vh, 360px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-  }
+/* V7.6.22 iPhone PWA interaction fixes */
+html,body{ -webkit-text-size-adjust:100%; overscroll-behavior-x:none; }
+.language-picker{position:relative!important;z-index:2147482000!important;isolation:isolate!important;touch-action:manipulation!important}
+.language-picker>button{touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important}
+.language-menu{z-index:2147483000!important;max-width:calc(100vw - 16px)!important;max-height:calc(100dvh - 100px)!important;overflow:auto!important;overscroll-behavior:contain!important;touch-action:pan-y!important}
+.language-menu[hidden]{display:none!important}
+.app-header,.app-lock-topline{overflow:visible!important}
+@media(max-width:719px){
+  input:not([type=checkbox]):not([type=radio]):not([type=range]),select,textarea{font-size:16px!important;}
+  .search-box input,.field input,.field select,.field textarea,.connect-field input,.connect-field select,.connect-field textarea{font-size:16px!important;}
+  button,input,select,textarea{touch-action:manipulation;}
 }

@@ -666,7 +666,7 @@
   // App-wide access gate. Token is session-scoped and expires server-side.
   $('appLockForm').addEventListener('submit',async e=>{
     e.preventDefault();const pin=String($('appLockPin').value||'').trim();
-    if(!/^\\d{6}$/.test(pin)){$('appLockError').textContent=appLanguage==='th'?'กรุณากดรหัสตัวเลข 6 หลัก':'Please enter all 6 digits';return}
+    if(!/^\d{6}$/.test(pin)){$('appLockError').textContent=appLanguage==='th'?'กรุณากดรหัสตัวเลข 6 หลัก':'Please enter all 6 digits';return}
     const btn=$('appUnlockButton'),old=btn.textContent;btn.disabled=true;btn.textContent='VERIFYING…';$('appLockError').textContent='';
     try{await unlockWholeApp(pin);$('appLockPin').value='';showToast(appLanguage==='th'?'ปลดล็อกแอปแล้ว':'App unlocked')}
     catch(err){$('appLockError').textContent=err.message||'รหัสไม่ถูกต้อง หรือไม่สามารถเชื่อมต่อได้';$('appLockPin').value='';}
@@ -700,31 +700,27 @@
     finally{btn.disabled=false;btn.textContent=old}
   });
   pinChangeOverlay.addEventListener('click',e=>{if(e.target===pinChangeOverlay)closePinChange()});
-  function toggleLanguageMenu(id,btnId){const menu=$(id),btn=$(btnId);if(!menu||!btn)return;const open=menu.hidden;document.querySelectorAll('.language-menu').forEach(m=>m.hidden=true);menu.hidden=!open;btn.setAttribute('aria-expanded',String(open))}
-  function bindLanguageButton(id,menuId){
-    const btn=$(id);
-    if(!btn)return;
-    btn.addEventListener('click',e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      toggleLanguageMenu(menuId,id);
-    },true);
+  // iPhone/PWA-safe language picker: keep the menu in the top visual layer and anchor it to the trigger.
+  function toggleLanguageMenu(id,btnId){
+    const menu=$(id),btn=$(btnId);if(!menu||!btn)return;
+    const open=menu.hidden;
+    document.querySelectorAll('.language-menu').forEach(m=>{m.hidden=true;m.style.removeProperty('position');m.style.removeProperty('top');m.style.removeProperty('left');m.style.removeProperty('right');m.style.removeProperty('z-index');});
+    if(!open){btn.setAttribute('aria-expanded','false');return;}
+    const rect=btn.getBoundingClientRect();
+    const width=Math.max(154,menu.offsetWidth||176);
+    const left=Math.max(8,Math.min(window.innerWidth-width-8,rect.right-width));
+    menu.style.setProperty('position','fixed','important');menu.style.setProperty('top',Math.min(window.innerHeight-150,rect.bottom+8)+'px','important');
+    menu.style.setProperty('left',left+'px','important');menu.style.setProperty('right','auto','important');menu.style.setProperty('z-index','2147483000','important');
+    menu.hidden=false;btn.setAttribute('aria-expanded','true');
   }
-  bindLanguageButton('appLanguageBtn','appLanguageMenu');
-  bindLanguageButton('appLockLanguageBtn','appLockLanguageMenu');
+  ['appLanguageBtn','appLockLanguageBtn'].forEach(id=>{const btn=$(id);if(btn)btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();toggleLanguageMenu(id==='appLanguageBtn'?'appLanguageMenu':'appLockLanguageMenu',id)},{passive:false});});
   document.addEventListener('click',e=>{
     const choice=e.target.closest('[data-app-lang]');
-    if(choice){
-      e.preventDefault();
-      e.stopPropagation();
-      applyAppLanguage(choice.dataset.appLang);
-      document.querySelectorAll('.language-menu').forEach(m=>m.hidden=true);
-      document.querySelectorAll('#appLanguageBtn,#appLockLanguageBtn').forEach(b=>b.setAttribute('aria-expanded','false'));
-      return;
-    }
-    if(e.target.closest('.language-picker'))return;
-    document.querySelectorAll('.language-menu').forEach(m=>m.hidden=true);
+    if(choice){e.preventDefault();e.stopPropagation();applyAppLanguage(choice.dataset.appLang);document.querySelectorAll('.language-menu').forEach(m=>{m.hidden=true;m.style.removeProperty('position');m.style.removeProperty('top');m.style.removeProperty('left');m.style.removeProperty('right');m.style.removeProperty('z-index');});document.querySelectorAll('#appLanguageBtn,#appLockLanguageBtn').forEach(b=>b.setAttribute('aria-expanded','false'));return;}
+    if(!e.target.closest('.language-picker'))document.querySelectorAll('.language-menu').forEach(m=>{m.hidden=true;m.style.removeProperty('position');m.style.removeProperty('top');m.style.removeProperty('left');m.style.removeProperty('right');m.style.removeProperty('z-index');});
   },true);
+  window.addEventListener('resize',()=>document.querySelectorAll('.language-menu').forEach(m=>{if(!m.hidden)m.hidden=true;}));
+
   document.addEventListener('visibilitychange',()=>{
     if(document.visibilityState==='visible'&&appUnlocked&&credentialUnlockedUntil&&Date.now()>=credentialUnlockedUntil)showAppLock('เซสชันหมดอายุ กรุณาปลดล็อกอีกครั้ง');
   });
@@ -847,7 +843,7 @@
   $('appThemeBtn').addEventListener('click',toggleTheme);$('moreThemeBtn').addEventListener('click',toggleTheme);
   syncAppHeight();window.addEventListener('resize',syncAppHeight,{passive:true});if(window.visualViewport)window.visualViewport.addEventListener('resize',syncAppHeight,{passive:true});
   let initialTheme='dark';try{initialTheme=localStorage.getItem(THEME_STORAGE_KEY)||'dark'}catch(e){}applyTheme(initialTheme,false);
-  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=7617').catch(()=>{}));
+  if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=7630').catch(()=>{}));
 
   const initial=(location.hash||'#home').slice(1);if(initial.startsWith('detail/')){const id=decodeURIComponent(initial.slice(7));setTimeout(()=>openDetail(id),100)}else route(['home','search','scan','add','more'].includes(initial)?initial:'home',false);
 })();
