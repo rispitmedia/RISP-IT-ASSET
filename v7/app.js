@@ -635,7 +635,7 @@
   credentialAccountSheet.addEventListener('click',e=>{if(e.target===credentialAccountSheet){cancelPendingCredentialPrint();closeSheet(credentialAccountSheet)}});
   $('closeCredentialBtn').addEventListener('click',()=>{cancelPendingCredentialPrint();closeSheet(credentialSheet)});
   $('closeCredentialDataBtn').addEventListener('click',()=>{cancelPendingCredentialPrint();closeSheet(credentialSheet)});
-  $('lockCredentialBtn').addEventListener('click',()=>closeSheet(credentialSheet));
+  if($('lockCredentialBtn'))$('lockCredentialBtn').addEventListener('click',()=>closeSheet(credentialSheet));
 
   function toggleLanguageMenu(id,btnId){const menu=$(id),btn=$(btnId);if(!menu||!btn)return;const open=menu.hidden;document.querySelectorAll('.language-menu').forEach(m=>m.hidden=true);menu.hidden=!open;btn.setAttribute('aria-expanded',String(open))}
   $('appLanguageBtn').addEventListener('click',()=>toggleLanguageMenu('appLanguageMenu','appLanguageBtn'));
