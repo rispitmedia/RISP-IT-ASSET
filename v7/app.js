@@ -95,7 +95,7 @@
   const credentialDetailLoads=new Map();
   const protectedPhotoCache=new Map();
 
-  // V7.6.17: reliable EN/TH language menu, full-screen iPhone safe-area layout, balanced credential QR label, and faster live sync.
+  // V7.6.18 NO-PIN: reliable EN/TH language menu, full-screen iPhone safe-area layout, balanced credential QR label, and faster live sync.
   let scanRequest=0,scanResolving=false,cameraStarting=null,cameraEpoch=0,cameraWanted=false;
   const scanBackdrop=document.createElement('div');
   scanBackdrop.id='scanResultBackdrop';scanBackdrop.className='sheet-backdrop scan-result-backdrop';scanBackdrop.setAttribute('aria-hidden','true');
@@ -174,7 +174,7 @@
     try{const u=new URL(rawUrl);if(u.protocol!=='https:'||u.hostname.toLowerCase()!=='script.google.com')return'';let path=u.pathname.replace(/\/+$/,'');if(!/\/exec$/i.test(path)||path.indexOf('/s/')===-1)return'';u.search='';u.hash='';u.pathname=path;return u.toString().replace(/\/+$/,'')}catch(e){return''}
   }
   function loadConnection(){try{const raw=localStorage.getItem(CONNECTION_STORAGE_KEY);if(!raw)return null;const p=JSON.parse(raw);const url=normalizeApiUrl(p&&p.url);const key=String(p&&p.key||'').trim();if(!url||key.length<24)return null;return{url,key}}catch(e){return null}}
-  function saveConnection(url,key){try{localStorage.setItem(CONNECTION_STORAGE_KEY,JSON.stringify({url,key,savedAt:Date.now()}));return true}catch(e){return false}}
+  function saveConnection(url,key){localStorage.setItem(CONNECTION_STORAGE_KEY,JSON.stringify({url,key,savedAt:Date.now()}))}
   function forgetConnection(){try{localStorage.removeItem(CONNECTION_STORAGE_KEY)}catch(e){}serverConnected=false;setSync('','SETUP');syncBanner.classList.remove('hidden');$('syncBannerTitle').textContent='V7 API not paired';$('syncBannerText').textContent='Tap SETUP and enter the V7 API deployment URL + connection key.'}
   function syncSheetState(){document.documentElement.classList.toggle('sheet-open',!!document.querySelector('.sheet-backdrop.open'))}
   function openSheet(el){el.classList.add('open');el.setAttribute('aria-hidden','false');syncSheetState()}
@@ -392,35 +392,24 @@
     const lockTitle=$('appLockTitle');if(lockTitle)lockTitle.textContent=appLanguage==='th'?'ปลดล็อก RISP IT ASSET':'Unlock RISP IT ASSET';
     const lockDesc=$('appLockDescription');if(lockDesc)lockDesc.textContent=appLanguage==='th'?'กรอกรหัส PIN 6 หลักเพื่อเข้าใช้งานแอป':'Enter your 6-digit PIN to access the app.';
     const lockButton=$('appUnlockButton');if(lockButton)lockButton.textContent=appLanguage==='th'?'ปลดล็อกแอป':'UNLOCK APP';
-    const setupButton=$('appLockSetupButton');if(setupButton)setupButton.textContent=appLanguage==='th'?'ตั้งค่าการเชื่อมต่อ API':'SET UP API CONNECTION';
     const pinInput=$('appLockPin');if(pinInput)pinInput.setAttribute('aria-label',appLanguage==='th'?'รหัส PIN 6 หลัก':'Six digit access PIN');
 
     document.querySelectorAll('[data-app-lang]').forEach(x=>x.classList.toggle('selected',x.dataset.appLang===appLanguage));
   }
   const appLanguageObserver=new MutationObserver(records=>records.forEach(r=>(r.addedNodes||[]).forEach(n=>{if(n.nodeType===1)translateAppTree(n,appLanguage);else if(n.nodeType===3&&n.parentElement)translateAppTree(n.parentElement,appLanguage)})));
   appLanguageObserver.observe(document.body,{childList:true,subtree:true});
-  function showAppLock(message){
-    appUnlocked=false;clearCredentialToken();credentialDetailLoads.clear();
-    const section=$('assetCredentialsSection'),rows=$('assetCredentialRows');
-    if(section)section.hidden=true;if(rows)rows.innerHTML='';
-    const overlay=$('appLockOverlay');if(overlay)overlay.classList.remove('hidden');
-    document.body.classList.add('app-is-locked');
-    if(message)$('appLockError').textContent=message;
-    const pin=$('appLockPin');if(pin){pin.value='';pin.blur()}
+  function showAppLock(){
+    appUnlocked=true;
+    const overlay=$('appLockOverlay');if(overlay)overlay.classList.add('hidden');
+    document.body.classList.remove('app-is-locked');
   }
   function hideAppLock(){
-    appUnlocked=true;const overlay=$('appLockOverlay');if(overlay)overlay.classList.add('hidden');
-    document.body.classList.remove('app-is-locked');$('appLockError').textContent='';
+    appUnlocked=true;
+    const overlay=$('appLockOverlay');if(overlay)overlay.classList.add('hidden');
+    document.body.classList.remove('app-is-locked');
     if(currentDetailId)loadDetailCredentials(currentDetailId);
   }
-  async function unlockWholeApp(pin){
-    const challenge=await jsonpRequest('cred_challenge',{},14000);
-    const proof=await sha256Hex(String(pin||'')+':'+String(challenge.challenge||''));
-    const result=await jsonpRequest('app_unlock',{challengeId:challenge.challengeId,proof:proof},18000);
-    if(!result.credentialToken)throw new Error('ไม่สามารถยืนยันสิทธิ์ได้ กรุณาลองใหม่');
-    saveCredentialToken(result.credentialToken,result.expiresIn||900);
-    hideAppLock();
-  }
+  async function unlockWholeApp(){appUnlocked=true;hideAppLock();}
   function renderAssetCredentials(data){
     const section=$('assetCredentialsSection'),host=$('assetCredentialRows');if(!section||!host)return;
     const fields=[['LOCAL_USERNAME','ชื่อผู้ใช้เครื่อง','Local username'],['LOCAL_PASSWORD','รหัสผ่านเครื่อง','Local password'],
@@ -438,40 +427,40 @@
     section.hidden=false;
   }
   async function loadDetailCredentials(id){
-    const token=loadCredentialToken();if(!appUnlocked||!token||!id)return;
+    if(!id)return;
     const key=normalize(id);if(credentialDetailLoads.has(key))return credentialDetailLoads.get(key);
-    const job=jsonpRequest('credentials',{id:id,credToken:token},18000).then(p=>{
-      if(appUnlocked&&normalize(currentDetailId)===key)renderAssetCredentials(p.credentials||{});
+    const job=jsonpRequest('credentials',{id:id},18000).then(p=>{
+      if(normalize(currentDetailId)===key)renderAssetCredentials(p.credentials||{});
     }).catch(err=>{
-      if(/expired|invalid|token/i.test(String(err&&err.message||'')))showAppLock('เซสชันหมดอายุ กรุณาปลดล็อกอีกครั้ง');
+      const section=$('assetCredentialsSection');if(section)section.hidden=true;
+      console.warn('Could not load private credentials:',err&&err.message||err);
     }).finally(()=>credentialDetailLoads.delete(key));
     credentialDetailLoads.set(key,job);return job;
   }
 
   function renderCredentialGrid(data){const fields=[['PRODUCT_KEY','Product Key'],['LOCAL_USERNAME','Local Username'],['LOCAL_PASSWORD','Local Password'],['ADMIN_USERNAME','Admin Username'],['ADMIN_PASSWORD','Admin Password'],['MICROSOFT_USERNAME','Microsoft Username'],['MICROSOFT_PASSWORD','Microsoft Password'],['EMAIL','Email / Account Email'],['EMAIL_PASSWORD','Email Password'],['ICLOUD','iCloud / Apple ID'],['ICLOUD_PASSWORD','iCloud Password'],['PASSWORD_HINT','Password Hint']];const rows=fields.filter(x=>String(data&&data[x[0]]||'').trim()).map(x=>'<div class="credential-row"><span>'+esc(x[1])+'</span><b>'+esc(String(data[x[0]]||''))+'</b><button class="credential-copy" type="button" data-cred-copy="'+esc(String(data[x[0]]||''))+'">COPY</button></div>').join('');$('credentialGrid').innerHTML=rows||'<div class="credential-empty">No private credentials have been entered for this asset.</div>';$('credentialGrid').querySelectorAll('[data-cred-copy]').forEach(btn=>btn.addEventListener('click',()=>copyText(btn.dataset.credCopy)))}
-  async function fetchPrivateCredentials(pin){
+  async function fetchPrivateCredentials(){
     if(!currentDetailId)throw new Error('Open a device first.');
-    let token=loadCredentialToken();
-    if(token){try{const p=await jsonpRequest('credentials',{id:currentDetailId,credToken:token},16000);if(p.credentialToken)saveCredentialToken(p.credentialToken,p.expiresIn);return p.credentials||{}}catch(e){clearCredentialToken();token=''}}
-    const bucket=Math.floor(Date.now()/60000),proof=await sha256Hex(String(pin||'')+':'+String(currentDetailId)+':'+String(bucket));
-    try{
-      const p=await jsonpRequest('cred_unlock',{id:currentDetailId,bucket,proof},18000);
-      if(p.credentialToken)saveCredentialToken(p.credentialToken,p.expiresIn);
-      return p.credentials||{};
-    }catch(primaryErr){
-      const ch=await jsonpRequest('cred_challenge',{},14000),fallbackProof=await sha256Hex(String(pin||'')+':'+String(ch.challenge||''));
-      const p=await jsonpRequest('credentials',{id:currentDetailId,challengeId:ch.challengeId,proof:fallbackProof},22000);
-      if(p.credentialToken)saveCredentialToken(p.credentialToken,p.expiresIn);return p.credentials||{};
-    }
+    const p=await jsonpRequest('credentials',{id:currentDetailId},18000);
+    return p.credentials||{};
   }
-  async function openPrivateCredentialSheet(){if(!currentDetailId){showToast('Open a device first');return}credentialPinInput.value='';credentialPinInput.type='password';$('toggleCredentialPinBtn').textContent='SHOW';$('credentialDataPane').hidden=true;$('credentialUnlockPane').hidden=!!loadCredentialToken();openSheet(credentialSheet);if(loadCredentialToken()){try{$('credentialSheetCopy').textContent='Secure session unlocked • loading credentials…';const data=await fetchPrivateCredentials('');if(pendingCredentialPrintMode&&pendingCredentialPrintAsset){handleCredentialPrintData(pendingCredentialPrintMode,pendingCredentialPrintAsset,data);return}renderCredentialGrid(data);$('credentialUnlockPane').hidden=true;$('credentialDataPane').hidden=false;$('credentialSheetCopy').textContent='Private credentials • session unlock expires automatically.'}catch(e){clearCredentialToken();$('credentialUnlockPane').hidden=false;$('credentialDataPane').hidden=true;$('credentialSheetCopy').textContent=e.message||'Unlock required.'}}}
-
+  async function openPrivateCredentialSheet(){
+    if(!currentDetailId){showToast('Open a device first');return}
+    $('credentialDataPane').hidden=false;$('credentialUnlockPane').hidden=true;
+    $('credentialSheetCopy').textContent='Private credentials';
+    openSheet(credentialSheet);
+    try{
+      const data=await fetchPrivateCredentials();
+      if(pendingCredentialPrintMode&&pendingCredentialPrintAsset){handleCredentialPrintData(pendingCredentialPrintMode,pendingCredentialPrintAsset,data);return}
+      renderCredentialGrid(data);
+    }catch(e){$('credentialGrid').innerHTML='<div class="credential-empty">'+esc(e.message||'Could not load credentials.')+'</div>';}
+  }
   async function writeRequest(action,data){const saved=loadConnection();if(!saved)throw new Error('V7 API is not paired.');const body=new URLSearchParams();body.set('v7write',action);body.set('key',saved.key);body.set('t',Date.now());Object.keys(data||{}).forEach(k=>{if(data[k]!=null)body.set(k,String(data[k]))});await fetch(saved.url,{method:'POST',mode:'no-cors',body});}
   function optimisticPatchAsset(id,payload){const key=normalize(id),base=assetMap[key]||{};const merged=Object.assign({},base,payload||{}, {ASSET_ID:String(id||base.ASSET_ID||''),UPDATED:new Date().toISOString()});assetMap[key]=merged;let found=false;ASSETS=ASSETS.map(a=>{if(normalize(a.ASSET_ID)===key){found=true;return merged}return a});if(!found&&merged.ASSET_ID)ASSETS.push(merged);if(normalize(currentDetailId)===key)setDetail(merged);renderHome();renderSearch();saveCache();return merged}
   function quietBackgroundSync(delay){setTimeout(async()=>{try{const p=await jsonpRequest('bootstrap',{},25000);if(p.version)setBackendVersion(p.version);if(p.generatedAt)lastServerGeneration=String(p.generatedAt);if(Array.isArray(p.assets))applyAssets(p.assets,true)}catch(e){}},Math.max(250,Number(delay)||650))}
 
   syncButton.addEventListener('click',()=>loadConnection()?syncInventory(true).catch(showApiError):openConnectionSheet());$('openBackendBtn').addEventListener('click',openConnectionSheet);$('moreSyncBtn').addEventListener('click',()=>syncInventory(true).catch(showApiError));$('moreConnectionBtn').addEventListener('click',openConnectionSheet);
-  $('closeConnectionBtn').addEventListener('click',()=>closeSheet(connectionSheet));connectionSheet.addEventListener('click',e=>{if(e.target===connectionSheet)closeSheet(connectionSheet)});$('toggleKeyBtn').addEventListener('click',()=>{const show=apiKeyInput.type==='password';apiKeyInput.type=show?'text':'password';$('toggleKeyBtn').textContent=show?'HIDE':'SHOW'});$('saveConnectionBtn').addEventListener('click',()=>{const url=normalizeApiUrl(apiUrlInput.value),key=String(apiKeyInput.value||'').trim();if(!url){showToast('Paste a valid Apps Script /exec URL');return}if(key.length<24){showToast('Connection key looks too short');return}if(!saveConnection(url,key)){showToast('Unable to save connection on this device. Check Chrome site storage settings.',4200);return}closeSheet(connectionSheet);showToast('API paired — connecting…');connectApi()});$('disconnectBtn').addEventListener('click',()=>{forgetConnection();closeSheet(connectionSheet);showToast('Connection forgotten')});$('openAdminWebBtn').addEventListener('click',()=>window.open(LEGACY_ADMIN_URL,'_blank','noopener'));function openPrivateAdmin(){const u=LEGACY_ADMIN_URL+(currentDetailId?'?id='+encodeURIComponent(currentDetailId):'');window.open(u,'_blank','noopener')}if($('openPrivateCredentialsBtn'))$('openPrivateCredentialsBtn').addEventListener('click',openPrivateCredentialSheet);
+  $('closeConnectionBtn').addEventListener('click',()=>closeSheet(connectionSheet));connectionSheet.addEventListener('click',e=>{if(e.target===connectionSheet)closeSheet(connectionSheet)});$('toggleKeyBtn').addEventListener('click',()=>{const show=apiKeyInput.type==='password';apiKeyInput.type=show?'text':'password';$('toggleKeyBtn').textContent=show?'HIDE':'SHOW'});$('saveConnectionBtn').addEventListener('click',()=>{const url=normalizeApiUrl(apiUrlInput.value),key=String(apiKeyInput.value||'').trim();if(!url){showToast('Paste a valid Apps Script /exec URL');return}if(key.length<24){showToast('Connection key looks too short');return}saveConnection(url,key);closeSheet(connectionSheet);showToast('API paired — connecting…');connectApi()});$('disconnectBtn').addEventListener('click',()=>{forgetConnection();closeSheet(connectionSheet);showToast('Connection forgotten')});$('openAdminWebBtn').addEventListener('click',()=>window.open(LEGACY_ADMIN_URL,'_blank','noopener'));function openPrivateAdmin(){const u=LEGACY_ADMIN_URL+(currentDetailId?'?id='+encodeURIComponent(currentDetailId):'');window.open(u,'_blank','noopener')}if($('openPrivateCredentialsBtn'))$('openPrivateCredentialsBtn').addEventListener('click',openPrivateCredentialSheet);
 
   function isKnownOption(list,val){return list.some(x=>normalize(x)===normalize(val))}
   function selectWithOtherHtml(id,list,val,emptyLabel){val=String(val||'').trim();const base=list.filter(x=>normalize(x)!=='OTHER');const custom=!!val&&!isKnownOption(base,val)&&normalize(val)!=='OTHER';const chooseOther=custom||normalize(val)==='OTHER';let options=emptyLabel?'<option value="">'+esc(emptyLabel)+'</option>':'';options+=base.map(x=>'<option value="'+esc(x)+'" '+(normalize(x)===normalize(val)?'selected':'')+'>'+esc(x)+'</option>').join('');options+='<option value="__OTHER__" '+(chooseOther?'selected':'')+'>Other (specify)</option>';return'<div class="select-custom-wrap"><select id="'+id+'" data-custom-other="1">'+options+'</select><input id="'+id+'_OTHER" class="custom-other-input" type="text" value="'+esc(custom?val:'')+'" placeholder="Please specify" '+(chooseOther?'':'hidden')+'></div>'}
@@ -644,74 +633,14 @@
   $('cancelCredentialAccountBtn').addEventListener('click',()=>{cancelPendingCredentialPrint();closeSheet(credentialAccountSheet)});
   $('useCredentialAccountBtn').addEventListener('click',()=>{const pair=pendingCredentialPairs[selectedCredentialIndex];if(!pair){showToast('Choose a Local account first');return}const mode=pendingCredentialPrintMode,asset=pendingCredentialPrintAsset,data=pendingCredentialPrintData;finishCredentialPrint(mode,asset,data,pair)});
   credentialAccountSheet.addEventListener('click',e=>{if(e.target===credentialAccountSheet){cancelPendingCredentialPrint();closeSheet(credentialAccountSheet)}});
-  $('toggleCredentialPinBtn').addEventListener('click',()=>{const show=credentialPinInput.type==='password';credentialPinInput.type=show?'text':'password';$('toggleCredentialPinBtn').textContent=show?'HIDE':'SHOW'});
-  $('unlockCredentialBtn').addEventListener('click',async()=>{const pin=String(credentialPinInput.value||'').trim();if(pin.length<6){showToast('Enter the Super Admin PIN');return}const btn=$('unlockCredentialBtn'),old=btn.textContent;btn.disabled=true;btn.textContent='UNLOCKING…';try{const data=await fetchPrivateCredentials(pin);if(pendingCredentialPrintMode&&pendingCredentialPrintAsset){credentialPinInput.value='';handleCredentialPrintData(pendingCredentialPrintMode,pendingCredentialPrintAsset,data);return}renderCredentialGrid(data);$('credentialUnlockPane').hidden=true;$('credentialDataPane').hidden=false;$('credentialSheetCopy').textContent='Private credentials • unlocked for this app session.';credentialPinInput.value='';showToast('Private credentials unlocked ✓')}catch(e){clearCredentialToken();showToast(e.message||'Unlock failed',3200)}finally{btn.disabled=false;btn.textContent=old}});
-  $('lockCredentialBtn').addEventListener('click',()=>{clearCredentialToken();$('credentialDataPane').hidden=true;$('credentialUnlockPane').hidden=false;showAppLock('แอปถูกล็อกแล้ว')});
+  $('closeCredentialBtn').addEventListener('click',()=>{cancelPendingCredentialPrint();closeSheet(credentialSheet)});
+  $('closeCredentialDataBtn').addEventListener('click',()=>{cancelPendingCredentialPrint();closeSheet(credentialSheet)});
+  $('lockCredentialBtn').addEventListener('click',()=>closeSheet(credentialSheet));
 
-
-  // On-screen numeric PIN keypad; readonly input prevents the iOS keyboard from opening.
-  const appPinField=$('appLockPin');
-  const appPinPad=$('appLockKeypad');
-  if(appPinPad&&appPinField){
-    appPinPad.addEventListener('click',e=>{
-      const key=e.target.closest('[data-pin-key]');if(!key)return;
-      const action=key.dataset.pinKey;let value=String(appPinField.value||'');
-      if(action==='clear')value='';
-      else if(action==='back')value=value.slice(0,-1);
-      else if(/^\d$/.test(action)&&value.length<6)value+=action;
-      appPinField.value=value;$('appLockError').textContent='';
-      appPinField.dispatchEvent(new Event('input',{bubbles:true}));
-      if(value.length===6){const form=$('appLockForm');if(form)form.requestSubmit();}
-    });
-  }
-  // API setup is intentionally available before app unlock for first-time devices.
-  $('appLockSetupButton').addEventListener('click',()=>openConnectionSheet());
-
-  // App-wide access gate. Token is session-scoped and expires server-side.
-  $('appLockForm').addEventListener('submit',async e=>{
-    e.preventDefault();const pin=String($('appLockPin').value||'').trim();
-    if(!/^\d{6}$/.test(pin)){$('appLockError').textContent=appLanguage==='th'?'กรุณากดรหัสตัวเลข 6 หลัก':'Please enter all 6 digits';return}
-    const btn=$('appUnlockButton'),old=btn.textContent;btn.disabled=true;btn.textContent='VERIFYING…';$('appLockError').textContent='';
-    try{await unlockWholeApp(pin);$('appLockPin').value='';showToast(appLanguage==='th'?'ปลดล็อกแอปแล้ว':'App unlocked')}
-    catch(err){$('appLockError').textContent=err.message||'รหัสไม่ถูกต้อง หรือไม่สามารถเชื่อมต่อได้';$('appLockPin').value='';}
-    finally{btn.disabled=false;btn.textContent=old}
-  });
-  $('lockAppBtn').addEventListener('click',()=>showAppLock('แอปถูกล็อกแล้ว'));
-
-  const pinChangeOverlay=$('pinChangeOverlay');
-  function closePinChange(){if(pinChangeOverlay)pinChangeOverlay.classList.add('hidden');$('pinChangeForm').reset();$('pinChangeError').textContent=''}
-  $('changeAppPinBtn').addEventListener('click',()=>{closePinChange();pinChangeOverlay.classList.remove('hidden');setTimeout(()=>$('pinCurrent').focus(),80)});
-  $('pinChangeClose').addEventListener('click',closePinChange);
-  $('pinChangeCancel').addEventListener('click',closePinChange);
-  $('pinChangeForm').addEventListener('submit',async e=>{
-    e.preventDefault();
-    const currentPin=String($('pinCurrent').value||'').trim();
-    const newPin=String($('pinNew').value||'').trim();
-    const confirmPin=String($('pinConfirm').value||'').trim();
-    const error=$('pinChangeError');
-    if(!/^\d{6,12}$/.test(newPin)){error.textContent=appLanguage==='th'?'รหัสใหม่ต้องเป็นตัวเลข 6–12 หลัก':'New PIN must contain 6–12 digits.';return}
-    if(newPin!==confirmPin){error.textContent=appLanguage==='th'?'รหัสใหม่ทั้งสองช่องไม่ตรงกัน':'The new PINs do not match.';return}
-    const btn=$('pinChangeSave'),old=btn.textContent;btn.disabled=true;btn.textContent=appLanguage==='th'?'กำลังบันทึก…':'SAVING…';error.textContent='';
-    try{
-      const challenge=await jsonpRequest('cred_challenge',{},14000);
-      const proof=await sha256Hex(currentPin+':'+String(challenge.challenge||''));
-      await jsonpRequest('app_change_pin',{challengeId:challenge.challengeId,proof,newPin},18000);
-      closePinChange();
-      clearCredentialToken();
-      showAppLock(appLanguage==='th'?'เปลี่ยนรหัสแล้ว กรุณาเข้าสู่ระบบด้วยรหัสใหม่':'PIN changed. Unlock the app with your new PIN.');
-      showToast(appLanguage==='th'?'เปลี่ยนรหัสผ่านแอปเรียบร้อย':'App passcode changed ✓');
-    }catch(err){error.textContent=err.message|| (appLanguage==='th'?'ไม่สามารถเปลี่ยนรหัสได้':'Could not change PIN.')}
-    finally{btn.disabled=false;btn.textContent=old}
-  });
-  pinChangeOverlay.addEventListener('click',e=>{if(e.target===pinChangeOverlay)closePinChange()});
   function toggleLanguageMenu(id,btnId){const menu=$(id),btn=$(btnId);if(!menu||!btn)return;const open=menu.hidden;document.querySelectorAll('.language-menu').forEach(m=>m.hidden=true);menu.hidden=!open;btn.setAttribute('aria-expanded',String(open))}
   $('appLanguageBtn').addEventListener('click',()=>toggleLanguageMenu('appLanguageMenu','appLanguageBtn'));
-  $('appLockLanguageBtn').addEventListener('click',()=>toggleLanguageMenu('appLockLanguageMenu','appLockLanguageBtn'));
-  document.addEventListener('click',e=>{const choice=e.target.closest('[data-app-lang]');if(choice){applyAppLanguage(choice.dataset.appLang);document.querySelectorAll('.language-menu').forEach(m=>m.hidden=true);document.querySelectorAll('#appLanguageBtn,#appLockLanguageBtn').forEach(b=>b.setAttribute('aria-expanded','false'));return}if(!e.target.closest('.language-picker'))document.querySelectorAll('.language-menu').forEach(m=>m.hidden=true)});
-  document.addEventListener('visibilitychange',()=>{
-    if(document.visibilityState==='visible'&&appUnlocked&&credentialUnlockedUntil&&Date.now()>=credentialUnlockedUntil)showAppLock('เซสชันหมดอายุ กรุณาปลดล็อกอีกครั้ง');
-  });
-  setInterval(()=>{if(appUnlocked&&credentialUnlockedUntil&&Date.now()>=credentialUnlockedUntil)showAppLock('เซสชันหมดอายุ กรุณาปลดล็อกอีกครั้ง')},15000);
+  document.addEventListener('click',e=>{const choice=e.target.closest('[data-app-lang]');if(choice){applyAppLanguage(choice.dataset.appLang);document.querySelectorAll('.language-menu').forEach(m=>m.hidden=true);document.querySelectorAll('#appLanguageBtn').forEach(b=>b.setAttribute('aria-expanded','false'));return}if(!e.target.closest('.language-picker'))document.querySelectorAll('.language-menu').forEach(m=>m.hidden=true)});
+
 
   /* QR scanner — V7.5.4 SMART ENGINE
      Primary: qr-scanner worker/native BarcodeDetector engine at high resolution.
@@ -821,8 +750,9 @@
 
   const cache=loadCache();if(cache&&cache.assets&&cache.assets.length){applyAssets(cache.assets,false);setSync('','CACHE')}else $('visibleCount').textContent='—';
   applyAppLanguage(appLanguage);
-  appUnlocked=!!loadCredentialToken();
-  if(appUnlocked)hideAppLock();else showAppLock('');
+  appUnlocked=true;
+  hideAppLock();
+  clearCredentialToken();
   setTimeout(()=>splash.classList.add('hidden'),standalone()?480:620);
   if(loadConnection())connectApi();else{setSync('','SETUP');syncBanner.classList.remove('hidden')}
   setupVisibilitySync();

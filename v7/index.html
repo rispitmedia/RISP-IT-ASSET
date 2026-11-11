@@ -27,7 +27,7 @@
   </div>
 
 
-  <div class="app-lock-overlay" id="appLockOverlay" role="dialog" aria-modal="true" aria-labelledby="appLockTitle">
+  <div class="app-lock-overlay hidden" id="appLockOverlay" role="dialog" aria-modal="true" aria-labelledby="appLockTitle">
     <div class="app-lock-card">
       <img src="./icon-192.png" alt="RISP" class="app-lock-logo">
       <div class="app-lock-topline"><div class="app-lock-eyebrow"><strong>RISP IT ASSET</strong><span>PRIVATE ACCESS</span></div><div class="language-picker lock-language-picker"><button type="button" id="appLockLanguageBtn" aria-haspopup="true" aria-expanded="false"><span class="flag-icon flag-gb" aria-hidden="true"></span><span>⌄</span></button><div class="language-menu" id="appLockLanguageMenu" hidden><button type="button" data-app-lang="en"><span class="flag-icon flag-gb" aria-hidden="true"></span> English</button><button type="button" data-app-lang="th"><span class="flag-icon flag-th" aria-hidden="true"></span> ไทย</button></div></div></div>
@@ -44,7 +44,6 @@
         </div>
         <button type="submit" id="appUnlockButton">UNLOCK APP</button>
       </form>
-      <button type="button" id="appLockSetupButton" class="app-lock-setup-button">SET UP API CONNECTION</button>
       <div class="app-lock-error" id="appLockError" role="status"></div>
       <small>Access expires automatically. Do not share this PIN.</small>
     </div>
@@ -72,7 +71,7 @@
             <button type="button" data-app-lang="th"><span>🇹🇭</span> ไทย</button>
           </div>
         </div>
-        <button class="theme-chip" id="lockAppBtn" type="button" aria-label="Lock app">LOCK</button>
+        
         <button class="theme-chip" id="appThemeBtn" type="button" aria-label="Toggle theme">☀</button>
         <button class="sync-chip" id="syncButton" type="button">
           <span class="sync-dot" id="syncDot"></span>
@@ -329,7 +328,6 @@
           <button id="moreSyncBtn" type="button"><span class="more-icon">↻</span><div><b>Sync inventory</b><small>Pull fresh data from ASSET_DATABASE</small></div><i>›</i></button>
           <button id="moreConnectionBtn" type="button"><span class="more-icon">⚡</span><div><b>V7 API connection</b><small>Deployment URL and connection key</small></div><i>›</i></button>
           <button id="moreThemeBtn" type="button"><span class="more-icon">◐</span><div><b>Appearance</b><small id="themeModeLabel">Dark theme</small></div><i>›</i></button>
-          <button id="changeAppPinBtn" type="button"><span class="more-icon">⌑</span><div><b>Change app passcode</b><small>Update the PIN used to unlock this app</small></div><i>›</i></button>
           <button id="openAdminWebBtn" type="button"><span class="more-icon">⌘</span><div><b>Open Admin Web</b><small>Private Admin + QR Label Studio</small></div><i>↗</i></button>
         </div>
         <div class="system-card">
@@ -339,7 +337,7 @@
           <div><small>ENGINEERED</small><b>NEWVANA</b></div>
         </div>
         <div class="safe-note">
-          <span>🛡️</span><div><b>SPLIT-SECURITY BRIDGE</b><p>Normal asset data stays on the fast V7 bridge. Private credentials are fetched only after Super Admin proof and are never saved in the offline inventory cache.</p></div>
+          <span>🛡️</span><div><b>SPLIT-SECURITY BRIDGE</b><p>Normal asset data stays on the fast V7 bridge. Private credentials are fetched on demand and are not saved in the offline inventory cache.</p></div>
         </div>
         <div class="bottom-spacer"></div>
       </section>
@@ -347,19 +345,7 @@
 
 
 
-  <div class="pin-change-overlay hidden" id="pinChangeOverlay" role="dialog" aria-modal="true" aria-labelledby="pinChangeTitle">
-    <form class="pin-change-card" id="pinChangeForm">
-      <div class="pin-change-head"><div><small>SECURITY SETTINGS</small><h2 id="pinChangeTitle">Change app passcode</h2><p>Enter your current PIN, then choose a new 6–12 digit PIN.</p></div><button type="button" id="pinChangeClose" aria-label="Close">×</button></div>
-      <label for="pinCurrent">CURRENT PIN</label>
-      <input id="pinCurrent" type="password" inputmode="numeric" autocomplete="current-password" maxlength="12" required>
-      <label for="pinNew">NEW PIN</label>
-      <input id="pinNew" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" maxlength="12" required>
-      <label for="pinConfirm">CONFIRM NEW PIN</label>
-      <input id="pinConfirm" type="password" inputmode="numeric" autocomplete="new-password" minlength="6" maxlength="12" required>
-      <div class="pin-change-error" id="pinChangeError" role="status"></div>
-      <div class="pin-change-actions"><button type="button" class="secondary-wide" id="pinChangeCancel">CANCEL</button><button type="submit" class="save-button" id="pinChangeSave">SAVE NEW PIN</button></div>
-    </form>
-  </div>
+
 
     <nav class="tabbar" aria-label="Main navigation">
       <button class="tab active" data-route="home" aria-label="Home">
@@ -387,7 +373,7 @@
       <p class="connect-copy">The API URL and connection key are saved only on this device. Updating the app does not normally require pairing again.</p>
       <label class="connect-field"><span>V7 API DEPLOYMENT URL</span><input id="apiUrlInput" type="url" inputmode="url" autocomplete="off" placeholder="https://script.google.com/macros/s/.../exec"></label>
       <label class="connect-field"><span>CONNECTION KEY</span><div class="key-field"><input id="apiKeyInput" type="password" autocomplete="off" placeholder="Paste your connection key"><button id="toggleKeyBtn" type="button">SHOW</button></div></label>
-      <div class="connect-note"><b>FULL CONTROL • SPLIT SECURITY</b><p>Normal inventory uses the standard bridge. Private credentials require a separate short-lived Super Admin unlock.</p></div>
+      <div class="connect-note"><b>FULL CONTROL • SPLIT SECURITY</b><p>Normal inventory and device credentials use the connected V7 API.</p></div>
       <div class="connect-actions"><button class="sheet-secondary" id="closeConnectionBtn" type="button">CANCEL</button><button class="sheet-primary" id="saveConnectionBtn" type="button">SAVE & CONNECT</button></div>
       <button class="disconnect-link" id="disconnectBtn" type="button">Forget saved connection</button>
     </div>
@@ -461,14 +447,14 @@
     <div class="sheet credential-sheet">
       <div class="grabber"></div>
       <div class="connect-head"><div class="connect-icon">🔐</div><div><small>SUPER ADMIN</small><h2>Private credentials</h2></div></div>
-      <p class="connect-copy" id="credentialSheetCopy">Enter your Super Admin PIN once. The unlocked session expires automatically and is not written to local storage.</p>
-      <div id="credentialUnlockPane">
+      <p class="connect-copy" id="credentialSheetCopy">Credentials are loaded directly from the connected asset database.</p>
+      <div id="credentialUnlockPane" hidden>
         <label class="connect-field"><span>SUPER ADMIN PIN</span><div class="key-field"><input id="credentialPinInput" type="password" inputmode="numeric" autocomplete="one-time-code" placeholder="6-digit PIN" maxlength="6"><button id="toggleCredentialPinBtn" type="button">SHOW</button></div></label>
         <div class="connect-actions"><button class="sheet-secondary" id="closeCredentialBtn" type="button">CANCEL</button><button class="sheet-primary" id="unlockCredentialBtn" type="button">UNLOCK</button></div>
       </div>
       <div id="credentialDataPane" hidden>
         <div class="credential-grid" id="credentialGrid"></div>
-        <div class="connect-actions"><button class="sheet-secondary" id="lockCredentialBtn" type="button">LOCK</button><button class="sheet-primary" id="closeCredentialDataBtn" type="button">DONE</button></div>
+        <div class="connect-actions"><button class="sheet-primary" id="closeCredentialDataBtn" type="button">DONE</button></div>
       </div>
     </div>
   </div>
