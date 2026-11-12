@@ -489,18 +489,18 @@
       <p class="connect-copy">Saved to the shared asset history.</p>
       <form id="maintenanceForm" class="maintenance-form">
         <label class="connect-field"><span>TYPE</span><small class="field-hint">Select the type of service activity.</small><select id="mntType" required><option>Repair</option><option>Maintenance</option><option>Inspection</option><option>Warranty Claim</option><option>Replacement</option></select></label>
-        <div class="maintenance-form-grid">
-          <label class="connect-field"><span>REPORTED DATE</span><input id="mntReported" type="date" required></label>
-          <label class="connect-field"><span>SENT DATE</span><small class="field-hint">Select the date the device was sent out.</small><input id="mntSent" type="date" aria-label="Sent date / วันที่ส่งซ่อม"></label>
-          <label class="connect-field"><span>RETURN DATE</span><small class="field-hint">Select the date the device was returned.</small><input id="mntReturn" type="date" aria-label="Return date / วันที่รับคืน"></label>
+        <div class="maintenance-form-grid maintenance-paired-fields">
+          <label class="connect-field"><span>REPORTED DATE</span><small class="field-hint">Date the issue was reported.</small><input id="mntReported" type="date" required></label>
+          <label class="connect-field"><span>SENT DATE</span><small class="field-hint">Date the device was sent for service.</small><input id="mntSent" type="date" aria-label="Sent date / วันที่ส่งซ่อม"></label>
+          <label class="connect-field"><span>RETURN DATE</span><small class="field-hint">Date the device was returned.</small><input id="mntReturn" type="date" aria-label="Return date / วันที่รับคืน"></label>
+          <label class="connect-field"><span>SHOP / SERVICE CENTER</span><small class="field-hint">Name of the repair shop or service center.</small><input id="mntVendor" maxlength="200" placeholder="e.g. Dell Service Center"></label>
           <label class="connect-field"><span>STATUS</span><small class="field-hint">Choose the current repair status.</small><select id="mntStatus"><option>Completed</option><option>In Progress</option><option>Waiting for Parts</option><option>Sent to Service Center</option><option>Unresolved</option></select></label>
+          <label class="connect-field"><span>CONTACT / TECHNICIAN</span><small class="field-hint">Technician or contact person.</small><input id="mntContact" maxlength="200" placeholder="Technician or contact person"></label>
+          <label class="connect-field"><span>PROBLEM / REASON</span><small class="field-hint">Describe the fault or reason for service.</small><textarea id="mntProblem" required rows="2" placeholder="Describe the fault or reason for inspection"></textarea></label>
+          <label class="connect-field"><span>DIAGNOSIS</span><small class="field-hint">What the shop or technician found.</small><textarea id="mntDiagnosis" rows="2" placeholder="What did the shop / technician find?"></textarea></label>
+          <label class="connect-field"><span>REPAIR / ACTION TAKEN</span><small class="field-hint">Work completed or checks performed.</small><textarea id="mntAction" rows="2" placeholder="What was repaired, replaced or checked?"></textarea></label>
+          <label class="connect-field"><span>PARTS REPLACED</span><small class="field-hint">Parts or components replaced, if any.</small><input id="mntParts" placeholder="Part name / model"></label>
         </div>
-        <label class="connect-field"><span>SHOP / SERVICE CENTER</span><input id="mntVendor" maxlength="200" placeholder="e.g. Dell Service Center"></label>
-        <label class="connect-field"><span>CONTACT / TECHNICIAN</span><input id="mntContact" maxlength="200" placeholder="Technician or contact person"></label>
-        <label class="connect-field"><span>PROBLEM / REASON</span><textarea id="mntProblem" required rows="2" placeholder="Describe the fault or reason for inspection"></textarea></label>
-        <label class="connect-field"><span>DIAGNOSIS</span><textarea id="mntDiagnosis" rows="2" placeholder="What did the shop / technician find?"></textarea></label>
-        <label class="connect-field"><span>REPAIR / ACTION TAKEN</span><textarea id="mntAction" rows="2" placeholder="What was repaired, replaced or checked?"></textarea></label>
-        <label class="connect-field"><span>PARTS REPLACED</span><input id="mntParts" placeholder="Part name / model"></label>
         <div class="maintenance-form-grid">
           <label class="connect-field"><span>PARTS COST (THB)</span><input id="mntPartsCost" type="number" min="0" step="0.01" value="0" inputmode="decimal"></label>
           <label class="connect-field"><span>LABOR COST (THB)</span><input id="mntLaborCost" type="number" min="0" step="0.01" value="0" inputmode="decimal"></label>
@@ -517,7 +517,7 @@
   <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.legacy.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script src="./photo-tools.js?v=7633"></script>
-  <script src="./app.js?v=7633"></script>
+  <script src="./photo-tools.js?v=7636"></script>
+  <script src="./app.js?v=7636"></script>
 </body>
 </html>

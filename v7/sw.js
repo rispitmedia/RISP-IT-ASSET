@@ -1,4 +1,4 @@
-const CACHE_NAME = 'risp-it-asset-v7-6-33-value-form-polish';
+const CACHE_NAME='risp-it-asset-v7-6-36-ui-alignment';
 const CORE = ['./','./index.html','./asset/index.html','./styles.css?v=7633','./app.js?v=7633','./photo-tools.js?v=7633','./manifest.webmanifest?v=772','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>Promise.allSettled(CORE.map(url=>cache.add(url)))).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('risp-it-asset-')&&key!==CACHE_NAME).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));});
