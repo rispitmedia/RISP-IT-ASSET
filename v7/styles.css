@@ -1095,3 +1095,77 @@ html,body{background:var(--bg)!important}
 
 /* Keep bottom safe-area color identical to the navigation bar. */
 html,body{overscroll-behavior:none!important}
+
+
+/* V7.6.32 — iPhone stability, contrast, true-alpha rendering and compact forms */
+:root{--form-label-size:10px;--form-control-size:16px}
+html,body{overscroll-behavior:none!important;-webkit-text-size-adjust:100%!important;touch-action:pan-x pan-y!important}
+body.sheet-open{overflow:hidden!important;position:fixed!important;width:100%!important;inset:0!important}
+.sheet-backdrop{position:fixed!important;inset:0!important;align-items:flex-end!important;overscroll-behavior:contain!important;touch-action:pan-y!important}
+.sheet{max-height:calc(var(--app-height,100dvh) - var(--safe-top) - 8px)!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;touch-action:pan-y!important;padding-bottom:calc(18px + var(--safe-bottom))!important}
+.sheet *{max-width:100%;box-sizing:border-box}
+.sheet input,.sheet select,.sheet textarea,.asset-form input,.asset-form select,.asset-form textarea{font-size:16px!important;line-height:1.35!important;min-width:0!important;max-width:100%!important}
+.sheet textarea,.asset-form textarea{min-height:76px!important;resize:vertical!important}
+.connect-field{gap:5px!important;margin-top:9px!important}
+.connect-field>span,.field>label{font-size:10px!important;line-height:1.3!important;letter-spacing:.06em!important}
+.connect-field input,.connect-field select{height:46px!important;padding:0 12px!important}
+.maintenance-sheet{max-height:calc(var(--app-height,100dvh) - var(--safe-top) - 8px)!important;overflow-y:auto!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important}
+.maintenance-form{gap:8px!important;padding-bottom:8px!important}
+.maintenance-form-grid{gap:8px!important}
+.maintenance-sheet .connect-head h2{font-size:20px!important;line-height:1.2!important}
+.maintenance-sheet .connect-head small{font-size:9px!important}
+.maintenance-sheet .connect-actions{position:sticky!important;bottom:calc(-1 * var(--safe-bottom))!important;padding:10px 0 calc(8px + var(--safe-bottom))!important;margin:8px -2px 0!important;background:linear-gradient(180deg,rgba(7,17,29,0),var(--sheet-bg,#0b1624) 22%)!important;z-index:4!important}
+[data-theme="light"] .maintenance-sheet .connect-actions{background:linear-gradient(180deg,rgba(248,250,252,0),#f8fafc 22%)!important}
+/* Transparent PNGs must reveal the card surface, never a baked dark gradient. */
+.asset-photo{background:transparent!important}
+.asset-photo img{background:transparent!important;mix-blend-mode:normal!important}
+.scan-match-photo{background:transparent!important}
+.scan-match-photo img{background:transparent!important;mix-blend-mode:normal!important}
+[data-theme="light"] .asset-photo,[data-theme="light"] .asset-photo img,[data-theme="light"] .scan-match-photo,[data-theme="light"] .scan-match-photo img{background:transparent!important}
+/* Dark theme keeps the image canvas subtle; the PNG itself remains alpha-transparent. */
+[data-theme="dark"] .asset-photo{background:#0b1b2a!important}
+[data-theme="dark"] .asset-photo img{background:transparent!important}
+/* Fix the empty navy icon tiles called out in More and Add / Scan screens. */
+[data-theme="light"] .more-icon{background:#edf5fb!important;border-color:#c4d7e5!important;color:#173a63!important;box-shadow:inset 0 1px #fff,0 2px 6px rgba(20,55,80,.06)!important}
+[data-theme="light"] .more-icon svg{stroke:#173a63!important;fill:none!important}
+[data-theme="light"] .scan-entry-button{background:linear-gradient(120deg,#f5faff,#e8f2f9)!important;border-color:#b7cddd!important;color:#17324b!important;box-shadow:0 5px 16px rgba(24,67,98,.07)!important}
+[data-theme="light"] .scan-entry-button>span{background:#fff!important;border-color:#c6d8e5!important;color:#245b85!important}
+[data-theme="light"] .scan-entry-button b{color:#17324b!important}
+[data-theme="light"] .scan-entry-button small{color:#617b91!important}
+[data-theme="light"] .scan-entry-button i{color:#376f99!important}
+[data-theme="light"] .scan-actions{background:linear-gradient(180deg,transparent,#f3f7fa 26%)!important}
+[data-theme="light"] .scan-actions button,[data-theme="light"] .manual-scan button{background:#fff!important;color:#173a63!important;border-color:#bfd0dc!important}
+[data-theme="light"] .scanner-flash{background:#fff!important;color:#173a63!important}
+[data-theme="light"] .manual-scan input{background:#fff!important;color:#142332!important;border-color:#bfced9!important}
+[data-theme="light"] .photo-choice-grid .photo-picker{background:#173a63!important;color:#fff!important;border-color:#173a63!important}
+[data-theme="light"] .photo-ai-button{background:#f3effb!important;color:#563b7c!important;border-color:#d4c5e9!important}
+[data-theme="light"] .maintenance-sheet .connect-head{color:#172b3d!important}
+[data-theme="light"] .maintenance-sheet .connect-head h2{color:#142332!important}
+[data-theme="light"] .maintenance-sheet .connect-head small{color:#55718a!important}
+[data-theme="light"] .maintenance-sheet .connect-field>span{color:#526d84!important}
+[data-theme="light"] .maintenance-sheet .connect-field input,[data-theme="light"] .maintenance-sheet .connect-field select,[data-theme="light"] .maintenance-sheet .connect-field textarea{background:#fff!important;color:#142332!important;border:1px solid #c4d2dd!important}
+[data-theme="light"] .maintenance-sheet .sheet-secondary{background:#fff!important;color:#244d70!important}
+[data-theme="light"] .maintenance-sheet .sheet-primary{background:#1d5f91!important;color:#fff!important}
+[data-theme="dark"] .maintenance-sheet{background:#0b1624!important;color:#eaf4ff!important}
+[data-theme="dark"] .maintenance-sheet .connect-field input,[data-theme="dark"] .maintenance-sheet .connect-field select,[data-theme="dark"] .maintenance-sheet .connect-field textarea{background:#07111d!important;color:#f1f7fc!important}
+[data-theme="dark"] .maintenance-sheet .sheet-primary{background:#3d91d5!important;color:#fff!important;border-color:#5aa7e7!important}
+[data-theme="dark"] .maintenance-sheet .sheet-secondary{background:#132438!important;color:#d6e6f4!important;border-color:#36516b!important}
+/* Keep form text compact without triggering iOS Safari's automatic input zoom. */
+.asset-form .field label{font-size:10px!important;line-height:1.3!important}
+.asset-form .field input,.asset-form .field select,.asset-form .field textarea{font-size:16px!important}
+.asset-form .field{gap:5px!important;margin-bottom:9px!important}
+.asset-form .field input,.asset-form .field select{height:46px!important}
+.asset-form .field textarea{min-height:76px!important}
+/* Make sheet controls respond to taps without hijacking vertical scrolling. */
+button,.photo-picker,.tab{touch-action:manipulation!important;-webkit-tap-highlight-color:transparent}
+.screen{touch-action:pan-y!important;overscroll-behavior-y:contain!important}
+.scanner-shell,.scanner-shell video{touch-action:pan-y!important}
+@media(max-width:600px){
+  .maintenance-form-grid{grid-template-columns:1fr 1fr!important}
+  .maintenance-sheet{border-radius:22px 22px 0 0!important;padding-left:16px!important;padding-right:16px!important}
+  .maintenance-sheet .connect-actions>*{min-width:0!important;font-size:10px!important}
+  .more-card button{grid-template-columns:44px minmax(0,1fr) auto!important;min-height:70px!important}
+  .more-icon{width:42px!important;height:42px!important;font-size:19px!important}
+  .scan-actions{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 76px!important;gap:7px!important}
+  .scan-actions button{min-width:0!important;padding-inline:8px!important;font-size:9px!important}
+}
