@@ -13,7 +13,7 @@
   <link rel="manifest" href="./manifest.webmanifest?v=772">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=7632">
+  <link rel="stylesheet" href="./styles.css?v=7633">
 </head>
 <body>
   <div class="splash" id="splash">
@@ -163,7 +163,7 @@
         <div class="detail-topbar">
           <button class="back-button" id="detailBack" type="button" aria-label="Back">‹</button>
           <div><small>LIVE ASSET PROFILE</small><b id="detailTopTag">Loading…</b></div>
-          <button class="icon-action" id="detailMoreBtn" type="button" aria-label="Edit">•••</button>
+          
         </div>
 
         <div class="detail-photo-shell" id="detailPhotoShell">
@@ -488,12 +488,12 @@
       <div class="connect-head"><div class="connect-icon maintenance-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14.2 6.2a5 5 0 0 0-6.6 6.6L3 17.4 6.6 21l4.6-4.6a5 5 0 0 0 6.6-6.6l-3 3-3.2-3.2 2.6-3.4Z"/><path d="m14.5 5.5 4-2 2 2-2 4"/></svg></div><div><small>SERVICE LOG</small><h2 id="maintenanceFormTitle">Add repair record</h2></div><button type="button" class="sheet-close-btn" id="closeMaintenanceBtn" aria-label="Close maintenance form">×</button></div>
       <p class="connect-copy">Saved to the shared asset history.</p>
       <form id="maintenanceForm" class="maintenance-form">
-        <label class="connect-field"><span>TYPE</span><select id="mntType"><option>Repair</option><option>Maintenance</option><option>Inspection</option><option>Warranty Claim</option><option>Replacement</option></select></label>
+        <label class="connect-field"><span>TYPE</span><small class="field-hint">Select the type of service activity.</small><select id="mntType" required><option>Repair</option><option>Maintenance</option><option>Inspection</option><option>Warranty Claim</option><option>Replacement</option></select></label>
         <div class="maintenance-form-grid">
           <label class="connect-field"><span>REPORTED DATE</span><input id="mntReported" type="date" required></label>
-          <label class="connect-field"><span>SENT DATE</span><input id="mntSent" type="date"></label>
-          <label class="connect-field"><span>RETURN DATE</span><input id="mntReturn" type="date"></label>
-          <label class="connect-field"><span>STATUS</span><select id="mntStatus"><option>Completed</option><option>In Progress</option><option>Waiting for Parts</option><option>Sent to Service Center</option><option>Unresolved</option></select></label>
+          <label class="connect-field"><span>SENT DATE</span><small class="field-hint">Select the date the device was sent out.</small><input id="mntSent" type="date" aria-label="Sent date / วันที่ส่งซ่อม"></label>
+          <label class="connect-field"><span>RETURN DATE</span><small class="field-hint">Select the date the device was returned.</small><input id="mntReturn" type="date" aria-label="Return date / วันที่รับคืน"></label>
+          <label class="connect-field"><span>STATUS</span><small class="field-hint">Choose the current repair status.</small><select id="mntStatus"><option>Completed</option><option>In Progress</option><option>Waiting for Parts</option><option>Sent to Service Center</option><option>Unresolved</option></select></label>
         </div>
         <label class="connect-field"><span>SHOP / SERVICE CENTER</span><input id="mntVendor" maxlength="200" placeholder="e.g. Dell Service Center"></label>
         <label class="connect-field"><span>CONTACT / TECHNICIAN</span><input id="mntContact" maxlength="200" placeholder="Technician or contact person"></label>
@@ -517,7 +517,7 @@
   <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.legacy.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script src="./photo-tools.js?v=7632"></script>
-  <script src="./app.js?v=7632"></script>
+  <script src="./photo-tools.js?v=7633"></script>
+  <script src="./app.js?v=7633"></script>
 </body>
 </html>

@@ -1169,3 +1169,63 @@ button,.photo-picker,.tab{touch-action:manipulation!important;-webkit-tap-highli
   .scan-actions{grid-template-columns:minmax(0,1fr) minmax(0,1fr) 76px!important;gap:7px!important}
   .scan-actions button{min-width:0!important;padding-inline:8px!important;font-size:9px!important}
 }
+
+
+/* V7.6.33 — dashboard value stability, selected states, asset form layout, service sheet polish */
+/* Brand selection becomes a clean horizontal logo rail; Model sits directly beneath it. */
+.form-grid .field:has(.brand-select-wrap),
+.form-grid .field:has([id$="_MODEL"]){grid-column:1/-1!important}
+.brand-choice-strip{display:flex!important;flex-wrap:nowrap!important;gap:9px!important;overflow-x:auto!important;overflow-y:hidden!important;padding:2px 2px 8px!important;scroll-snap-type:x proximity!important;scrollbar-width:thin!important;overscroll-behavior-x:contain!important}
+.brand-choice{flex:0 0 82px!important;width:82px!important;height:78px!important;display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:center!important;gap:4px!important;padding:6px!important;scroll-snap-align:start!important}
+.brand-choice-mark{width:54px!important;height:42px!important;display:grid!important;place-items:center!important}
+.brand-choice-logo{width:54px!important;height:42px!important}
+.brand-choice-name{font-size:9px!important;max-width:100%!important;text-align:center!important}
+.brand-choice>i{position:absolute!important;right:5px!important;top:4px!important}
+.brand-selected-card{grid-template-columns:58px minmax(0,1fr)!important;grid-template-areas:"logo copy" "select select"!important}
+.form-grid .field:has([id$="_MODEL"])>label{display:block!important;margin-bottom:2px!important}
+.form-grid .field:has([id$="_MODEL"]) input{width:100%!important}
+/* Selected dashboard filters have a clear focus ring in both themes. */
+.stat-card{transition:border-color .14s ease,box-shadow .14s ease,background .14s ease!important}
+.stat-card:focus-visible{outline:3px solid #58a6e5!important;outline-offset:2px!important}
+[data-theme="light"] .stat-card.active-filter{border:2px solid #4b8fc4!important;box-shadow:0 0 0 3px rgba(57,126,181,.16),0 8px 20px rgba(30,75,112,.08)!important;background:linear-gradient(145deg,#edf7ff,#fff)!important}
+[data-theme="light"] .stat-card.active-filter small,[data-theme="light"] .stat-card.active-filter span{color:#245a83!important}
+[data-theme="dark"] .stat-card.active-filter{outline:2px solid rgba(104,183,244,.22)!important;outline-offset:1px!important}
+/* Service history form: deliberate dark palette, readable fields, restrained contrast. */
+[data-theme="dark"] .maintenance-sheet{background:#101c2b!important;color:#eaf2f9!important;border:1px solid #294158!important;box-shadow:0 -16px 50px rgba(0,0,0,.38)!important}
+[data-theme="dark"] .maintenance-sheet .connect-head{background:linear-gradient(135deg,#14263a,#102033)!important;border-bottom:1px solid #29445d!important}
+[data-theme="dark"] .maintenance-sheet .connect-copy{color:#a8bbcc!important}
+[data-theme="dark"] .maintenance-sheet .connect-field>span{color:#9bb4c9!important;font-size:10px!important;letter-spacing:.08em!important}
+[data-theme="dark"] .maintenance-sheet .connect-field input,
+[data-theme="dark"] .maintenance-sheet .connect-field select,
+[data-theme="dark"] .maintenance-sheet .connect-field textarea{background:#17283a!important;color:#f3f7fb!important;border:1px solid #3a566f!important;border-radius:12px!important;box-shadow:inset 0 1px 2px rgba(0,0,0,.14)!important}
+[data-theme="dark"] .maintenance-sheet .connect-field input:focus,
+[data-theme="dark"] .maintenance-sheet .connect-field select:focus,
+[data-theme="dark"] .maintenance-sheet .connect-field textarea:focus{border-color:#65a9df!important;box-shadow:0 0 0 3px rgba(83,157,213,.17)!important;outline:0!important}
+[data-theme="dark"] .maintenance-sheet .connect-field input::placeholder,
+[data-theme="dark"] .maintenance-sheet .connect-field textarea::placeholder{color:#91a7ba!important;opacity:1!important}
+[data-theme="dark"] .maintenance-sheet .connect-actions{background:linear-gradient(180deg,rgba(16,28,43,0),#101c2b 24%)!important;border-top:1px solid rgba(99,132,160,.18)!important}
+[data-theme="dark"] .maintenance-sheet .sheet-secondary{background:#1a2b3e!important;color:#e2edf6!important;border:1px solid #476078!important}
+[data-theme="dark"] .maintenance-sheet .sheet-primary{background:linear-gradient(135deg,#3989c7,#256da8)!important;color:#fff!important;border:1px solid #69afe4!important;box-shadow:0 5px 14px rgba(25,100,160,.2)!important}
+[data-theme="light"] .maintenance-sheet .connect-field input,
+[data-theme="light"] .maintenance-sheet .connect-field select,
+[data-theme="light"] .maintenance-sheet .connect-field textarea{background:#fff!important;color:#172a3b!important;border:1px solid #c5d3df!important}
+/* Scanner Thai heading and QR eyebrow use a consistent typographic scale. */
+.scan-head .eyebrow{font-size:clamp(10px,2.8vw,12px)!important;letter-spacing:.12em!important;line-height:1.35!important;white-space:normal!important}
+.scan-head h1{font-size:clamp(29px,8vw,46px)!important;line-height:1.08!important;letter-spacing:-.045em!important;overflow-wrap:normal!important}
+.scan-head p{font-size:clamp(12px,3.4vw,15px)!important;line-height:1.5!important}
+/* Form labels and controls stay balanced on narrow phones without horizontal drift. */
+@media(max-width:600px){
+  .form-grid .field:has(.brand-select-wrap),.form-grid .field:has([id$="_MODEL"]){grid-column:1/-1!important}
+  .brand-choice{flex-basis:76px!important;width:76px!important;height:72px!important}
+  .brand-choice-mark,.brand-choice-logo{width:50px!important;height:38px!important}
+  .maintenance-form-grid{grid-template-columns:1fr 1fr!important;gap:9px!important}
+  .maintenance-sheet{padding-left:18px!important;padding-right:18px!important}
+  .maintenance-sheet .connect-head h2{font-size:19px!important}
+}
+
+/* V7.6.33 helper copy */
+.field-hint{display:block!important;margin-top:2px!important;color:var(--muted,#71879b)!important;font-size:9px!important;line-height:1.4!important;font-weight:500!important;letter-spacing:0!important}
+[data-theme="light"] .field-hint{color:#647b8f!important}
+[data-theme="dark"] .field-hint{color:#91a8bc!important}
+.maintenance-form .field-hint{margin:0 0 2px!important;font-size:9px!important}
+@media(max-width:600px){.field-hint{font-size:9px!important}.form-grid .field:has(.brand-select-wrap){margin-bottom:2px!important}}
