@@ -1229,3 +1229,35 @@ button,.photo-picker,.tab{touch-action:manipulation!important;-webkit-tap-highli
 [data-theme="dark"] .field-hint{color:#91a8bc!important}
 .maintenance-form .field-hint{margin:0 0 2px!important;font-size:9px!important}
 @media(max-width:600px){.field-hint{font-size:9px!important}.form-grid .field:has(.brand-select-wrap){margin-bottom:2px!important}}
+\n/* V7.6.35 — PIN access: neon/thunder visual system, theme-aware */
+.app-lock-topline{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.pin-top-actions{display:flex;align-items:center;gap:8px}
+.pin-theme-toggle{width:44px;height:44px;flex:0 0 44px;border-radius:50%;border:1px solid rgba(90,177,242,.65);background:linear-gradient(145deg,#102c47,#071321);color:#8bd7ff;font-size:22px;box-shadow:0 0 18px rgba(55,165,255,.18);cursor:pointer}
+.app-lock-card{position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 0%,rgba(25,143,225,.22),transparent 45%),linear-gradient(155deg,#10243a,#050d18 76%);border-color:rgba(81,177,255,.55);box-shadow:0 25px 80px rgba(0,0,0,.48),0 0 35px rgba(27,143,235,.12)}
+.app-lock-card:before{content:"";position:absolute;top:-50px;right:-60px;width:180px;height:180px;background:linear-gradient(135deg,transparent 47%,rgba(91,205,255,.15) 48%,transparent 51%);transform:rotate(18deg);pointer-events:none}
+.app-lock-card .app-lock-eyebrow strong{display:block;color:#eaf7ff;font-size:12px;letter-spacing:.12em}
+.app-lock-card .app-lock-eyebrow span{display:block;margin-top:5px;color:#7dcaff}
+.app-lock-card h1{color:#f3f9ff}
+.app-lock-card input{height:58px;text-align:center;font-size:22px;letter-spacing:.28em;background:#071522;border-color:#3977a5;box-shadow:inset 0 0 18px rgba(40,143,220,.12)}
+.app-pin-keypad{gap:9px}
+.app-pin-keypad button{height:58px;border:1px solid rgba(103,174,224,.42);border-radius:15px;background:linear-gradient(145deg,#173b5c,#0b1c2d);color:#eaf7ff;font-size:23px;font-weight:800;box-shadow:0 5px 14px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.06);transition:transform .12s,border-color .12s,box-shadow .12s}
+.app-pin-keypad button:active{transform:scale(.96);border-color:#6bd7ff;box-shadow:0 0 18px rgba(66,190,255,.25)}
+.app-pin-keypad button.pin-key-action{font-size:12px;letter-spacing:.08em;color:#9edcff}
+.app-pin-keypad button[data-pin-key="back"]{font-size:25px;color:#fff}
+.app-lock-card form>button{height:48px;border-radius:14px;background:linear-gradient(110deg,#168de0,#44c7ff 55%,#8de6ff);box-shadow:0 0 22px rgba(48,169,246,.25);color:#041322}
+[data-theme="light"] .app-lock-overlay{background:radial-gradient(circle at 50% 8%,rgba(36,170,255,.18),transparent 45%),rgba(232,241,249,.96)}
+[data-theme="light"] .app-lock-card{background:linear-gradient(155deg,#ffffff,#eef6fc 80%);color:#12263a;border-color:#9fc6e4;box-shadow:0 24px 70px rgba(24,61,91,.20),0 0 28px rgba(45,159,235,.10)}
+[data-theme="light"] .app-lock-card .app-lock-eyebrow strong,[data-theme="light"] .app-lock-card h1{color:#10283e}
+[data-theme="light"] .app-lock-card .app-lock-eyebrow span,[data-theme="light"] .app-lock-card label{color:#27648d}
+[data-theme="light"] .app-lock-card p,[data-theme="light"] .app-lock-card>small{color:#536d82}
+[data-theme="light"] .app-lock-card input{background:#f5faff;color:#10283e;border-color:#9abbd5}
+[data-theme="light"] .app-pin-keypad button{background:linear-gradient(145deg,#f8fcff,#e5f1fa);color:#153b5a;border-color:#b4ccdd;box-shadow:0 4px 12px rgba(22,66,101,.10)}
+[data-theme="light"] .app-pin-keypad button.pin-key-action{color:#1f6b9c}
+[data-theme="light"] .pin-theme-toggle{background:linear-gradient(145deg,#fff,#e7f4ff);color:#176a9e;border-color:#a7c8df}
+/* Keep date controls compact and aligned in both languages */
+.maintenance-form-grid .connect-field{min-width:0;align-content:start}
+.maintenance-form-grid input[type="date"]{width:100%;min-width:0;max-width:100%;box-sizing:border-box;text-align:left;text-align-last:left;padding-inline:12px;font-size:14px;line-height:1.2;white-space:nowrap}
+.maintenance-form-grid input[type="date"]::-webkit-date-and-time-value{text-align:left}
+.asset-value-breakdown-app button.active{border-color:#4eb7ff!important;box-shadow:0 0 0 2px rgba(63,171,241,.18),0 0 16px rgba(63,171,241,.12)!important;background:rgba(55,153,219,.13)!important}
+[data-theme="light"] .asset-value-breakdown-app button.active{background:#e6f4ff!important;border-color:#368fca!important;color:#163a57!important}
+[data-theme="light"] .detail-brand-badge .brand-logo,.detail-brand-badge .brand-logo{background:#fff!important;object-fit:contain!important;filter:none!important;mix-blend-mode:normal!important}
