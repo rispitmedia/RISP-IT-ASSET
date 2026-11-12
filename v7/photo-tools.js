@@ -40,11 +40,16 @@
       if(typeof remove!=='function')throw new Error('AI background-removal module is unavailable.');
       ui.status.textContent='AI is separating the device from its background…';
       var cut=await deadline(remove(inputBlob,{
-        model:'isnet_quint8',device:'cpu',output:{format:'image/png',quality:1},
+        publicPath:'https://staticimgly.com/@imgly/background-removal-data/1.7.0/dist/',
+        model:'isnet_quint8',device:'cpu',output:{format:'image/png',quality:1,type:'foreground'},
         progress:function(key,current,total){if(!ui.el.isConnected)return;var pct=total?Math.round(current/total*100):0;ui.status.textContent=String(key||'').toLowerCase().indexOf('fetch')===0?'Downloading AI model… '+pct+'%':'Removing background… '+pct+'%';}
       }),240000,'AI ลบพื้นหลังเกินเวลา กรุณาลองรูปที่มีขนาดเล็กลง');
       if(!(cut instanceof Blob))throw new Error('AI did not return an image.');
+      if(!/^image\/png$/i.test(cut.type||''))throw new Error('AI did not return a transparent PNG. Please try again.');
       var c=await loadCanvas(cut,1600),ctx=c.getContext('2d',{willReadFrequently:true}),im=ctx.getImageData(0,0,c.width,c.height),d=im.data;
+      var transparentPixels=0,visiblePixels=0;
+      for(var ai=3;ai<d.length;ai+=4){if(d[ai]<=8)transparentPixels++;if(d[ai]>12)visiblePixels++}
+      if(!visiblePixels||transparentPixels<Math.max(20,Math.floor(d.length/4*.005)))throw new Error('AI returned an opaque image instead of a cut-out. Check model download / connection and try again.');
       var minX=c.width,minY=c.height,maxX=-1,maxY=-1;
       for(var y=0;y<c.height;y++)for(var x=0;x<c.width;x++){if(d[(y*c.width+x)*4+3]>12){if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}}
       if(maxX<minX||maxY<minY)throw new Error('AI could not detect the device. Try another photo.');
@@ -55,7 +60,7 @@
       var out=document.createElement('canvas');out.width=1200;out.height=1200;var o=out.getContext('2d');o.clearRect(0,0,1200,1200);o.imageSmoothingEnabled=true;o.imageSmoothingQuality='high';
       var scale=Math.min(1080/crop.width,1080/crop.height),w=crop.width*scale,h=crop.height*scale;o.drawImage(crop,(1200-w)/2,(1200-h)/2,w,h);
       var png=await canvasBlob(out,'image/png');
-      return {dataUrl:await read(png),fileName:String(file.name||'device').replace(/\.[^.]+$/,'')+'-no-bg.png',mimeType:'image/png',blob:png,backgroundRemoved:true,whiteBackground:false};
+      return {dataUrl:await read(png),fileName:String(file.name||'device').replace(/\.[^.]+$/,'')+'-no-bg.png',mimeType:'image/png',blob:png,backgroundRemoved:true,whiteBackground:false,alphaVerified:true};
     } finally {if(ui.el&&ui.el.remove)ui.el.remove();}
   }
   async function normalPhoto(file){validate(file);var src=await loadCanvas(file,1200),out=document.createElement('canvas');out.width=1200;out.height=1200;var c=out.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,1200,1200);var scale=Math.min(1080/src.width,1080/src.height),w=src.width*scale,h=src.height*scale;c.imageSmoothingEnabled=true;c.imageSmoothingQuality='high';c.drawImage(src,(1200-w)/2,(1200-h)/2,w,h);var jpg=await canvasBlob(out,'image/jpeg',.9);return {dataUrl:await read(jpg),fileName:String(file.name||'device').replace(/\.[^.]+$/,'')+'.jpg',mimeType:'image/jpeg',blob:jpg,backgroundRemoved:false,whiteBackground:true};}

@@ -127,12 +127,11 @@
   function standalone(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true}
   function syncAppHeight(){
     const isStandalone=standalone(),vv=window.visualViewport;
-    const screenH=Number(window.screen&&window.screen.height)||0;
     const innerH=Number(window.innerHeight)||0;
     const visualH=Number(vv&&vv.height)||0;
-    // In iOS Home Screen mode, visualViewport may exclude the home-indicator area.
-    // screen.height is the full CSS viewport; safe-area is reserved inside the fixed app.
-    const h=Math.max(320,Math.round(isStandalone?Math.max(screenH,innerH,visualH):Math.max(innerH,visualH)));
+    // Use the actual layout viewport, not screen.height (which includes iOS areas
+    // outside the web app and caused a dead strip below the bottom navigation).
+    const h=Math.max(320,Math.round(innerH||visualH));
     const top=isStandalone?0:Math.max(0,Math.round(vv&&Number.isFinite(vv.offsetTop)?vv.offsetTop:0));
     document.documentElement.style.setProperty('--app-height',h+'px');
     document.documentElement.style.setProperty('--app-top',top+'px');
@@ -196,8 +195,8 @@
   function photoMarkup(asset,size){const urls=imageCandidates(asset,size||420),type=String(asset.DEVICE_TYPE||'IT').slice(0,11);if(!urls.length)return'<div class="asset-photo"><span class="photo-fallback">'+esc(type)+'</span></div>';return'<div class="asset-photo"><img loading="lazy" src="'+esc(urls[0])+'" data-f1="'+esc(urls[1]||'')+'" data-f2="'+esc(urls[2]||'')+'" data-secure-id="'+esc(asset.ASSET_ID||'')+'" alt="'+esc(asset.ASSET_TAG||'Asset')+'"><span class="photo-fallback" style="display:none">'+esc(type)+'</span></div>'}
   async function protectedPhotoData(assetId){assetId=String(assetId||'').trim();if(!assetId)return'';if(protectedPhotoCache.has(assetId))return protectedPhotoCache.get(assetId);const p=jsonpRequest('photo',{id:assetId},30000).then(r=>String(r&&r.dataUrl||'')).catch(()=> '');protectedPhotoCache.set(assetId,p);const data=await p;if(data)protectedPhotoCache.set(assetId,Promise.resolve(data));return data}
   function attachImageFallbacks(root){(root||document).querySelectorAll('img[data-f1]').forEach(img=>{if(img.dataset.bound==='1')return;img.dataset.bound='1';img.addEventListener('error',async function(){const stage=Number(this.dataset.stage||'0');if(stage===0&&this.dataset.f1){this.dataset.stage='1';this.src=this.dataset.f1;return}if(stage<=1&&this.dataset.f2){this.dataset.stage='2';this.src=this.dataset.f2;return}if(this.dataset.secureId&&this.dataset.secureTried!=='1'){this.dataset.secureTried='1';const data=await protectedPhotoData(this.dataset.secureId);if(data){this.style.display='';this.src=data;return}}this.style.display='none';const fb=this.parentElement&&this.parentElement.querySelector('.photo-fallback');if(fb)fb.style.display=''})})}
-  function cardHtml(asset){return'<button class="asset-card" type="button" data-asset-id="'+esc(asset.ASSET_ID)+'">'+photoMarkup(asset,420)+'<div class="asset-main"><div class="asset-kicker">'+esc(value(asset.DEVICE_TYPE))+'</div><div class="asset-tag">'+esc(value(asset.ASSET_TAG))+'</div><div class="asset-device">'+esc([asset.BRAND,asset.MODEL].filter(Boolean).join(' ')||'—')+'</div><div class="asset-assigned">ASSIGNED TO<b>'+esc(asset.ASSIGNED_TO||'Unassigned')+'</b></div></div><div class="asset-side"><span class="status-pill '+statusClass(asset.STATUS)+'">'+esc(value(asset.STATUS))+'</span><span class="chev">›</span></div></button>'}
-  function bindCards(root){(root||document).querySelectorAll('[data-asset-id]').forEach(btn=>{if(btn.dataset.bound==='1')return;btn.dataset.bound='1';btn.addEventListener('click',()=>openDetail(btn.dataset.assetId))});attachImageFallbacks(root)}
+  function cardHtml(asset){return'<article class="asset-card" role="button" tabindex="0" data-asset-id="'+esc(asset.ASSET_ID)+'">'+photoMarkup(asset,420)+'<div class="asset-main"><div class="asset-kicker">'+esc(value(asset.DEVICE_TYPE))+'</div><div class="asset-tag" title="'+esc(value(asset.ASSET_TAG))+'">'+esc(value(asset.ASSET_TAG))+'</div><div class="asset-device" title="'+esc([asset.BRAND,asset.MODEL].filter(Boolean).join(' ')||'—')+'">'+esc([asset.BRAND,asset.MODEL].filter(Boolean).join(' ')||'—')+'</div><div class="asset-assigned">ASSIGNED TO<b title="'+esc(asset.ASSIGNED_TO||'Unassigned')+'">'+esc(asset.ASSIGNED_TO||'Unassigned')+'</b></div></div><div class="asset-side"><button class="status-pill '+statusClass(asset.STATUS)+'" type="button" data-card-status-id="'+esc(asset.ASSET_ID)+'" aria-label="Change status: '+esc(value(asset.STATUS))+'">'+esc(value(asset.STATUS))+'</button><span class="chev" aria-hidden="true">›</span></div></article>'}
+  function bindCards(root){(root||document).querySelectorAll('[data-asset-id]').forEach(card=>{if(card.dataset.bound==='1')return;card.dataset.bound='1';card.addEventListener('click',e=>{const statusButton=e.target.closest('[data-card-status-id]');if(statusButton){e.preventDefault();e.stopPropagation();currentDetailId=statusButton.dataset.cardStatusId;openCardStatusMenu(currentDetailId,statusButton);return}openDetail(card.dataset.assetId)});card.addEventListener('keydown',e=>{if(e.target!==card)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();openDetail(card.dataset.assetId)}})});attachImageFallbacks(root)}
 
   function categoryName(type){const n=normalize(type);if(n==='MAC MINI'||n==='IMAC'||n==='DESKTOP PC')return'DESKTOP';if(n==='TABLET / IPAD')return'TABLET';if(n==='IPAD')return'iPad';return String(type||'Other').trim()||'Other'}
   function renderCategories(){const counts={};ASSETS.forEach(a=>{const k=categoryName(a.DEVICE_TYPE);counts[k]=(counts[k]||0)+1});const ordered=Object.keys(counts).sort((a,b)=>counts[b]-counts[a]||a.localeCompare(b));categoryRail.innerHTML='<button class="category-chip '+(currentCategory==='__ALL__'?'active':'')+'" data-category="__ALL__">ALL</button>'+ordered.map(k=>'<button class="category-chip '+(normalize(currentCategory)===normalize(k)?'active':'')+'" data-category="'+esc(k)+'">'+esc(k.toUpperCase())+' · '+counts[k]+'</button>').join('');categoryRail.querySelectorAll('[data-category]').forEach(b=>b.addEventListener('click',()=>{currentCategory=b.dataset.category;currentSpecialFilter='';renderHome()}))}
@@ -406,15 +405,29 @@
     document.body.classList.add('app-is-locked');
     if(message)$('appLockError').textContent=message;
     const pin=$('appLockPin');if(pin){pin.value='';pin.blur()}
+    warmAppPinChallenge().catch(()=>{});
   }
   function hideAppLock(){
     appUnlocked=true;const overlay=$('appLockOverlay');if(overlay)overlay.classList.add('hidden');
     document.body.classList.remove('app-is-locked');$('appLockError').textContent='';
     if(currentDetailId)loadDetailCredentials(currentDetailId);
   }
+  let appPinChallenge=null,appPinChallengeUntil=0,appPinChallengePromise=null;
+  function warmAppPinChallenge(){
+    if(appPinChallenge&&Date.now()<appPinChallengeUntil)return Promise.resolve(appPinChallenge);
+    if(appPinChallengePromise)return appPinChallengePromise;
+    appPinChallengePromise=jsonpRequest('cred_challenge',{},14000).then(ch=>{
+      if(!ch||!ch.challengeId||!ch.challenge)throw new Error('ไม่สามารถเตรียมการตรวจสอบ PIN ได้');
+      appPinChallenge=ch;appPinChallengeUntil=Date.now()+Math.max(15,Number(ch.expiresIn||120)-10)*1000;
+      return ch;
+    }).catch(err=>{appPinChallenge=null;appPinChallengeUntil=0;throw err}).finally(()=>{appPinChallengePromise=null});
+    return appPinChallengePromise;
+  }
   async function unlockWholeApp(pin){
-    const challenge=await jsonpRequest('cred_challenge',{},14000);
+    let challenge=appPinChallenge&&Date.now()<appPinChallengeUntil?appPinChallenge:null;
+    if(!challenge)challenge=await warmAppPinChallenge();
     const proof=await sha256Hex(String(pin||'')+':'+String(challenge.challenge||''));
+    appPinChallenge=null;appPinChallengeUntil=0;
     const result=await jsonpRequest('app_unlock',{challengeId:challenge.challengeId,proof:proof},18000);
     if(!result.credentialToken)throw new Error('ไม่สามารถยืนยันสิทธิ์ได้ กรุณาลองใหม่');
     saveCredentialToken(result.credentialToken,result.expiresIn||900);
@@ -591,6 +604,24 @@
   $('editAssetForm').addEventListener('submit',async e=>{e.preventDefault();const payload=collectForm('edit'),problem=validateFormPayload(payload);if(problem){showToast(problem);return}const btn=$('editSaveBtn'),old=btn.textContent,id=currentDetailId,photo=editPhotoPrepared,returnRoute=editReturnRoute||'detail';btn.disabled=true;btn.textContent='SAVING…';try{await writeRequest('edit',{id,payload:JSON.stringify(payload)});optimisticPatchAsset(id,publicOptimisticPayload(payload));resetEditPhoto();showToast('SAVE SUCCESS ✓',2300);route(returnRoute==='edit'?'detail':returnRoute);if(photo){showToast('Changes saved • uploading photo…',2600);uploadPreparedPhotoForAsset(id,photo).then(()=>{showToast('Photo saved ✓');quietBackgroundSync(400)}).catch(()=>{showToast('Changes saved • photo sync needs retry',3400);quietBackgroundSync(1200)})}else quietBackgroundSync(450)}catch(err){showToast(err.message||'Could not save changes',3400)}finally{btn.disabled=false;btn.textContent=old}});
 
   function openStatusSheet(){const a=assetMap[normalize(currentDetailId)];if(!a)return;$('statusAssetLabel').textContent=value(a.ASSET_TAG);$('statusOptions').innerHTML=STATUSES.map(s=>'<button type="button" class="status-option '+statusClass(s)+' '+(normalize(s)===normalize(a.STATUS)?'current':'')+'" data-status="'+esc(s)+'"><i></i><b>'+esc(s)+'</b></button>').join('');$('statusOptions').querySelectorAll('[data-status]').forEach(b=>b.addEventListener('click',()=>saveStatus(b.dataset.status)));openSheet(statusSheet)}
+  let cardStatusMenu=null;
+  function closeCardStatusMenu(){if(cardStatusMenu){cardStatusMenu.classList.remove('open');window.setTimeout(()=>{if(cardStatusMenu&&!cardStatusMenu.classList.contains('open'))cardStatusMenu.hidden=true},140)}}
+  function openCardStatusMenu(assetId,button){
+    const asset=assetMap[normalize(assetId)];if(!asset||!button)return;
+    if(!cardStatusMenu){cardStatusMenu=document.createElement('div');cardStatusMenu.className='card-status-menu';cardStatusMenu.id='cardStatusMenu';cardStatusMenu.hidden=true;document.body.appendChild(cardStatusMenu);
+      cardStatusMenu.addEventListener('click',e=>{const choice=e.target.closest('[data-quick-status]');if(!choice)return;const status=choice.dataset.quickStatus;closeCardStatusMenu();saveStatus(status)});
+      document.addEventListener('pointerdown',e=>{if(cardStatusMenu&&!cardStatusMenu.hidden&&!cardStatusMenu.contains(e.target)&&!e.target.closest('[data-card-status-id]'))closeCardStatusMenu()});
+      window.addEventListener('resize',closeCardStatusMenu,{passive:true});document.addEventListener('scroll',closeCardStatusMenu,true);
+    }
+    currentDetailId=assetId;
+    cardStatusMenu.innerHTML='<div class="card-status-menu-head"><small>CHANGE STATUS</small><b>'+esc(value(asset.ASSET_TAG))+'</b></div>'+STATUSES.map(s=>'<button type="button" class="status-option '+statusClass(s)+' '+(normalize(s)===normalize(asset.STATUS)?'current':'')+'" data-quick-status="'+esc(s)+'"><i></i><b>'+esc(s)+'</b></button>').join('');
+    cardStatusMenu.hidden=false;cardStatusMenu.classList.remove('open');
+    const r=button.getBoundingClientRect(),w=Math.min(240,window.innerWidth-24),h=Math.min(cardStatusMenu.scrollHeight||420,window.innerHeight*.62);
+    const left=Math.max(12,Math.min(window.innerWidth-w-12,r.right-w));
+    const top=r.bottom+h+12<window.innerHeight?r.bottom+7:Math.max(12,r.top-h-7);
+    cardStatusMenu.style.left=Math.round(left)+'px';cardStatusMenu.style.top=Math.round(top)+'px';cardStatusMenu.style.width=Math.round(w)+'px';
+    requestAnimationFrame(()=>cardStatusMenu&&cardStatusMenu.classList.add('open'));
+  }
   $('detailStatusCard').addEventListener('click',openStatusSheet);$('closeStatusBtn').addEventListener('click',()=>closeSheet(statusSheet));statusSheet.addEventListener('click',e=>{if(e.target===statusSheet)closeSheet(statusSheet)});
   async function saveStatus(status){const id=currentDetailId,a=assetMap[normalize(id)];if(!a)return;closeSheet(statusSheet);const old=a.STATUS;a.STATUS=status;setDetail(a);renderHome();showToast('Saving status…');try{await writeRequest('status',{id,status});optimisticPatchAsset(id,{STATUS:status});showToast('Status saved ✓');quietBackgroundSync(450)}catch(e){a.STATUS=old;mergeDetail(a);showToast(e.message||'Could not change status',3200)}}
 
@@ -669,7 +700,7 @@
     if(!/^\d{6}$/.test(pin)){$('appLockError').textContent=appLanguage==='th'?'กรุณากดรหัสตัวเลข 6 หลัก':'Please enter all 6 digits';return}
     const btn=$('appUnlockButton'),old=btn.textContent;btn.disabled=true;btn.textContent='VERIFYING…';$('appLockError').textContent='';
     try{await unlockWholeApp(pin);$('appLockPin').value='';showToast(appLanguage==='th'?'ปลดล็อกแอปแล้ว':'App unlocked')}
-    catch(err){$('appLockError').textContent=err.message||'รหัสไม่ถูกต้อง หรือไม่สามารถเชื่อมต่อได้';$('appLockPin').value='';}
+    catch(err){$('appLockError').textContent=err.message||'รหัสไม่ถูกต้อง หรือไม่สามารถเชื่อมต่อได้';$('appLockPin').value='';warmAppPinChallenge().catch(()=>{});}
     finally{btn.disabled=false;btn.textContent=old}
   });
   $('lockAppBtn').addEventListener('click',()=>showAppLock('แอปถูกล็อกแล้ว'));
