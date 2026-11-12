@@ -46,10 +46,23 @@
       }),240000,'AI ลบพื้นหลังเกินเวลา กรุณาลองรูปที่มีขนาดเล็กลง');
       if(!(cut instanceof Blob))throw new Error('AI did not return an image.');
       if(!/^image\/png$/i.test(cut.type||''))throw new Error('AI did not return a transparent PNG. Please try again.');
+      ui.status.textContent='Verifying transparent PNG edges…';
       var c=await loadCanvas(cut,1600),ctx=c.getContext('2d',{willReadFrequently:true}),im=ctx.getImageData(0,0,c.width,c.height),d=im.data;
       var transparentPixels=0,visiblePixels=0;
       for(var ai=3;ai<d.length;ai+=4){if(d[ai]<=8)transparentPixels++;if(d[ai]>12)visiblePixels++}
-      if(!visiblePixels||transparentPixels<Math.max(20,Math.floor(d.length/4*.005)))throw new Error('AI returned an opaque image instead of a cut-out. Check model download / connection and try again.');
+      // A few transparent pixels are not enough: that can be an opaque white
+      // background with only antialiased edges. Check the four image corners too.
+      var cornerClear=0,cornerPoints=[[2,2],[c.width-3,2],[2,c.height-3],[c.width-3,c.height-3]];
+      cornerPoints.forEach(function(pt){
+        var clear=0,total=0;
+        for(var cy=-1;cy<=1;cy++)for(var cx=-1;cx<=1;cx++){
+          var px=Math.max(0,Math.min(c.width-1,pt[0]+cx)),py=Math.max(0,Math.min(c.height-1,pt[1]+cy));
+          if(d[(py*c.width+px)*4+3]<=24)clear++;total++;
+        }
+        if(clear>=7)cornerClear++;
+      });
+      if(!visiblePixels||transparentPixels<Math.max(100,Math.floor(d.length/4*.015))||cornerClear<3)
+        throw new Error('AI did not remove the background cleanly. The PNG still appears opaque around its edges. Try a photo with the whole device visible against a plain background.');
       var minX=c.width,minY=c.height,maxX=-1,maxY=-1;
       for(var y=0;y<c.height;y++)for(var x=0;x<c.width;x++){if(d[(y*c.width+x)*4+3]>12){if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;}}
       if(maxX<minX||maxY<minY)throw new Error('AI could not detect the device. Try another photo.');

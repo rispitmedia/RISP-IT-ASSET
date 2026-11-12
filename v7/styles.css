@@ -937,3 +937,161 @@ html,body{background:var(--risp-header-top)!important}
 [data-theme="light"] .field input:focus,[data-theme="light"] .field select:focus,[data-theme="light"] .field textarea:focus{border-color:#4d8bbd!important;box-shadow:0 0 0 3px rgba(77,139,189,.13)!important}
 [data-theme="light"] .form-section-head{color:#173a63!important}
 [data-theme="light"] .immutable-note :where(b,p,span){color:#34536e!important}
+
+
+/* ============================================================
+   V7.6.31 — FINAL iOS / THEME / BRAND / TRANSPARENCY OVERRIDES
+   ============================================================ */
+:root{
+  --tab-h:64px;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+html,body{background:var(--bg)!important}
+.app{
+  background:var(--bg)!important;
+  grid-template-rows:calc(var(--header-h) + var(--safe-top)) minmax(0,1fr) 0!important;
+}
+.app-header{
+  height:calc(var(--header-h) + var(--safe-top))!important;
+  padding-top:calc(8px + var(--safe-top))!important;
+}
+.viewport{min-height:0!important;overflow:hidden!important}
+.screen{
+  padding-bottom:calc(var(--tab-h) + var(--safe-bottom) + 18px)!important;
+}
+/* Pin the navigation to the actual bottom edge; the iPhone home-indicator
+   inset is filled by the same navigation surface, not a separate blank band. */
+.tabbar{
+  position:fixed!important;
+  left:0!important;right:0!important;bottom:0!important;
+  width:100%!important;
+  height:calc(var(--tab-h) + var(--safe-bottom))!important;
+  min-height:calc(var(--tab-h) + var(--safe-bottom))!important;
+  padding:4px 8px calc(4px + var(--safe-bottom))!important;
+  margin:0!important;
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  align-items:center!important;
+  z-index:100!important;
+  border-radius:0!important;
+}
+.tab{height:54px!important;min-width:0!important;justify-content:center!important;gap:4px!important}
+.tab svg{width:23px!important;height:23px!important}
+.tab small{font-size:8px!important;line-height:1.15!important}
+.scan-icon{width:38px!important;height:34px!important}
+.bottom-spacer{height:4px!important}
+
+/* Brand artwork always sits on a neutral white tile, in BOTH themes.
+   This matches the brand picker reference and prevents dark-theme logo tiles. */
+.detail-brand-icon,.brand-form-icon,.brand-choice-logo,.brand-logo-chip,
+.analytics-leader-logo,.analytics-brand-logo{
+  background:#fff!important;background-image:none!important;
+  border:1px solid #d3dee7!important;
+  box-shadow:0 2px 9px rgba(0,0,0,.10)!important;
+  filter:none!important;mix-blend-mode:normal!important;opacity:1!important;
+  color-scheme:light!important;
+}
+.detail-brand-icon img,.brand-form-icon img,.brand-choice-logo img,.brand-logo-chip img,
+.analytics-leader-logo img,.analytics-brand-logo img{
+  display:block!important;filter:none!important;-webkit-filter:none!important;
+  mix-blend-mode:normal!important;opacity:1!important;object-fit:contain!important;
+  background:transparent!important;
+}
+.detail-brand-badge{
+  background:#fff!important;border:1px solid #d3dee7!important;
+  color:#142332!important;box-shadow:0 7px 18px rgba(0,0,0,.12)!important;
+}
+.detail-brand-badge small{color:#60778b!important}
+.detail-brand-badge b{color:#142332!important}
+
+/* Light theme: no dark navy panels or dark text on dark surfaces in any screen. */
+[data-theme="light"]{
+  --bg:#eef3f7;--bg2:#f7f9fb;--panel:#fff;--panel2:#f8fafc;
+  --line:#d3dee7;--line2:#b9cbd9;--text:#142332;--muted:#5d7183;--muted2:#718496;
+  --blue:#1b5b8e;--blue2:#174b78;--green:#16834b;
+  color-scheme:light!important;
+}
+[data-theme="light"] html,[data-theme="light"] body,
+[data-theme="light"] .app{background:#eef3f7!important;color:#142332!important}
+[data-theme="light"] .screen{color:#142332!important}
+[data-theme="light"] .system-card>div,
+[data-theme="light"] .locked-credential-card,
+[data-theme="light"] .connect-icon,
+[data-theme="light"] .open-admin-from-form,
+[data-theme="light"] .manual-scan,
+[data-theme="light"] .search-box,
+[data-theme="light"] .empty-state,
+[data-theme="light"] .asset-skeleton{
+  background:#fff!important;color:#142332!important;border-color:#cbd8e2!important;
+}
+[data-theme="light"] .system-card small,
+[data-theme="light"] .locked-credential-card small,
+[data-theme="light"] .locked-credential-card p,
+[data-theme="light"] .system-card b,
+[data-theme="light"] .system-card>div b{
+  color:#526a7e!important;
+}
+[data-theme="light"] .system-card>div b{color:#142332!important}
+[data-theme="light"] .open-admin-from-form{color:#174b78!important}
+[data-theme="light"] .status-option,
+[data-theme="light"] .card-status-menu .status-option,
+[data-theme="light"] .status-sheet .status-option{
+  background:#fff!important;color:#142332!important;border-color:#cbd8e2!important;
+}
+[data-theme="light"] .status-option b,
+[data-theme="light"] .card-status-menu .status-option b{color:#142332!important}
+[data-theme="light"] .status-option.current{background:#e8f2fa!important;border-color:#6d9fc4!important}
+[data-theme="light"] .status-option i{background:#8295a5!important}
+[data-theme="light"] .tabbar{
+  background:rgba(250,252,254,.99)!important;
+  border-top:1px solid #cbd7e1!important;
+  box-shadow:0 -5px 18px rgba(20,45,68,.10)!important;
+}
+[data-theme="light"] .tab{color:#526b80!important}
+[data-theme="light"] .tab svg{stroke:#526b80!important}
+[data-theme="light"] .tab.active,[data-theme="light"] .tab.active svg{color:#174b78!important;stroke:#174b78!important}
+[data-theme="light"] .scan-icon{background:#e8f2fa!important;border-color:#a9c2d6!important}
+[data-theme="light"] .scan-icon svg{stroke:#174b78!important}
+[data-theme="light"] .sheet .status-option b,
+[data-theme="light"] .sheet :where(h1,h2,h3,p,small,span,b,strong,label,li,dt,dd){color:#142332}
+[data-theme="light"] .sheet .sheet-primary *,
+[data-theme="light"] .sheet .primary-button *{color:#fff!important}
+[data-theme="light"] .app-header{background:rgba(248,250,252,.98)!important}
+[data-theme="light"] .brand-copy strong{color:#142332!important}
+[data-theme="light"] .brand-copy small{color:#526a7e!important}
+[data-theme="light"] .brand-credit{color:#1b5b8e!important}
+[data-theme="light"] .control-pill,
+[data-theme="light"] .detail-status-row small,
+[data-theme="light"] .detail-actions b{color:#174b78!important}
+[data-theme="light"] .detail-brand-badge,
+[data-theme="light"] .detail-brand-badge *{background:#fff!important;color:#142332!important}
+[data-theme="light"] .detail-brand-badge small{color:#60778b!important}
+
+/* Long identifiers remain fully readable instead of being clipped with ellipses. */
+.asset-title,.asset-tag,.asset-assigned b,.info-row b,.info-row span,
+.detail-device-name,.detail-asset-kicker,.detail-topbar b,
+.asset-card :where(h2,h3,p,b,span),.info-card :where(b,span),
+.credential-row b,.asset-credential-row b,.summary-chip span{
+  min-width:0!important;max-width:100%!important;
+  white-space:normal!important;overflow:visible!important;
+  text-overflow:clip!important;overflow-wrap:anywhere!important;word-break:break-word!important;
+}
+[data-theme="light"] .detail-brand-badge b{color:#142332!important}
+
+/* Checkerboard makes real alpha transparency visible on both themes.
+   A transparent cutout must not be visually confused with a white canvas. */
+.photo-preview-shell,
+#addPhotoPreview,
+#editPhotoPreview{
+  background-color:#fff!important;
+  background-image:linear-gradient(45deg,#dce3e9 25%,transparent 25%,transparent 75%,#dce3e9 75%,#dce3e9),
+                   linear-gradient(45deg,#dce3e9 25%,#fff 25%,#fff 75%,#dce3e9 75%,#dce3e9)!important;
+  background-position:0 0,8px 8px!important;
+  background-size:16px 16px!important;
+}
+.photo-preview-shell img{background:transparent!important;object-fit:contain!important}
+[data-theme="light"] .photo-preview-shell{background-color:#fff!important;border-color:#bdcbd7!important}
+[data-theme="light"] .photo-preview-shell div{color:#526a7e!important}
+
+/* Keep bottom safe-area color identical to the navigation bar. */
+html,body{overscroll-behavior:none!important}
