@@ -1,5 +1,5 @@
-const CACHE_NAME='risp-it-asset-v7-6-39-qr-studio-mobile-nav';
-const CORE = ['./','./index.html','./asset/index.html','./styles.css?v=7639','./app.js?v=7639','./photo-tools.js?v=7639','./manifest.webmanifest?v=772','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
+const CACHE_NAME='risp-it-asset-v7-6-40-qr-pin-brand-service';
+const CORE = ['./','./index.html','./asset/index.html','./styles.css?v=7640','./app.js?v=7640','./photo-tools.js?v=7640','./manifest.webmanifest?v=772','./icon-192.png','./icon-512.png','./apple-touch-icon.png'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE_NAME).then(cache=>Promise.allSettled(CORE.map(url=>cache.add(url)))).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('risp-it-asset-')&&key!==CACHE_NAME).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',event=>{
