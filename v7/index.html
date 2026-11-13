@@ -174,7 +174,9 @@
             <span id="detailType">—</span><h1 id="detailTag">—</h1><p id="detailDevice">—</p>
             <div class="detail-brand-badge" id="detailBrandBadge"><span class="detail-brand-icon"><span>IT</span></span><span><small>MANUFACTURER</small><b>—</b></span></div>
           </div>
-          <button class="photo-fab" id="changePhotoBtn" type="button" aria-label="Change photo">▧</button>
+          <button class="photo-fab" id="changePhotoBtn" type="button" aria-label="Change photo">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="2.2"></rect><circle cx="8.2" cy="9" r="1.6"></circle><path d="m5 17 4.4-4.5 3.1 3 2.4-2.3L19 17"></path></svg>
+          </button>
         </div>
 
         <div class="detail-status-row">
@@ -497,8 +499,8 @@
       <div class="connect-head"><div class="connect-icon maintenance-tool-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M14.2 6.2a5 5 0 0 0-6.6 6.6L3 17.4 6.6 21l4.6-4.6a5 5 0 0 0 6.6-6.6l-3 3-3.2-3.2 2.6-3.4Z"/><path d="m14.5 5.5 4-2 2 2-2 4"/></svg></div><div><small>SERVICE LOG</small><h2 id="maintenanceFormTitle">Add repair record</h2></div><button type="button" class="sheet-close-btn" id="closeMaintenanceBtn" aria-label="Close maintenance form">×</button></div>
       <p class="connect-copy">Saved to the shared asset history.</p>
       <form id="maintenanceForm" class="maintenance-form">
-        <label class="connect-field"><span>TYPE</span><small class="field-hint">Select the type of service activity.</small><select id="mntType" required><option>Repair</option><option>Maintenance</option><option>Inspection</option><option>Warranty Claim</option><option>Replacement</option></select></label>
         <div class="maintenance-form-grid maintenance-paired-fields">
+          <label class="connect-field"><span>TYPE</span><small class="field-hint">Select the type of service activity.</small><select id="mntType" required><option>Repair</option><option>Maintenance</option><option>Inspection</option><option>Warranty Claim</option><option>Replacement</option></select></label>
           <label class="connect-field"><span>REPORTED DATE</span><small class="field-hint">Date the issue was reported.</small><input id="mntReported" type="date" required></label>
           <label class="connect-field"><span>SENT DATE</span><small class="field-hint">Date the device was sent for service.</small><input id="mntSent" type="date" aria-label="Sent date / วันที่ส่งซ่อม"></label>
           <label class="connect-field"><span>RETURN DATE</span><small class="field-hint">Date the device was returned.</small><input id="mntReturn" type="date" aria-label="Return date / วันที่รับคืน"></label>
