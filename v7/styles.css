@@ -1415,3 +1415,32 @@ button,.photo-picker,.tab{touch-action:manipulation!important;-webkit-tap-highli
   .maintenance-paired-fields{grid-template-columns:minmax(0,1fr)!important}
   .maintenance-paired-fields .field-hint{min-height:0!important}
 }
+
+
+/* V7.6.37 — scan preview, optical alignment, brand marks and responsive form polish */
+.scanner-mark{font-size:20px!important;letter-spacing:.08em!important;line-height:1!important;display:grid!important;place-items:center!important;text-align:center!important;flex:0 0 74px!important}
+.detail-topbar .back-button{display:flex!important;align-items:center!important;justify-content:center!important;line-height:1!important;padding:0!important}
+.detail-topbar .back-button:before{display:block!important;line-height:1!important;transform:translateY(0)!important}
+.photo-fab{display:grid!important;place-items:center!important;padding:0!important;line-height:1!important;font-size:24px!important}
+.brand-option-chip{align-content:center!important;justify-items:center!important;grid-template-columns:1fr!important;grid-template-rows:48px auto!important;min-width:78px!important;min-height:76px!important;padding:7px!important;gap:5px!important}
+.brand-option-logo{width:46px!important;height:42px!important;display:grid!important;place-items:center!important;margin:auto!important;padding:4px!important;box-sizing:border-box!important}
+.brand-option-logo img{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center!important;display:block!important}
+.brand-option-chip:has(.brand-option-logo[data-wide-logo="1"]){grid-template-columns:1fr!important;min-width:78px!important}
+.brand-option-chip b{font-size:8px!important;line-height:1.15!important;text-align:center!important}
+.scan-result-sheet{max-height:88dvh!important;overflow-y:auto!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important}
+.scan-result-sheet .scan-match{display:grid!important;grid-template-columns:92px minmax(0,1fr) auto!important;align-items:start!important;gap:10px!important}
+.scan-result-sheet .scan-match-photo{width:92px!important;height:82px!important;grid-row:1!important;background:#eef4f8!important;border:1px solid #d2e0ea!important}
+.scan-result-sheet .scan-match-photo img{background:transparent!important;object-fit:contain!important}
+.scan-result-sheet .scan-match-copy{grid-column:2!important;grid-row:1!important;min-width:0!important}
+.scan-result-sheet .scan-match-copy b{font-size:18px!important;white-space:normal!important;overflow-wrap:anywhere!important}
+.scan-result-sheet .scan-match-copy p{font-size:11px!important;white-space:normal!important;overflow-wrap:anywhere!important}
+.scan-result-sheet .scan-match-status{grid-column:3!important;grid-row:1!important}
+.scan-match-details{grid-column:1/-1!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important;max-height:32dvh!important;overflow:auto!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;padding:2px!important}
+.scan-match-details>div{min-width:0!important;padding:9px 10px!important;border:1px solid #d7e2eb!important;border-radius:10px!important;background:#f4f8fb!important}
+.scan-match-details small{display:block!important;font-size:7px!important;letter-spacing:.08em!important;color:#617c93!important;font-weight:850!important}
+.scan-match-details b{display:block!important;margin-top:4px!important;font-size:11px!important;color:#142b40!important;overflow-wrap:anywhere!important;word-break:break-word!important}
+[data-theme="dark"] .scan-match-details>div{background:#0c1d2c!important;border-color:#27445d!important}
+[data-theme="dark"] .scan-match-details small{color:#8baac4!important}
+[data-theme="dark"] .scan-match-details b{color:#eaf5ff!important}
+[data-theme="light"] .scan-result-sheet .scan-result-close{background:#eaf3fa!important;color:#173b57!important;border-color:#a9c4d8!important}
+@media(max-width:390px){.scan-result-sheet{padding:18px!important}.scan-result-sheet .scan-match{grid-template-columns:76px minmax(0,1fr)!important}.scan-result-sheet .scan-match-photo{width:76px!important;height:72px!important}.scan-result-sheet .scan-match-status{grid-column:2!important;grid-row:2!important}.scan-match-details{grid-template-columns:repeat(2,minmax(0,1fr))!important;max-height:34dvh!important}}

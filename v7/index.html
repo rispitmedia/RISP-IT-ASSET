@@ -13,7 +13,7 @@
   <link rel="manifest" href="./manifest.webmanifest?v=772">
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./styles.css?v=7633">
+  <link rel="stylesheet" href="./styles.css?v=7637">
 </head>
 <body>
   <div class="splash" id="splash">
@@ -174,7 +174,7 @@
             <span id="detailType">—</span><h1 id="detailTag">—</h1><p id="detailDevice">—</p>
             <div class="detail-brand-badge" id="detailBrandBadge"><span class="detail-brand-icon"><span>IT</span></span><span><small>MANUFACTURER</small><b>—</b></span></div>
           </div>
-          <button class="photo-fab" id="changePhotoBtn" type="button" aria-label="Change photo">⌑</button>
+          <button class="photo-fab" id="changePhotoBtn" type="button" aria-label="Change photo">▧</button>
         </div>
 
         <div class="detail-status-row">
@@ -243,7 +243,7 @@
           <canvas id="scannerCanvas" hidden></canvas>
           <div class="scanner-corners"><i></i><i></i><i></i><i></i></div>
           <div class="scanner-line" id="scannerLine"></div>
-          <div class="scanner-mark" id="scannerMark">QR</div>
+          <div class="scanner-mark" id="scannerMark" data-no-translate="1">QR</div>
           <div class="scanner-state" id="scannerState">SMART SCAN • READY</div>
           <div class="scanner-tech"><span>QR-ONLY</span><span>30 FPS</span><span>AUTO-RECOVER</span></div>
         </div>
@@ -262,6 +262,15 @@
             <div class="scan-match-photo" id="scanMatchPhoto"><span>IT</span></div>
             <div class="scan-match-copy"><small id="scanMatchType">DEVICE</small><b id="scanMatchTag">—</b><p id="scanMatchDevice">—</p><span id="scanMatchAssigned">—</span></div>
             <span class="scan-match-status" id="scanMatchStatus">—</span>
+            <div class="scan-match-details" id="scanMatchDetails" aria-label="Key device details">
+              <div><small>ASSET ID</small><b id="scanDetailAssetId">—</b></div>
+              <div><small>SERIAL NUMBER</small><b id="scanDetailSerial">—</b></div>
+              <div><small>DEPARTMENT</small><b id="scanDetailDepartment">—</b></div>
+              <div><small>PURCHASE DATE</small><b id="scanDetailPurchase">—</b></div>
+              <div><small>WARRANTY</small><b id="scanDetailWarranty">—</b></div>
+              <div><small>ASSET VALUE</small><b id="scanDetailCost">—</b></div>
+              <div><small>LIBIB / QR</small><b id="scanDetailLibib">—</b></div>
+            </div>
           </div>
           <div class="scan-result-actions">
             <button id="scanOpenBtn" type="button">OPEN DEVICE</button>
@@ -517,7 +526,7 @@
   <script src="https://cdn.jsdelivr.net/npm/qr-scanner@1.4.2/qr-scanner.legacy.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-  <script src="./photo-tools.js?v=7636"></script>
-  <script src="./app.js?v=7636"></script>
+  <script src="./photo-tools.js?v=7637"></script>
+  <script src="./app.js?v=7637"></script>
 </body>
 </html>
