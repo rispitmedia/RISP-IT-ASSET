@@ -1615,3 +1615,181 @@ button,.photo-picker,.tab{touch-action:manipulation!important;-webkit-tap-highli
 
 .brand-form-icon,.brand-choice-logo{display:grid!important;place-items:center!important;overflow:hidden!important;box-sizing:border-box!important}
 .brand-form-icon img,.brand-choice-logo img{display:block!important;width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center!important;margin:auto!important}
+
+
+/* V7.6.39 — mobile QR studio, device detail and viewport corrections */
+
+/* Web-app shell: one viewport-sized flex column, navigation anchored to the real
+   bottom edge. This removes the legacy absolute/fixed positioning collisions. */
+html,body{width:100%;min-height:100%;margin:0!important;overflow:hidden!important}
+body{background:var(--bg,#07111d)!important}
+.app{
+ position:fixed!important;inset:0!important;width:100%!important;
+ height:100vh!important;height:100dvh!important;min-height:0!important;max-height:100dvh!important;
+ display:flex!important;flex-direction:column!important;overflow:hidden!important;
+ padding:0!important;margin:0!important;box-sizing:border-box!important;
+}
+.app-header{
+ position:relative!important;inset:auto!important;left:auto!important;right:auto!important;top:auto!important;
+ flex:0 0 calc(var(--header-h,64px) + env(safe-area-inset-top,0px))!important;
+ width:100%!important;height:calc(var(--header-h,64px) + env(safe-area-inset-top,0px))!important;
+ padding-top:env(safe-area-inset-top,0px)!important;box-sizing:border-box!important;
+}
+.viewport{
+ position:relative!important;inset:auto!important;top:auto!important;bottom:auto!important;
+ flex:1 1 auto!important;width:100%!important;height:auto!important;min-height:0!important;
+ overflow:hidden!important;box-sizing:border-box!important;
+}
+.screen{height:100%!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;
+ padding-bottom:18px!important;box-sizing:border-box!important;-webkit-overflow-scrolling:touch!important}
+.tabbar{
+ position:relative!important;inset:auto!important;left:auto!important;right:auto!important;bottom:auto!important;
+ flex:0 0 calc(62px + env(safe-area-inset-bottom,0px))!important;
+ width:100%!important;height:calc(62px + env(safe-area-inset-bottom,0px))!important;
+ min-height:calc(62px + env(safe-area-inset-bottom,0px))!important;max-height:calc(62px + env(safe-area-inset-bottom,0px))!important;
+ padding:2px 7px env(safe-area-inset-bottom,0px)!important;margin:0!important;
+ display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;align-items:center!important;
+ z-index:9000!important;transform:none!important;box-sizing:border-box!important;
+ background:var(--surface,#0b1928)!important;
+}
+[data-theme="light"] .tabbar{background:#f9fbfd!important}
+.tab{height:58px!important;min-height:58px!important;align-self:center!important}
+
+@media(display-mode:standalone){.app{height:100dvh!important;max-height:100dvh!important}}
+
+/* PIN keypad: remove duplicate pseudo backspace glyph; keep one icon centered. */
+.app-pin-keypad{width:min(100%,310px)!important;max-width:310px!important;gap:10px!important;margin:16px auto!important;padding:0!important;box-sizing:border-box!important}
+.app-pin-keypad button{width:min(100%,76px)!important;max-width:76px!important;min-width:0!important;aspect-ratio:1/1!important;justify-self:center!important;overflow:hidden!important}
+.app-pin-keypad button[data-pin-key="back"]{font-size:0!important}
+.app-pin-keypad button[data-pin-key="back"]::before,
+.app-pin-keypad button[data-pin-key="back"]::after{content:none!important;display:none!important}
+.app-pin-keypad button[data-pin-key="back"]{font-size:22px!important}
+
+/* Brand chip must hug its logo and text — not stretch across the hero image. */
+.detail-photo-copy .detail-brand-badge{
+ display:inline-flex!important;width:max-content!important;max-width:min(230px,calc(100% - 58px))!important;
+ min-width:0!important;flex:0 0 auto!important;align-items:center!important;justify-content:flex-start!important;
+ gap:9px!important;padding:7px 11px!important;margin-top:10px!important;
+ border-radius:16px!important;box-sizing:border-box!important;overflow:hidden!important;
+}
+.detail-photo-copy .detail-brand-icon{
+ width:62px!important;height:62px!important;min-width:62px!important;max-width:62px!important;
+ flex:0 0 62px!important;padding:6px!important;border-radius:14px!important;
+ display:grid!important;place-items:center!important;overflow:hidden!important;box-sizing:border-box!important;
+}
+.detail-photo-copy .detail-brand-icon img,.detail-photo-copy .detail-brand-icon .brand-logo{
+ width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;
+ object-fit:contain!important;object-position:center!important;display:block!important;margin:0!important;
+}
+.detail-photo-copy .detail-brand-badge>span:last-child{min-width:0!important;display:flex!important;flex-direction:column!important;gap:2px!important}
+.detail-photo-copy .detail-brand-badge small,.detail-photo-copy .detail-brand-badge b{white-space:normal!important;overflow-wrap:anywhere!important}
+[data-theme="light"] .detail-photo-copy .detail-brand-badge{background:rgba(255,255,255,.96)!important;color:#142332!important}
+
+/* Scan status: on the same top line as the device type, never over the model text. */
+.scan-result-sheet .scan-match{grid-template-columns:116px minmax(0,1fr)!important;align-items:center!important}
+.scan-result-sheet .scan-match-copy{grid-column:2!important;grid-row:1!important;min-width:0!important}
+.scan-match-kicker{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;width:100%!important;min-width:0!important}
+.scan-match-kicker>small{min-width:0!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.scan-match-status{position:static!important;grid-column:auto!important;grid-row:auto!important;justify-self:end!important;align-self:center!important;
+ flex:0 0 auto!important;margin:0!important;white-space:nowrap!important;max-width:48%!important}
+@media(max-width:390px){.scan-result-sheet .scan-match{grid-template-columns:104px minmax(0,1fr)!important}}
+
+/* Detail badge/photo button stay separate; no stretched brand panel under the photo control. */
+.photo-fab{z-index:5!important}
+.detail-photo-copy{max-width:calc(100% - 8px)!important}
+
+/* Maintenance sheet header: centered title, centered icon, close button at top-right. */
+.maintenance-sheet .connect-head{
+ grid-template-columns:42px minmax(0,1fr) 38px!important;align-items:center!important;
+ min-height:66px!important;gap:8px!important;
+}
+.maintenance-sheet .connect-head .connect-icon{justify-self:center!important;align-self:center!important;
+ display:grid!important;place-items:center!important;margin:0!important}
+.maintenance-sheet .connect-head>div:nth-child(2){text-align:center!important;justify-self:stretch!important}
+.maintenance-sheet .connect-head h2{text-align:center!important;line-height:1.18!important;margin:2px 0 0!important}
+.maintenance-sheet .sheet-close-btn{grid-column:3!important;grid-row:1!important;justify-self:end!important;align-self:center!important;margin:0!important}
+
+/* Compact QR label studio: one consistent preview panel for all three print modes. */
+.qr-ready-sheet{
+ width:min(520px,calc(100vw - 24px))!important;max-width:520px!important;
+ max-height:calc(100dvh - env(safe-area-inset-top,0px) - 10px)!important;
+ padding:16px 18px calc(14px + env(safe-area-inset-bottom,0px))!important;
+ border-radius:24px 24px 0 0!important;overflow-y:auto!important;
+}
+.qr-ready-sheet .connect-head{margin-bottom:8px!important;min-height:48px!important}
+.qr-ready-sheet .connect-head .connect-icon{width:42px!important;height:42px!important;min-width:42px!important}
+.qr-ready-sheet .connect-head h2{font-size:20px!important;line-height:1.15!important}
+.qr-ready-sheet .connect-copy{font-size:11px!important;line-height:1.4!important;margin:6px 0 12px!important}
+.qr-ready-sheet .generated-qr-card{
+ width:100%!important;max-width:480px!important;min-height:0!important;height:auto!important;
+ aspect-ratio:2.62/1!important;margin:0 auto!important;padding:12px!important;
+ display:grid!important;grid-template-columns:108px minmax(0,1fr)!important;gap:12px!important;
+ border-radius:18px!important;box-sizing:border-box!important;align-items:center!important;overflow:hidden!important;
+}
+.qr-ready-sheet .generated-qr-code{width:100px!important;height:100px!important;min-width:100px!important;
+ padding:2px!important;display:grid!important;place-items:center!important;overflow:hidden!important}
+.qr-ready-sheet .generated-qr-code canvas,.qr-ready-sheet .generated-qr-code img{
+ width:96px!important;height:96px!important;max-width:96px!important;max-height:96px!important;display:block!important}
+.qr-ready-sheet .generated-qr-copy{min-width:0!important;display:flex!important;flex-direction:column!important;
+ justify-content:center!important;gap:3px!important;overflow:hidden!important}
+.qr-ready-sheet .generated-qr-brand{height:18px!important;min-height:18px!important;gap:6px!important}
+.qr-ready-sheet .generated-qr-brand img{width:17px!important;height:17px!important}
+.qr-ready-sheet .generated-qr-brand small{font-size:8px!important;letter-spacing:.08em!important}
+.qr-ready-sheet .generated-qr-copy h3{font-size:19px!important;line-height:1.08!important;margin:2px 0!important;
+ white-space:normal!important;overflow-wrap:anywhere!important}
+.qr-ready-sheet .generated-qr-copy p{font-size:10px!important;line-height:1.25!important;margin:1px 0!important;
+ white-space:normal!important;overflow-wrap:anywhere!important;word-break:break-word!important}
+.qr-ready-sheet .generated-qr-payload{font-size:8px!important;line-height:1.2!important;padding:5px 7px!important;margin-top:3px!important}
+.qr-ready-sheet .qr-identity-note{font-size:9px!important;line-height:1.35!important;margin:8px 0!important}
+.qr-ready-sheet .qr-copy-control-app{margin:8px 0!important;min-height:38px!important}
+.qr-ready-sheet .qr-copy-control-app input{height:38px!important;min-height:38px!important;width:74px!important;font-size:16px!important}
+.qr-ready-sheet .qr-assigned-toggle-app{margin:6px 0 10px!important;font-size:10px!important}
+.qr-ready-sheet .qr-print-options{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ gap:7px!important;margin:10px 0!important}
+.qr-ready-sheet .qr-print-options button{min-width:0!important;min-height:48px!important;height:auto!important;
+ padding:8px 5px!important;font-size:9px!important;line-height:1.2!important;white-space:normal!important;
+ border-radius:13px!important;letter-spacing:.015em!important}
+.qr-ready-sheet .connect-actions{display:flex!important;margin:8px 0 0!important;padding:0!important}
+.qr-ready-sheet .connect-actions button{height:42px!important;min-height:42px!important;font-size:10px!important}
+.qr-ready-sheet .generated-qr-card.credentials-only-mode{aspect-ratio:2.62/1!important;grid-template-columns:minmax(0,1fr)!important}
+.qr-ready-sheet .generated-qr-card.credentials-only-mode .generated-qr-code{display:none!important}
+.qr-ready-sheet .generated-qr-card.credentials-only-mode .generated-qr-copy{grid-column:1!important;text-align:left!important}
+.qr-ready-sheet .generated-qr-card.credentials-only-mode .generated-qr-copy h3{font-size:17px!important}
+.qr-ready-sheet .generated-qr-card.credentials-only-mode .generated-qr-payload{display:none!important}
+.qr-ready-sheet .generated-qr-card.credentials-only-mode .generated-qr-identity,
+.qr-ready-sheet .generated-qr-card.credentials-only-mode .generated-qr-serial-info{display:none!important}
+.qr-ready-sheet .generated-qr-card.credentials-only-mode .generated-qr-credential-line{font-size:14px!important;
+ line-height:1.3!important;font-weight:800!important;color:#132a3e!important}
+.qr-ready-sheet .generated-qr-card.qr-credential-mode:not(.credentials-only-mode) .generated-qr-copy .generated-qr-credential-line{
+ font-size:10px!important;line-height:1.2!important;font-weight:800!important}
+.qr-ready-sheet .generated-qr-card.qr-credential-mode:not(.credentials-only-mode) .generated-qr-copy .generated-qr-payload{display:none!important}
+[data-theme="light"] .qr-ready-sheet{background:#f8fafc!important;color:#142332!important}
+[data-theme="light"] .qr-ready-sheet .generated-qr-card{background:#fff!important;border-color:#c5d3de!important}
+[data-theme="light"] .qr-ready-sheet .generated-qr-copy p{color:#40566b!important}
+[data-theme="light"] .qr-ready-sheet .generated-qr-card.credentials-only-mode .generated-qr-credential-line{color:#142332!important}
+@media(max-width:390px){
+ .qr-ready-sheet{padding-left:14px!important;padding-right:14px!important}
+ .qr-ready-sheet .generated-qr-card{grid-template-columns:92px minmax(0,1fr)!important;gap:9px!important;padding:9px!important}
+ .qr-ready-sheet .generated-qr-code{width:86px!important;height:86px!important;min-width:86px!important}
+ .qr-ready-sheet .generated-qr-code canvas,.qr-ready-sheet .generated-qr-code img{width:82px!important;height:82px!important}
+ .qr-ready-sheet .generated-qr-copy h3{font-size:17px!important}
+ .qr-ready-sheet .qr-print-options{gap:5px!important}
+ .qr-ready-sheet .qr-print-options button{font-size:8px!important;padding:7px 3px!important}
+}
+
+/* Keep credentials-only on the same QR preview sheet; the old second sheet is retired. */
+#credentialOnlyPreviewSheet{display:none!important}
+
+@media print{
+ .pwa-qr-label-cell .generated-qr-card.credentials-only-mode{grid-template-columns:minmax(0,1fr)!important}
+ .pwa-qr-label-cell .generated-qr-card.credentials-only-mode .generated-qr-code{display:none!important}
+ .pwa-qr-label-cell .generated-qr-card.credentials-only-mode .generated-qr-copy{grid-column:1!important}
+}
+
+.app-lock-card{
+ width:min(calc(100vw - 32px),460px)!important;max-width:460px!important;
+ max-height:calc(100dvh - env(safe-area-inset-top,0px) - 18px)!important;
+ overflow-y:auto!important;overflow-x:hidden!important;box-sizing:border-box!important;
+ margin-inline:auto!important;padding-inline:clamp(16px,4vw,28px)!important;
+}
+.app-lock-overlay{padding:calc(10px + env(safe-area-inset-top,0px)) 0 calc(10px + env(safe-area-inset-bottom,0px))!important;box-sizing:border-box!important}
