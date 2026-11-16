@@ -1963,3 +1963,79 @@ html:has(#appLockOverlay:not(.hidden)),body.app-is-locked{height:100%!important;
 .app-lock-overlay:not(.hidden){position:fixed!important;inset:0!important;height:100dvh!important;overflow:hidden!important;overscroll-behavior:none!important;touch-action:none!important}
 .maintenance-sheet .connect-head{display:grid!important;grid-template-columns:42px minmax(0,1fr) 38px!important;align-items:center!important;gap:10px!important}
 .maintenance-sheet .connect-head #closeMaintenanceBtn{position:static!important;grid-column:3!important;grid-row:1!important;justify-self:end!important;align-self:center!important;margin:0!important;transform:none!important}
+
+
+/* V7.6.43 — precise brand cards, field helper hierarchy and animated PIN backdrop */
+.brand-choice-strip{
+ display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;
+ gap:7px!important;padding:2px 1px 8px!important;scroll-snap-type:x proximity!important;
+}
+.brand-choice{
+ flex:0 0 88px!important;width:88px!important;min-width:88px!important;height:52px!important;
+ min-height:52px!important;display:grid!important;grid-template-columns:32px minmax(0,1fr)!important;
+ grid-template-rows:1fr!important;align-items:center!important;justify-items:center!important;
+ gap:5px!important;padding:5px!important;text-align:center!important;border-radius:12px!important;
+}
+.brand-choice-logo{
+ width:30px!important;height:30px!important;min-width:30px!important;max-width:30px!important;
+ border-radius:7px!important;padding:2px!important;background:#f5f8fb!important;
+ display:grid!important;place-items:center!important;overflow:hidden!important;
+}
+.brand-choice-logo img{
+ width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;
+ object-fit:contain!important;object-position:center!important;display:block!important;
+}
+.brand-choice b{font-size:8px!important;line-height:1.1!important;white-space:normal!important;text-align:center!important}
+.brand-select-line{grid-template-columns:42px minmax(0,1fr)!important;gap:9px!important}
+.brand-form-icon{width:42px!important;height:42px!important;min-width:42px!important;max-width:42px!important;
+ border-radius:10px!important;padding:3px!important;background:#f5f8fb!important}
+.brand-form-icon img{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;
+ object-fit:contain!important;object-position:center!important}
+.brand-select-wrap .brand-select-line{min-height:44px!important}
+.field-hint{
+ display:block!important;font-size:9px!important;line-height:1.28!important;font-weight:450!important;
+ letter-spacing:0!important;margin:3px 0 0!important;min-height:0!important;
+ color:#91a8bc!important;opacity:.95!important
+}
+[data-theme="light"] .field-hint{color:#647b8f!important}
+[data-theme="dark"] .field-hint{color:#91a8bc!important}
+.field label{font-size:10px!important;line-height:1.2!important}
+.field input,.field select,.field textarea{font-size:14px!important}
+.field select{font-size:14px!important}
+.field input::placeholder,.field textarea::placeholder{font-size:12px!important;opacity:.72!important}
+.app-lock-overlay:not(.hidden){
+ isolation:isolate!important;overflow:hidden!important;touch-action:none!important;
+ background:linear-gradient(145deg,#030a13,#071a2c 48%,#020810)!important;
+}
+.app-lock-overlay:not(.hidden)::before,.app-lock-overlay:not(.hidden)::after{
+ content:"";position:absolute;inset:-25%;z-index:-1;pointer-events:none;will-change:transform;
+}
+.app-lock-overlay:not(.hidden)::before{
+ background:
+  radial-gradient(ellipse at 25% 35%,rgba(31,132,205,.20),transparent 34%),
+  radial-gradient(ellipse at 75% 65%,rgba(32,91,151,.18),transparent 38%),
+  linear-gradient(120deg,transparent 35%,rgba(77,179,235,.08) 49%,transparent 62%);
+ animation:rispPinAurora 18s ease-in-out infinite alternate;
+}
+.app-lock-overlay:not(.hidden)::after{
+ background:repeating-linear-gradient(125deg,transparent 0 78px,rgba(89,171,225,.035) 79px 80px,transparent 81px 150px);
+ animation:rispPinGrid 32s linear infinite;
+}
+@keyframes rispPinAurora{0%{transform:translate3d(-2%,1%,0) rotate(-3deg) scale(1)}100%{transform:translate3d(3%,-2%,0) rotate(4deg) scale(1.08)}}
+@keyframes rispPinGrid{from{transform:translate3d(-2%,0,0)}to{transform:translate3d(2%,1%,0)}}
+[data-theme="light"] .app-lock-overlay:not(.hidden){
+ background:linear-gradient(145deg,#eaf3fb,#dcebf7 50%,#f6f9fc)!important;
+}
+[data-theme="light"] .app-lock-overlay:not(.hidden)::before{
+ background:radial-gradient(ellipse at 25% 35%,rgba(65,153,216,.18),transparent 38%),
+ radial-gradient(ellipse at 75% 65%,rgba(90,178,220,.16),transparent 38%);
+}
+@media(prefers-reduced-motion:reduce){
+ .app-lock-overlay:not(.hidden)::before,.app-lock-overlay:not(.hidden)::after{animation:none!important}
+}
+@media(max-width:430px){
+ .brand-choice{flex-basis:88px!important;width:88px!important}
+ .field-hint{font-size:8.5px!important;line-height:1.25!important}
+ .field label{font-size:9px!important}
+ .field input,.field select,.field textarea{font-size:13px!important}
+}
