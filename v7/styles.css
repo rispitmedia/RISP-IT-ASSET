@@ -2032,3 +2032,46 @@ html:has(#appLockOverlay:not(.hidden)),body.app-is-locked{height:100%!important;
 [data-theme="light"] .app-lock-overlay::before{opacity:.20;background:radial-gradient(circle,rgba(70,150,215,.34),transparent 70%)}
 [data-theme="light"] .app-lock-overlay::after{opacity:.14;background:radial-gradient(circle,rgba(70,190,175,.28),transparent 70%)}
 @media(prefers-reduced-motion:reduce){.app-lock-overlay::before,.app-lock-overlay::after{animation:none!important}}
+
+
+/* V7.6.45 — keep Service Log header visible; scroll the form body only. */
+#maintenanceSheet .maintenance-sheet{
+  display:flex!important;flex-direction:column!important;
+  height:min(90dvh,900px)!important;max-height:min(90dvh,900px)!important;
+  min-height:0!important;overflow:hidden!important;box-sizing:border-box!important;
+  padding:0 20px max(12px,env(safe-area-inset-bottom))!important;
+}
+#maintenanceSheet .maintenance-sheet>.grabber{flex:0 0 auto!important;margin:8px auto 10px!important}
+#maintenanceSheet .maintenance-sheet>.connect-head{
+  position:relative!important;top:auto!important;z-index:5!important;flex:0 0 auto!important;
+  min-height:82px!important;margin:0 -20px!important;padding:12px 18px!important;
+  display:grid!important;grid-template-columns:48px minmax(0,1fr) 48px!important;
+  align-items:center!important;gap:10px!important;background:#14283e!important;
+  border-bottom:1px solid rgba(112,165,205,.28)!important;
+}
+#maintenanceSheet .maintenance-sheet>.connect-head>div:nth-child(2){min-width:0!important;text-align:center!important;padding:0!important}
+#maintenanceSheet .maintenance-sheet>.connect-head h2{text-align:center!important;margin:3px 0 0!important;line-height:1.18!important}
+#maintenanceSheet .maintenance-sheet>.connect-head .sheet-close-btn{
+  justify-self:end!important;position:static!important;width:42px!important;height:42px!important;
+  min-width:42px!important;min-height:42px!important;display:grid!important;place-items:center!important;
+  opacity:1!important;visibility:visible!important;
+}
+#maintenanceSheet .maintenance-sheet>.connect-copy{flex:0 0 auto!important;margin:0 -20px!important;padding:10px 20px 8px!important}
+#maintenanceSheet .maintenance-sheet>#maintenanceForm{
+  flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;
+  overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important;padding:4px 0 18px!important;
+}
+#maintenanceSheet .maintenance-sheet>#maintenanceForm>.connect-actions{
+  position:sticky!important;bottom:0!important;z-index:4!important;
+  padding:12px 0 max(10px,env(safe-area-inset-bottom))!important;margin:8px 0 0!important;
+  background:#101c2b!important;
+}
+[data-theme="dark"] #maintenanceSheet .maintenance-sheet{background:#101c2b!important;color:#eaf2f9!important}
+[data-theme="dark"] #maintenanceSheet .maintenance-sheet>.connect-head{background:#14283e!important}
+[data-theme="light"] #maintenanceSheet .maintenance-sheet{background:#f7f9fc!important;color:#17283a!important}
+[data-theme="light"] #maintenanceSheet .maintenance-sheet>.connect-head{background:#edf3f8!important}
+[data-theme="light"] #maintenanceSheet .maintenance-sheet>#maintenanceForm>.connect-actions{background:#f7f9fc!important}
+@media(min-width:700px){
+ #maintenanceSheet{align-items:center!important;justify-content:center!important;padding:24px!important;box-sizing:border-box!important}
+ #maintenanceSheet .maintenance-sheet{width:min(900px,94vw)!important;border-radius:22px!important}
+}
