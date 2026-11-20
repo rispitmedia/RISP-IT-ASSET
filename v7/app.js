@@ -152,7 +152,25 @@
   function brandDomain(brand){return BRAND_DOMAIN_MAP[normalize(brand)]||''}
   function brandLogoUrl(brand){const key=normalize(brand);if(BRAND_LOGO_URL_MAP[key])return BRAND_LOGO_URL_MAP[key];const d=brandDomain(brand);return d?'https://www.google.com/s2/favicons?domain='+encodeURIComponent(d)+'&sz=128':''}
   function brandInitials(brand){const s=String(brand||'').replace(/[^A-Za-z0-9]/g,'').toUpperCase();return s.slice(0,3)||'IT'}
-  function brandLogoMarkup(brand,cls){const raw=String(brand||'').trim();const baseCls=(cls||'brand-logo-chip');if(!raw)return'<span class="'+baseCls+' brand-logo-empty" data-brand-empty="1"><span>⌁</span></span>';const url=brandLogoUrl(raw),txt=brandInitials(raw),wide=['ASUS','ACER','LENOVO','SAMSUNG','XIAOMI','XIAOMI (MI)','XIAOMI (REDMI)','REDMI','MI','CANON','CANNON','BROTHER','EPSON'].includes(normalize(raw))?' data-wide-logo="1"':'';return'<span class="'+baseCls+'"'+wide+' data-brand="'+esc(normalize(raw))+'">'+(url?'<img src="'+esc(url)+'" alt="" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'inline-flex\'"><span style="display:none">'+esc(txt)+'</span>':'<span>'+esc(txt)+'</span>')+'</span>'}
+  function brandInlineMark(brand){
+    const key=normalize(brand), label=String(brand||'').trim();
+    const common='role="img" aria-label="'+esc(label)+' logo" viewBox="0 0 120 64" xmlns="http://www.w3.org/2000/svg"';
+    if(key==='ASUS') return '<svg '+common+'><text x="60" y="43" text-anchor="middle" font-family="Arial,sans-serif" font-size="39" font-weight="900" font-style="italic" letter-spacing="-3" fill="#111827">ASUS</text></svg>';
+    if(key==='ACER') return '<svg '+common+'><text x="60" y="43" text-anchor="middle" font-family="Arial,sans-serif" font-size="43" font-weight="800" font-style="italic" letter-spacing="-3" fill="#83b81a">acer</text></svg>';
+    if(key==='DELL') return '<svg '+common+'><circle cx="60" cy="32" r="28" fill="none" stroke="#0672ce" stroke-width="5"/><text x="60" y="42" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="900" fill="#0672ce">DELL</text></svg>';
+    if(key==='HP') return '<svg '+common+'><circle cx="60" cy="32" r="28" fill="#0096d6"/><text x="60" y="43" text-anchor="middle" font-family="Arial,sans-serif" font-size="36" font-weight="700" font-style="italic" fill="#fff">hp</text></svg>';
+    if(key==='LENOVO') return '<svg '+common+'><rect x="12" y="8" width="96" height="48" rx="5" fill="#e2231a"/><text x="60" y="42" text-anchor="middle" font-family="Arial,sans-serif" font-size="31" font-weight="800" fill="#fff">Lenovo</text></svg>';
+    if(key==='MSI') return '<svg '+common+'><text x="60" y="42" text-anchor="middle" font-family="Arial,sans-serif" font-size="40" font-weight="900" font-style="italic" fill="#d71920">MSI</text></svg>';
+    if(key==='APPLE') return '<svg '+common+'><path d="M65 15c5-7 13-9 18-9-1 8-7 14-15 15M59 22c-10-7-24-2-28 8-6 13 4 29 10 35 5 6 9 5 15 2 5-3 9-3 14 0 7 4 12 2 17-6 3-4 5-8 6-12-12-5-14-19-2-26-8-9-20-8-27-1z" transform="translate(0,-8) scale(.78)" fill="#111827"/></svg>';
+    const txt=brandInitials(label);
+    return '<svg '+common+'><text x="60" y="42" text-anchor="middle" font-family="Arial,sans-serif" font-size="34" font-weight="900" fill="#173a63">'+esc(txt)+'</text></svg>';
+  }
+  function brandLogoMarkup(brand,cls){
+    const raw=String(brand||'').trim(),baseCls=(cls||'brand-logo-chip');
+    if(!raw)return '<span class="'+baseCls+' brand-logo-empty" data-brand-empty="1"><span>⌁</span></span>';
+    const key=normalize(raw),wide=['ASUS','ACER','LENOVO','SAMSUNG','XIAOMI','XIAOMI (MI)','XIAOMI (REDMI)','REDMI','MI','CANON','CANNON','BROTHER','EPSON'].includes(key)?' data-wide-logo="1"':'';
+    return '<span class="'+baseCls+' brand-logo-fallback"'+wide+' data-brand="'+esc(key)+'">'+brandInlineMark(raw)+'</span>';
+  }
   function brandsForType(type){return(BRAND_OPTIONS_BY_TYPE[String(type||'').trim()]||BRAND_OPTIONS_BY_TYPE.Other||[]).slice()}
 
   function route(name,push){
