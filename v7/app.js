@@ -152,24 +152,31 @@
   function brandDomain(brand){return BRAND_DOMAIN_MAP[normalize(brand)]||''}
   function brandLogoUrl(brand){const key=normalize(brand);if(BRAND_LOGO_URL_MAP[key])return BRAND_LOGO_URL_MAP[key];const d=brandDomain(brand);return d?'https://www.google.com/s2/favicons?domain='+encodeURIComponent(d)+'&sz=128':''}
   function brandInitials(brand){const s=String(brand||'').replace(/[^A-Za-z0-9]/g,'').toUpperCase();return s.slice(0,3)||'IT'}
-  function brandInlineMark(brand){
-    const key=normalize(brand), label=String(brand||'').trim();
-    const common='role="img" aria-label="'+esc(label)+' logo" viewBox="0 0 120 64" xmlns="http://www.w3.org/2000/svg"';
-    if(key==='ASUS') return '<svg '+common+'><text x="60" y="43" text-anchor="middle" font-family="Arial,sans-serif" font-size="39" font-weight="900" font-style="italic" letter-spacing="-3" fill="#111827">ASUS</text></svg>';
-    if(key==='ACER') return '<svg '+common+'><text x="60" y="43" text-anchor="middle" font-family="Arial,sans-serif" font-size="43" font-weight="800" font-style="italic" letter-spacing="-3" fill="#83b81a">acer</text></svg>';
-    if(key==='DELL') return '<svg '+common+'><circle cx="60" cy="32" r="28" fill="none" stroke="#0672ce" stroke-width="5"/><text x="60" y="42" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="900" fill="#0672ce">DELL</text></svg>';
-    if(key==='HP') return '<svg '+common+'><circle cx="60" cy="32" r="28" fill="#0096d6"/><text x="60" y="43" text-anchor="middle" font-family="Arial,sans-serif" font-size="36" font-weight="700" font-style="italic" fill="#fff">hp</text></svg>';
-    if(key==='LENOVO') return '<svg '+common+'><rect x="12" y="8" width="96" height="48" rx="5" fill="#e2231a"/><text x="60" y="42" text-anchor="middle" font-family="Arial,sans-serif" font-size="31" font-weight="800" fill="#fff">Lenovo</text></svg>';
-    if(key==='MSI') return '<svg '+common+'><text x="60" y="42" text-anchor="middle" font-family="Arial,sans-serif" font-size="40" font-weight="900" font-style="italic" fill="#d71920">MSI</text></svg>';
-    if(key==='APPLE') return '<svg '+common+'><path d="M65 15c5-7 13-9 18-9-1 8-7 14-15 15M59 22c-10-7-24-2-28 8-6 13 4 29 10 35 5 6 9 5 15 2 5-3 9-3 14 0 7 4 12 2 17-6 3-4 5-8 6-12-12-5-14-19-2-26-8-9-20-8-27-1z" transform="translate(0,-8) scale(.78)" fill="#111827"/></svg>';
-    const txt=brandInitials(label);
-    return '<svg '+common+'><text x="60" y="42" text-anchor="middle" font-family="Arial,sans-serif" font-size="34" font-weight="900" fill="#173a63">'+esc(txt)+'</text></svg>';
-  }
   function brandLogoMarkup(brand,cls){
     const raw=String(brand||'').trim(),baseCls=(cls||'brand-logo-chip');
-    if(!raw)return '<span class="'+baseCls+' brand-logo-empty" data-brand-empty="1"><span>⌁</span></span>';
-    const key=normalize(raw),wide=['ASUS','ACER','LENOVO','SAMSUNG','XIAOMI','XIAOMI (MI)','XIAOMI (REDMI)','REDMI','MI','CANON','CANNON','BROTHER','EPSON'].includes(key)?' data-wide-logo="1"':'';
-    return '<span class="'+baseCls+' brand-logo-fallback"'+wide+' data-brand="'+esc(key)+'">'+brandInlineMark(raw)+'</span>';
+    if(!raw)return '<span class="'+baseCls+' brand-logo-empty" data-brand-empty="1"><span>IT</span></span>';
+    const key=normalize(raw);
+    const icons={
+      'ASUS':'asus','ACER':'acer','DELL':'dell','HP':'hp','LENOVO':'lenovo','APPLE':'apple','MSI':'msi',
+      'SAMSUNG':'samsung','XIAOMI':'xiaomi','XIAOMI (MI)':'xiaomi','XIAOMI (REDMI)':'xiaomi','REDMI':'xiaomi','MI':'xiaomi',
+      'HUAWEI':'huawei','GOOGLE':'google','OPPO':'oppo','VIVO':'vivo','ONEPLUS':'oneplus','LG':'lg',
+      'BENQ':'benq','CANON':'canon','CANNON':'canon','EPSON':'epson','BROTHER':'brother',
+      'VIEWSONIC':'viewsonic','OPTOMA':'optoma','TP-LINK':'tplink','UBIQUITI':'ubiquiti',
+      'MIKROTIK':'mikrotik','CISCO':'cisco','HIKVISION':'hikvision','SUPERMICRO':'supermicro'
+    };
+    const colors={
+      'ASUS':'000000','ACER':'83B81A','DELL':'007DB8','HP':'0096D6','LENOVO':'E2231A','APPLE':'000000','MSI':'FF0000',
+      'SAMSUNG':'1428A0','XIAOMI':'FF6900','HUAWEI':'FF0000','GOOGLE':'4285F4','OPPO':'2BB673','VIVO':'415FFF',
+      'ONEPLUS':'F5010C','LG':'A50034','BENQ':'000000','CANON':'CC0000','EPSON':'003399','BROTHER':'0072BC',
+      'VIEWSONIC':'000000','OPTOMA':'000000','TP-LINK':'4ACBD6','UBIQUITI':'0559C9','MIKROTIK':'293239',
+      'CISCO':'1BA0D7','HIKVISION':'F40000','SUPERMICRO':'000000'
+    };
+    const slug=icons[key], color=colors[key]||'173A63', initials=brandInitials(raw);
+    const fallback='<span class="brand-logo-fallback-text" aria-hidden="true">'+esc(initials)+'</span>';
+    if(!slug)return '<span class="'+baseCls+' brand-logo-chip" data-brand="'+esc(key)+'">'+fallback+'</span>';
+    const url='https://cdn.simpleicons.org/'+slug+'/'+color;
+    return '<span class="'+baseCls+' brand-logo-chip" data-brand="'+esc(key)+'"><img src="'+url+'" alt="'+esc(raw)+' logo" loading="eager" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false">'+
+      '<span class="brand-logo-fallback-text" hidden aria-hidden="true">'+esc(initials)+'</span></span>';
   }
   function brandsForType(type){return(BRAND_OPTIONS_BY_TYPE[String(type||'').trim()]||BRAND_OPTIONS_BY_TYPE.Other||[]).slice()}
 
